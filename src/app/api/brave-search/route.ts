@@ -1,10 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as cheerio from 'cheerio';
+// Removed cheerio import to avoid potential browser API conflicts during build
 
 function makeBraveSearchURL(query: string) {
   // This query is crafted to find free, full-text ebooks in PDF or TXT format.
-  const finalQuery = `${query} ebook  filetype:pdf OR filetype:txt`;
+  const finalQuery = `${query} ebook filetype:pdf OR filetype:txt`;
   return `https://search.brave.com/search?q=${encodeURIComponent(finalQuery)}&source=web`;
 }
 
@@ -37,24 +37,28 @@ export async function GET(req: NextRequest) {
     }
     
     const html = await res.text();
-    const $ = cheerio.load(html);
-
-    const rawLinks = $('a[href^="http"]').map((i, el) => {
-        return {
-            title: $(el).text().trim(),
-            href: $(el).attr('href'),
-        };
-    }).get();
-
-    const results = rawLinks.filter(link => 
-        link.href && (/\.(pdf|txt)$/i.test(link.href))
-    ).map(link => ({
-        title: link.title,
-        link: link.href!,
-        type: link.href!.toLowerCase().endsWith('.pdf') ? 'pdf' : 'txt',
-    }));
     
-    // Return the first 5 valid results.
+    // Simple regex-based parsing instead of cheerio to avoid potential build issues
+    const linkRegex = /href=["']([^"']*\.(?:pdf|txt))["']/gi;
+    const titleRegex = /<a[^>]*>([^<]*(?:pdf|txt)[^<]*)<\/a>/gi;
+    
+    const results: Array<{title: string, link: string, type: 'pdf' | 'txt'}> = [];
+    let match;
+    
+    // Extract links using regex
+    while ((match = linkRegex.exec(html)) !== null) {
+      const link = match[1];
+      if (link && (link.endsWith('.pdf') || link.endsWith('.txt'))) {
+        const title = link.split('/').pop() || 'Untitled Document';
+        results.push({
+          title: title.replace(/\.(pdf|txt)$/i, ''),
+          link,
+          type: link.toLowerCase().endsWith('.pdf') ? 'pdf' : 'txt'
+        });
+      }
+    }
+    
+    // Return the first 5 valid results
     return NextResponse.json(results.slice(0, 5));
   } catch (error) {
     console.error("[Brave Search] An error occurred in the search route:", error);
