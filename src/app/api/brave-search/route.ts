@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
 function makeBraveSearchURL(query: string) {
-  // This query is crafted to find free, full-text ebooks in PDF or TXT format.
+  // This query is crafted to find ebooks in PDF or TXT format.
   const finalQuery = `${query} ebook  filetype:pdf OR filetype:txt`;
   return `https://search.brave.com/search?q=${encodeURIComponent(finalQuery)}&source=web`;
 }
