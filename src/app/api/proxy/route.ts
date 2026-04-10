@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
 
     const res = await fetch(targetUrl.toString(), { 
         headers,
-        signal: AbortSignal.timeout(30000)
+        signal: (() => {
+          const controller = new AbortController();
+          setTimeout(() => controller.abort(), 30000);
+          return controller.signal;
+        })()
     });
 
     if (!res.ok) {

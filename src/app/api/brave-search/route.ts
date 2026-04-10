@@ -17,14 +17,20 @@ export async function GET(req: NextRequest) {
   try {
     const braveURL = makeBraveSearchURL(query);
     
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const res = await fetch(braveURL, {
       headers: {
         // Using a standard browser User-Agent to avoid being blocked.
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
       },
-       signal: AbortSignal.timeout(10000) // 10-second timeout
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       throw new Error(`Brave search failed with status: ${res.status}`);
