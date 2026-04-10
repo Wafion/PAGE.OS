@@ -20,4 +20,4 @@ env:
     value: "1:588283938271:web:b739830deb89e91765f06a"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     value: "G-58C85TP1KC"
-    
+  
