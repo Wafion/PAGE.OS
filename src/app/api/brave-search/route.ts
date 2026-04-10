@@ -50,8 +50,7 @@ export async function GET(req: NextRequest) {
     
     // Return the first 5 valid results.
     return NextResponse.json(results.slice(0, 5));
-
-  } catch(error) {
+  } catch (error) {
     console.error("[Brave Search] An error occurred in the search route:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     return NextResponse.json({ error: 'Failed to scrape Brave results', details: errorMessage }, { status: 500 });
