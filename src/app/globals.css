@@ -658,6 +658,7 @@
     max-height: calc(100vh - 130px);
     flex-direction: column;
     gap: 1rem;
+  
   }
 
   .library-reader-index-card,
@@ -670,12 +671,14 @@
   .library-reader-index-card {
     border-radius: 1.35rem;
     padding: 1rem;
+  
   }
 
   .library-reader-index-card h2 {
     margin: 0;
     font-size: 1.2rem;
     line-height: 1.15;
+  
   }
 
   .library-reader-meter {
@@ -684,6 +687,7 @@
     margin-top: 0.85rem;
     color: hsl(var(--muted-foreground));
     font-size: 0.85rem;
+  
   }
 
   .library-reader-chapters {
@@ -840,4 +844,3 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
