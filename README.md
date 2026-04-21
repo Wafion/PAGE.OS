@@ -20,12 +20,6 @@ PageOS is a futuristic, sci-fi themed e-book reader and library management appli
 - **PDF Support**: PDF.js for document rendering
 - **Styling**: Custom sci-fi theme with JetBrains Mono, Orbitron, and IBM Plex Mono fonts
 
-## Getting Started
-
-1. Install dependencies: `npm install`
-2. Start development server: `npm run dev`
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
-
 ## Project Structure
 
 - `src/app/`: Next.js app router pages and API routes
