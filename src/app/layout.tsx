@@ -44,12 +44,12 @@ export default function RootLayout({
         )}
       >
         <ThemeProvider>
-          <ReaderSettingsProvider>
-            <AuthProvider>
+          <AuthProvider>
+            <ReaderSettingsProvider>
               <MainLayout>{children}</MainLayout>
               <Toaster />
-            </AuthProvider>
-          </ReaderSettingsProvider>
+            </ReaderSettingsProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/context/auth-provider";
+import { useReaderSettings } from "@/context/reader-settings-provider";
 import { auth } from "@/lib/firebase";
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,6 +34,7 @@ export function SidebarPopup() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useAuth();
+  const { uiMode } = useReaderSettings();
 
   const handleSignOut = async () => {
     try {
@@ -79,7 +81,9 @@ export function SidebarPopup() {
               >
                 PageOS
               </Link>
-              <span className="text-xs text-muted-foreground">v1.0</span>
+              <span className="text-xs text-muted-foreground">
+                {uiMode === "lounge" ? "lounge" : "v1.0"}
+              </span>
             </div>
           </div>
 
@@ -100,7 +104,13 @@ export function SidebarPopup() {
                   )}
                 >
                   <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <span>
+                    {uiMode === "lounge"
+                      ? item.label
+                          .replace("System Feed", "Discover")
+                          .replace("Archive", "My Library")
+                      : item.label}
+                  </span>
                 </Link>
               );
             })}

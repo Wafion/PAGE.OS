@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AppHeader } from "./header";
 import { Bootloader } from "@/components/bootloader";
 import { useReaderSettings } from "@/context/reader-settings-provider";
-import { SidebarPopup } from "@/components/ui/sidebar/popup"; // 👈 use popup
+import { SidebarPopup } from "@/components/ui/sidebar/popup";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { showBootAnimation } = useReaderSettings();
@@ -42,8 +42,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <SidebarPopup /> {/* ✅ This replaces the old sidebar */}
+    <div className="flex min-h-screen flex-col">
+      <SidebarPopup />
       <AppHeader />
       <main className="flex-1 animate-fade-in">{children}</main>
     </div>

@@ -19,11 +19,13 @@ import TOCModal from './TOCModal';
 import useBookLoader from '@/hooks/useBookLoader';
 import useBookmark from '@/hooks/useBookmark';
 import { useAuth } from '@/context/auth-provider';
+import { useReaderSettings } from '@/context/reader-settings-provider';
 
 export default function Reader() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { uiMode } = useReaderSettings();
 
   const {
     book,
@@ -77,8 +79,10 @@ export default function Reader() {
       return '0% complete';
     }
 
-    return `${completion.toFixed(1)}% decoded`;
-  }, [completion, currentSector]);
+    return uiMode === 'lounge'
+      ? `${completion.toFixed(1)}% read`
+      : `${completion.toFixed(1)}% decoded`;
+  }, [completion, currentSector, uiMode]);
 
   const pageLabel = currentSector
     ? `Page ${String(activeSector + 1).padStart(3, '0')} / ${String(sectors.length).padStart(3, '0')}`
@@ -109,6 +113,150 @@ export default function Reader() {
           <p className="font-headline text-lg">TRANSMISSION_ERROR</p>
           <p className="text-xs text-muted-foreground">{error}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (uiMode === 'lounge') {
+    return (
+      <div className="library-reader-shell">
+        <header className="library-reader-header">
+          <div className="library-reader-title-row">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="min-w-0">
+              <p className="library-kicker">Now reading</p>
+              <h1>{book?.title}</h1>
+              <p>{book?.authors || 'Unknown author'}</p>
+            </div>
+          </div>
+
+          <div className="library-reader-actions">
+            {toc.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setShowTOC(true)}>
+                <List className="mr-2 h-4 w-4" />
+                Chapters
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleBookmark}
+              disabled={isBookmarkLoading || !user || isWebBook}
+              aria-label="Bookmark this page"
+            >
+              {isBookmarkLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Bookmark
+                  className={`h-4 w-4 ${isBookmarked ? 'fill-accent text-accent' : ''}`}
+                />
+              )}
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => router.push('/settings')}>
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+
+        <div className="library-reader-progress-track">
+          <div style={{ width: `${completion}%` }} />
+        </div>
+
+        <main className="library-reader-grid">
+          <aside className="library-reader-index">
+            <div className="library-reader-index-card">
+              <p className="library-kicker">Reading map</p>
+              <h2>{currentChapter?.title ?? 'Opening'}</h2>
+              <div className="library-reader-meter">
+                <span>{progressLabel}</span>
+                <strong>{pageLabel}</strong>
+              </div>
+            </div>
+
+            <div className="library-reader-chapters">
+              {toc.map((entry, index) => {
+                const nextEntry = toc[index + 1];
+                const isActive =
+                  activeSector >= entry.sectorIndex &&
+                  (!nextEntry || activeSector < nextEntry.sectorIndex);
+
+                return (
+                  <button
+                    key={`${entry.title}-${entry.sectorIndex}`}
+                    type="button"
+                    onClick={() => {
+                      setDirection(entry.sectorIndex > activeSector ? 1 : -1);
+                      setActiveSector(entry.sectorIndex);
+                    }}
+                    className={isActive ? 'active' : ''}
+                  >
+                    <span>Chapter {String(entry.chapterIndex + 1).padStart(2, '0')}</span>
+                    <strong>{entry.title}</strong>
+                    <small>{entry.pageCount} pages</small>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          <section className="library-reader-stage">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.article
+                key={activeSector}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: 'spring', stiffness: 220, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="library-reader-page-card"
+              >
+                <div className="library-reader-page-meta">
+                  <span>Chapter {String(activeChapterIndex + 1).padStart(2, '0')}</span>
+                  <span>{pageLabel}</span>
+                </div>
+                <h2>{currentSector?.chapterTitle ?? book?.title}</h2>
+                <div className="library-reader-prose">
+                  {currentSector?.paragraphs.map((paragraph, index) => (
+                    <p key={`${currentSector.startParagraphIndex}-${index}`}>
+                      {paragraph.trim()}
+                    </p>
+                  ))}
+                </div>
+              </motion.article>
+            </AnimatePresence>
+          </section>
+        </main>
+
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+          <div className="pointer-events-auto">
+            <ReaderControls
+              onPrev={() => paginate(-1)}
+              onNext={() => paginate(1)}
+              isFirst={activeSector === 0}
+              isLast={activeSector === sectors.length - 1}
+              progressLabel={progressLabel}
+              pageLabel={pageLabel}
+            />
+          </div>
+        </div>
+
+        {showTOC && (
+          <TOCModal
+            toc={toc}
+            activeSector={activeSector}
+            onClose={() => setShowTOC(false)}
+            onSelect={(index) => {
+              setDirection(index > activeSector ? 1 : -1);
+              setActiveSector(index);
+            }}
+          />
+        )}
       </div>
     );
   }

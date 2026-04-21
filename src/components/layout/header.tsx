@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-provider";
+import { useReaderSettings } from "@/context/reader-settings-provider";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -21,10 +22,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   User,
   LogIn,
+  MonitorCog,
 } from "lucide-react";
 
 export function AppHeader() {
   const { user } = useAuth();
+  const { uiMode, setUiMode } = useReaderSettings();
 
   const handleSignOut = async () => {
     try {
@@ -38,6 +41,15 @@ export function AppHeader() {
     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/80 px-4 backdrop-blur-sm md:px-6">
       {/* You can optionally place breadcrumbs or title here */}
       <div className="flex-1" />
+      <Button
+        variant="outline"
+        size="sm"
+        className="hidden h-8 gap-2 border-accent/40 text-xs text-accent hover:bg-accent/10 hover:text-accent sm:flex"
+        onClick={() => setUiMode(uiMode === "lounge" ? "classic" : "lounge")}
+      >
+        <MonitorCog className="h-3.5 w-3.5" />
+        {uiMode === "lounge" ? "Classic UI" : "Library Lounge"}
+      </Button>
 
       {/* 👤 User Dropdown */}
       <DropdownMenu>

@@ -1,10 +1,11 @@
-
+﻿
 'use client';
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson2 } from 'lucide-react';
+import { useReaderSettings } from '@/context/reader-settings-provider';
 
 export type WebFallbackResult = {
   title: string;
@@ -20,20 +21,26 @@ const FiletypeIcon = ({ type }: { type: 'pdf' | 'txt' }) => {
 }
 
 export function WebFallbackResults({ results }: { results: WebFallbackResult[] }) {
+  const { uiMode } = useReaderSettings();
+
   if (results.length === 0) {
     return null;
   }
 
   return (
-    <section className="col-span-full">
+    <section className={uiMode === 'lounge' ? 'library-web-results' : 'col-span-full'}>
       <h2 className="font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2">
-        // WEB_FALLBACK_RESULTS
+        {uiMode === 'lounge' ? 'PDFs and web books' : '// WEB_FALLBACK_RESULTS'}
       </h2>
       <Card className="border-border/50 bg-card">
         <CardHeader>
-          <CardTitle className="font-headline text-accent/80">External Links Found</CardTitle>
+          <CardTitle className="font-headline text-accent/80">
+            {uiMode === 'lounge' ? 'More places to read' : 'External Links Found'}
+          </CardTitle>
           <CardDescription>
-            The following are unverified links from Brave Search. TXT files will open in the reader. PDF files will open in a new tab.
+            {uiMode === 'lounge'
+              ? 'These results come from web search. Text files open in the reader, PDFs open in a new tab.'
+              : 'The following are unverified links from Brave Search. TXT files will open in the reader. PDF files will open in a new tab.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -78,3 +85,4 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
     </section>
   );
 }
+

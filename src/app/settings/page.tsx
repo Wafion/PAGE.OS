@@ -42,7 +42,7 @@ const SourceStatus = ({ status }: { status: Status }) => {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { autoScroll, setAutoScroll, sourceSettings, toggleSource, showBootAnimation, setShowBootAnimation } = useReaderSettings();
+  const { autoScroll, setAutoScroll, uiMode, setUiMode, sourceSettings, toggleSource, showBootAnimation, setShowBootAnimation } = useReaderSettings();
   
   const [sourceStatuses, setSourceStatuses] = useState<Record<string, Status>>({});
 
@@ -108,6 +108,32 @@ export default function SettingsPage() {
               <CardDescription>Adjust fonts, colors, and layout.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="grid gap-3 rounded-md border border-border/50 p-4 md:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setUiMode("lounge")}
+                  className={`rounded-md border p-4 text-left transition hover:border-accent/60 ${
+                    uiMode === "lounge" ? "border-accent bg-accent/10" : "border-border/50"
+                  }`}
+                >
+                  <span className="font-medium">Library Lounge</span>
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    Warm shelves, friendlier language, genre browsing, and a calm reader.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUiMode("classic")}
+                  className={`rounded-md border p-4 text-left transition hover:border-accent/60 ${
+                    uiMode === "classic" ? "border-accent bg-accent/10" : "border-border/50"
+                  }`}
+                >
+                  <span className="font-medium">Classic PageOS</span>
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    Terminal interface, boot animation, archive language, neon styling.
+                  </span>
+                </button>
+              </div>
               <div className="flex items-center justify-between rounded-md border border-border/50 p-4">
                 <Label htmlFor="theme-void" className="flex flex-col gap-1 cursor-pointer">
                   <span>VOID.BLACK</span>

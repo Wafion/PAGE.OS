@@ -5,6 +5,7 @@ type GutenbergBook = {
   title: string;
   authors: { name: string }[];
   formats: Record<string, string>;
+  subjects?: string[];
 };
 
 type GutenbergAPIResponse = {
@@ -17,65 +18,52 @@ export type MappedGutenbergBook = {
   authors: string;
   formats: Record<string, string>;
   source: 'gutendex';
+  subjects?: string[];
 };
 
+const fallbackBook = (
+  id: string,
+  title: string,
+  authors: string,
+  subjects: string[] = [],
+): MappedGutenbergBook => ({
+  id,
+  title,
+  authors,
+  formats: { 'text/plain; charset=utf-8': `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt` },
+  source: 'gutendex',
+  subjects,
+});
+
 export const FALLBACK_GUTENBERG_BOOKS: MappedGutenbergBook[] = [
-  {
-    id: '84',
-    title: 'Frankenstein; Or, The Modern Prometheus',
-    authors: 'Mary Wollstonecraft Shelley',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/84/84-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '1342',
-    title: 'Pride and Prejudice',
-    authors: 'Jane Austen',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/1342/1342-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '11',
-    title: "Alice's Adventures in Wonderland",
-    authors: 'Lewis Carroll',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/11/11-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '1661',
-    title: 'The Adventures of Sherlock Holmes',
-    authors: 'Arthur Conan Doyle',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/1661/1661-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '2701',
-    title: 'Moby Dick; Or, The Whale',
-    authors: 'Herman Melville',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/2701/2701-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '98',
-    title: 'A Tale of Two Cities',
-    authors: 'Charles Dickens',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/98/98-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '74',
-    title: 'The Adventures of Tom Sawyer, Complete',
-    authors: 'Mark Twain',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/74/74-0.txt' },
-    source: 'gutendex',
-  },
-  {
-    id: '64317',
-    title: 'The Great Gatsby',
-    authors: 'F. Scott Fitzgerald',
-    formats: { 'text/plain; charset=utf-8': 'https://www.gutenberg.org/files/64317/64317-0.txt' },
-    source: 'gutendex',
-  },
+  fallbackBook('84', 'Frankenstein; Or, The Modern Prometheus', 'Mary Wollstonecraft Shelley', ['horror', 'science fiction', 'gothic']),
+  fallbackBook('1342', 'Pride and Prejudice', 'Jane Austen', ['romance', 'classic', 'society']),
+  fallbackBook('11', "Alice's Adventures in Wonderland", 'Lewis Carroll', ['fantasy', 'adventure', 'classic']),
+  fallbackBook('1661', 'The Adventures of Sherlock Holmes', 'Arthur Conan Doyle', ['mystery', 'detective', 'crime']),
+  fallbackBook('2701', 'Moby Dick; Or, The Whale', 'Herman Melville', ['adventure', 'classic', 'sea stories']),
+  fallbackBook('98', 'A Tale of Two Cities', 'Charles Dickens', ['historical fiction', 'classic']),
+  fallbackBook('74', 'The Adventures of Tom Sawyer, Complete', 'Mark Twain', ['adventure', 'classic']),
+  fallbackBook('64317', 'The Great Gatsby', 'F. Scott Fitzgerald', ['classic', 'literary fiction']),
+  fallbackBook('35', 'The Time Machine', 'H. G. Wells', ['science fiction', 'time travel']),
+  fallbackBook('36', 'The War of the Worlds', 'H. G. Wells', ['science fiction', 'alien invasion']),
+  fallbackBook('159', 'The Island of Doctor Moreau', 'H. G. Wells', ['science fiction', 'horror']),
+  fallbackBook('201', 'Flatland: A Romance of Many Dimensions', 'Edwin A. Abbott', ['science fiction', 'mathematics']),
+  fallbackBook('5230', 'The Invisible Man: A Grotesque Romance', 'H. G. Wells', ['science fiction']),
+  fallbackBook('2852', 'The Hound of the Baskervilles', 'Arthur Conan Doyle', ['mystery', 'detective']),
+  fallbackBook('155', 'The Moonstone', 'Wilkie Collins', ['mystery', 'detective']),
+  fallbackBook('583', 'The Woman in White', 'Wilkie Collins', ['mystery', 'sensation fiction']),
+  fallbackBook('204', 'The Innocence of Father Brown', 'G. K. Chesterton', ['mystery', 'detective']),
+  fallbackBook('1155', 'The Secret Adversary', 'Agatha Christie', ['mystery', 'thriller']),
+  fallbackBook('1260', 'Jane Eyre: An Autobiography', 'Charlotte Bronte', ['romance', 'gothic', 'classic']),
+  fallbackBook('768', 'Wuthering Heights', 'Emily Bronte', ['romance', 'gothic', 'classic']),
+  fallbackBook('161', 'Sense and Sensibility', 'Jane Austen', ['romance', 'classic']),
+  fallbackBook('105', 'Persuasion', 'Jane Austen', ['romance', 'classic']),
+  fallbackBook('121', 'Northanger Abbey', 'Jane Austen', ['romance', 'gothic satire']),
+  fallbackBook('120', 'Treasure Island', 'Robert Louis Stevenson', ['adventure', 'pirates']),
+  fallbackBook('76', 'Adventures of Huckleberry Finn', 'Mark Twain', ['adventure', 'classic']),
+  fallbackBook('103', 'Around the World in Eighty Days', 'Jules Verne', ['adventure', 'travel']),
+  fallbackBook('521', 'The Life and Adventures of Robinson Crusoe', 'Daniel Defoe', ['adventure']),
+  fallbackBook('215', 'The Call of the Wild', 'Jack London', ['adventure', 'animals']),
 ];
 
 export function getFallbackGutenbergBooks(query?: string): MappedGutenbergBook[] {
@@ -85,7 +73,7 @@ export function getFallbackGutenbergBooks(query?: string): MappedGutenbergBook[]
 
   const normalizedQuery = query.trim().toLowerCase();
   return FALLBACK_GUTENBERG_BOOKS.filter((book) => {
-    const haystack = `${book.title} ${book.authors}`.toLowerCase();
+    const haystack = `${book.title} ${book.authors} ${book.subjects?.join(' ') ?? ''}`.toLowerCase();
     return haystack.includes(normalizedQuery);
   });
 }
@@ -115,7 +103,8 @@ export async function fetchGutenbergBooks(query?: string, page = 1): Promise<Map
     title: book.title,
     authors: book.authors.map(a => a.name).join(', '),
     formats: book.formats,
-    source: 'gutendex' as const
+    source: 'gutendex' as const,
+    subjects: book.subjects ?? [],
   }));
   return mapped.length > 0 ? mapped : getFallbackGutenbergBooks(query);
 }
