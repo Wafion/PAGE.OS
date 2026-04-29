@@ -46,7 +46,7 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
           disabled={isSearching}
           className={
             uiMode === "lounge"
-              ? "h-14 w-full rounded-full border-0 bg-white pl-12 pr-14 text-base shadow-sm focus-visible:ring-accent/30"
+              ? "h-14 w-full rounded-full border border-border/60 bg-card/90 pl-12 pr-14 text-base shadow-sm focus-visible:ring-accent/30"
               : "w-full bg-input border-border/50 pl-14 h-12 text-lg focus:border-accent"
           }
         />

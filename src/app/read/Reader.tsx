@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,7 +10,8 @@ import {
   LoaderCircle,
   AlertTriangle,
   List,
-  Settings,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import useBookLoader from '@/hooks/useBookLoader';
 import useBookmark from '@/hooks/useBookmark';
 import { useAuth } from '@/context/auth-provider';
 import { useReaderSettings } from '@/context/reader-settings-provider';
+import { ThemeToggleButton } from '@/components/theme-toggle-button';
 
 export default function Reader() {
   const searchParams = useSearchParams();
@@ -45,6 +47,8 @@ export default function Reader() {
     useBookmark(user, book, activeSector, sectors.length);
 
   const [showTOC, setShowTOC] = useState(false);
+  const loungeViewportRef = useRef<HTMLDivElement>(null);
+  const classicViewportRef = useRef<HTMLDivElement>(null);
 
   const paginate = useCallback(
     (delta: number) => {
@@ -71,16 +75,22 @@ export default function Reader() {
     return () => window.removeEventListener('keydown', onKey);
   }, [paginate]);
 
+  useEffect(() => {
+    loungeViewportRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    classicViewportRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [activeSector]);
+
   const activeChapterIndex = currentSector?.chapterIndex ?? 0;
   const completion =
     sectors.length > 0 ? ((activeSector + 1) / sectors.length) * 100 : 0;
+
   const progressLabel = useMemo(() => {
     if (!currentSector) {
       return '0% complete';
     }
 
     return uiMode === 'lounge'
-      ? `${completion.toFixed(1)}% read`
+      ? `${completion.toFixed(1)}% through the book`
       : `${completion.toFixed(1)}% decoded`;
   }, [completion, currentSector, uiMode]);
 
@@ -88,18 +98,28 @@ export default function Reader() {
     ? `Page ${String(activeSector + 1).padStart(3, '0')} / ${String(sectors.length).padStart(3, '0')}`
     : 'Page 000 / 000';
 
+  const chapterLeafLabel = currentSector
+    ? `Leaf ${currentSector.pageNumberInChapter} of ${currentSector.pageCountInChapter} in this chapter`
+    : 'Leaf 0 of 0';
+
+  const remainingLeavesInChapter = currentSector
+    ? Math.max(currentSector.pageCountInChapter - currentSector.pageNumberInChapter, 0)
+    : 0;
+
+  const sourceLabel = book?.source === 'gutendex' ? 'Project Gutenberg' : 'Web text';
+
   const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? '10%' : '-10%', opacity: 0 }),
+    enter: (dir: number) => ({ x: dir > 0 ? '8%' : '-8%', opacity: 0 }),
     center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({ x: dir < 0 ? '10%' : '-10%', opacity: 0 }),
+    exit: (dir: number) => ({ x: dir < 0 ? '8%' : '-8%', opacity: 0 }),
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background text-muted-foreground">
+      <div className="flex h-[100dvh] items-center justify-center bg-background text-muted-foreground">
         <div className="flex flex-col items-center gap-3">
           <LoaderCircle className="h-6 w-6 animate-spin text-accent" />
-          <p>Rendering indexed transmission...</p>
+          <p>{uiMode === 'lounge' ? 'Preparing your reading room...' : 'Rendering indexed transmission...'}</p>
         </div>
       </div>
     );
@@ -107,10 +127,12 @@ export default function Reader() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background text-destructive">
+      <div className="flex h-[100dvh] items-center justify-center bg-background text-destructive">
         <div className="flex max-w-md flex-col items-center gap-3 text-center">
           <AlertTriangle className="h-8 w-8" />
-          <p className="font-headline text-lg">TRANSMISSION_ERROR</p>
+          <p className="font-headline text-lg">
+            {uiMode === 'lounge' ? 'We could not open this book' : 'TRANSMISSION_ERROR'}
+          </p>
           <p className="text-xs text-muted-foreground">{error}</p>
         </div>
       </div>
@@ -120,25 +142,31 @@ export default function Reader() {
   if (uiMode === 'lounge') {
     return (
       <div className="library-reader-shell">
-        <header className="library-reader-header">
+        <header className="library-reader-header library-reader-header-sticky">
           <div className="library-reader-title-row">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
-              <p className="library-kicker">Now reading</p>
+              <p className="library-kicker">Reading room</p>
               <h1>{book?.title}</h1>
-              <p>{book?.authors || 'Unknown author'}</p>
+              <p>
+                {book?.authors || 'Unknown author'} . {sourceLabel}
+              </p>
             </div>
           </div>
 
           <div className="library-reader-actions">
-            {toc.length > 0 && (
-              <Button variant="outline" size="sm" onClick={() => setShowTOC(true)}>
-                <List className="mr-2 h-4 w-4" />
-                Chapters
-              </Button>
-            )}
+            <ThemeToggleButton compact className="border-accent/30 hover:bg-accent/10 hover:text-accent" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="library-reader-guide-button"
+              onClick={() => setShowTOC(true)}
+            >
+              <List className="mr-2 h-4 w-4" />
+              Chapter guide
+            </Button>
             <Button
               variant="outline"
               size="icon"
@@ -154,9 +182,6 @@ export default function Reader() {
                 />
               )}
             </Button>
-            <Button variant="outline" size="icon" onClick={() => router.push('/settings')}>
-              <Settings className="h-4 w-4" />
-            </Button>
           </div>
         </header>
 
@@ -164,15 +189,31 @@ export default function Reader() {
           <div style={{ width: `${completion}%` }} />
         </div>
 
-        <main className="library-reader-grid">
-          <aside className="library-reader-index">
-            <div className="library-reader-index-card">
-              <p className="library-kicker">Reading map</p>
+        <main className="library-reader-layout">
+          <aside className="library-reader-sidebar">
+            <div className="library-reader-summary-card">
+              <p className="library-kicker">Where you are</p>
               <h2>{currentChapter?.title ?? 'Opening'}</h2>
-              <div className="library-reader-meter">
-                <span>{progressLabel}</span>
-                <strong>{pageLabel}</strong>
+              <div className="library-reader-summary-grid">
+                <div>
+                  <span>Book progress</span>
+                  <strong>{progressLabel}</strong>
+                </div>
+                <div>
+                  <span>Current leaf</span>
+                  <strong>{chapterLeafLabel}</strong>
+                </div>
               </div>
+            </div>
+
+            <div className="library-reader-note-card">
+              <p className="library-kicker">Reading note</p>
+              <h3>{remainingLeavesInChapter > 0 ? 'You still have room to linger.' : 'You are at the end of this chapter.'}</h3>
+              <p>
+                {remainingLeavesInChapter > 0
+                  ? `${remainingLeavesInChapter} more leaves remain before the next chapter begins.`
+                  : 'When you are ready, move on to the next chapter or revisit the guide.'}
+              </p>
             </div>
 
             <div className="library-reader-chapters">
@@ -194,57 +235,132 @@ export default function Reader() {
                   >
                     <span>Chapter {String(entry.chapterIndex + 1).padStart(2, '0')}</span>
                     <strong>{entry.title}</strong>
-                    <small>{entry.pageCount} pages</small>
+                    <small>{entry.pageCount} leaves</small>
                   </button>
                 );
               })}
             </div>
           </aside>
 
-          <section className="library-reader-stage">
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.article
-                key={activeSector}
-                custom={direction}
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: 'spring', stiffness: 220, damping: 30 },
-                  opacity: { duration: 0.2 },
-                }}
-                className="library-reader-page-card"
-              >
-                <div className="library-reader-page-meta">
-                  <span>Chapter {String(activeChapterIndex + 1).padStart(2, '0')}</span>
-                  <span>{pageLabel}</span>
-                </div>
+          <section className="library-reader-content">
+            <div className="library-reader-banner">
+              <div>
+                <p className="library-kicker">Current passage</p>
                 <h2>{currentSector?.chapterTitle ?? book?.title}</h2>
-                <div className="library-reader-prose">
-                  {currentSector?.paragraphs.map((paragraph, index) => (
-                    <p key={`${currentSector.startParagraphIndex}-${index}`}>
-                      {paragraph.trim()}
-                    </p>
-                  ))}
+              </div>
+              <div className="library-reader-banner-meta">
+                <span>{pageLabel}</span>
+                <span>{progressLabel}</span>
+              </div>
+            </div>
+
+            <div className="library-reader-sheet-viewport" ref={loungeViewportRef}>
+              <AnimatePresence initial={false} custom={direction} mode="wait">
+                <motion.article
+                  key={activeSector}
+                  custom={direction}
+                  variants={variants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{
+                    x: { type: 'spring', stiffness: 210, damping: 28 },
+                    opacity: { duration: 0.18 },
+                  }}
+                  className="library-reader-sheet"
+                >
+                  <div className="library-reader-sheet-top">
+                    <span>{chapterLeafLabel}</span>
+                    <span>{sourceLabel}</span>
+                  </div>
+
+                  <h3>{currentSector?.chapterTitle ?? book?.title}</h3>
+                  <div className="library-reader-sheet-rule" />
+
+                  <div className="library-reader-prose">
+                    {currentSector?.paragraphs.map((paragraph, index) => (
+                      <p
+                        key={`${currentSector.startParagraphIndex}-${index}`}
+                        className={index === 0 ? 'library-reader-lead' : undefined}
+                      >
+                        {paragraph.trim()}
+                      </p>
+                    ))}
+                  </div>
+                </motion.article>
+              </AnimatePresence>
+            </div>
+
+            <div className="library-reader-dock">
+              <div className="library-reader-dock-copy">
+                <p className="library-kicker">Move through the book</p>
+                <h3>
+                  {currentSector?.pageNumberInChapter === currentSector?.pageCountInChapter
+                    ? 'This leaf closes the chapter.'
+                    : 'Keep reading at your own pace.'}
+                </h3>
+                <span>
+                  {currentSector?.pageNumberInChapter === currentSector?.pageCountInChapter
+                    ? 'The next step will take you into a new chapter.'
+                    : `You are reading ${chapterLeafLabel.toLowerCase()}.`}
+                </span>
+              </div>
+
+              <div className="library-reader-dock-actions">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={activeSector === 0}
+                  onClick={() => paginate(-1)}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  <span className="reader-nav-label-full">Previous leaf</span>
+                  <span className="reader-nav-label-compact">Previous</span>
+                </Button>
+                <Button
+                  type="button"
+                  disabled={activeSector === sectors.length - 1}
+                  onClick={() => paginate(1)}
+                >
+                  <span className="reader-nav-label-full">Next leaf</span>
+                  <span className="reader-nav-label-compact">Next</span>
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="library-reader-mobile-insights">
+              <div className="library-reader-summary-card">
+                <p className="library-kicker">Where you are</p>
+                <h2>{currentChapter?.title ?? 'Opening'}</h2>
+                <div className="library-reader-summary-grid">
+                  <div>
+                    <span>Book progress</span>
+                    <strong>{progressLabel}</strong>
+                  </div>
+                  <div>
+                    <span>Current leaf</span>
+                    <strong>{chapterLeafLabel}</strong>
+                  </div>
                 </div>
-              </motion.article>
-            </AnimatePresence>
+              </div>
+
+              <div className="library-reader-note-card">
+                <p className="library-kicker">Reading note</p>
+                <h3>
+                  {remainingLeavesInChapter > 0
+                    ? 'You still have room to linger.'
+                    : 'You are at the end of this chapter.'}
+                </h3>
+                <p>
+                  {remainingLeavesInChapter > 0
+                    ? `${remainingLeavesInChapter} more leaves remain before the next chapter begins.`
+                    : 'When you are ready, move on to the next chapter or revisit the guide.'}
+                </p>
+              </div>
+            </div>
           </section>
         </main>
-
-        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-          <div className="pointer-events-auto">
-            <ReaderControls
-              onPrev={() => paginate(-1)}
-              onNext={() => paginate(1)}
-              isFirst={activeSector === 0}
-              isLast={activeSector === sectors.length - 1}
-              progressLabel={progressLabel}
-              pageLabel={pageLabel}
-            />
-          </div>
-        </div>
 
         {showTOC && (
           <TOCModal
@@ -262,7 +378,7 @@ export default function Reader() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
       <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -279,6 +395,7 @@ export default function Reader() {
         </div>
 
         <div className="flex items-center gap-1">
+          <ThemeToggleButton compact className="border-border/50 text-muted-foreground hover:text-accent" />
           {toc.length > 0 && (
             <Button variant="ghost" size="icon" onClick={() => setShowTOC(true)}>
               <List className="h-4 w-4" />
@@ -298,14 +415,11 @@ export default function Reader() {
               />
             )}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => router.push('/settings')}>
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </header>
 
-      <main className="grid flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-border/40 bg-card/40 lg:flex lg:flex-col">
+      <main className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="hidden min-h-0 border-r border-border/40 bg-card/40 lg:flex lg:min-h-0 lg:flex-col">
           <div className="border-b border-border/40 px-4 py-4">
             <p className="font-headline text-xs tracking-[0.28em] text-accent">
               READER MAP
@@ -390,8 +504,12 @@ export default function Reader() {
             </div>
           </div>
 
-          <div className="relative flex-1 overflow-hidden">
-            <AnimatePresence initial={false} custom={direction}>
+          <div
+            ref={classicViewportRef}
+            className="relative flex-1 min-h-0 overflow-y-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
                 key={activeSector}
                 custom={direction}
@@ -403,9 +521,9 @@ export default function Reader() {
                   x: { type: 'spring', stiffness: 220, damping: 30 },
                   opacity: { duration: 0.2 },
                 }}
-                className="absolute inset-0 overflow-auto"
+                className="min-h-full"
               >
-                <article className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-5 py-8 pb-36 sm:px-8">
+                <article className="mx-auto flex min-h-full w-full max-w-4xl flex-col px-5 py-8 pb-36 sm:px-8 sm:pb-40">
                   <div className="border border-accent/15 bg-card/80 p-6 shadow-[0_0_35px_rgba(0,255,200,0.12)] backdrop-blur-sm sm:p-8">
                     <div className="mb-6 flex items-center justify-between gap-4 border-b border-accent/10 pb-4">
                       <div>

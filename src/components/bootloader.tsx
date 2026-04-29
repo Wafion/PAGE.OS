@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, ChevronRight, LogIn, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { useReaderSettings } from "@/context/reader-settings-provider";
+import { useAuth } from "@/context/auth-provider";
 
 const bootSequence = [
   { text: "[ INITIATING BOOTLOADER ]", delay: 80 },
   { text: "> PAGEOS v1.0 - TERMINAL READER ENVIRONMENT", delay: 120 },
-  { text: "> Made with 💖 and care by Celeron", delay: 100, isAccent: true },
+  { text: "> Made with care by Celeron", delay: 100, isAccent: true },
   { text: "> MEMLINK PROTOCOL: ACTIVE", delay: 200 },
   { text: "> LINKING NODE(S): GUTENDEX | WEB", delay: 150, isAccent: true },
   { text: "> MEMORY STREAM STATUS: ONLINE", delay: 150 },
@@ -17,6 +20,16 @@ const bootSequence = [
   { text: "> DECOMPRESSING SHELL ENVIRONMENT... OK", delay: 180 },
   { text: "> SESSION ID: Explorer-ALPHA-001", delay: 150 },
   { text: "> WELCOME TO PAGEOS", delay: 300, isAccent: true },
+];
+
+const loungeBooks = [
+  { className: "lounge-boot-book-1", palette: "crimson" },
+  { className: "lounge-boot-book-2", palette: "ink" },
+  { className: "lounge-boot-book-3", palette: "amber" },
+  { className: "lounge-boot-book-4", palette: "forest" },
+  { className: "lounge-boot-book-5", palette: "plum" },
+  { className: "lounge-boot-book-6", palette: "night" },
+  { className: "lounge-boot-book-7", palette: "copper" },
 ];
 
 const ProgressBar = ({ onComplete }: { onComplete: () => void }) => {
@@ -81,59 +94,67 @@ const TypedLine = ({ text, onComplete }: { text: string; onComplete: () => void 
 };
 
 function LoungeBootloader({ onComplete }: { onComplete: () => void }) {
-  const [progress, setProgress] = useState(0);
-  const hasCompleted = useRef(false);
+  const router = useRouter();
+  const { user } = useAuth();
+  const [isEntering, setIsEntering] = useState(false);
 
-  const finish = useCallback(() => {
-    if (hasCompleted.current) {
-      return;
-    }
-
-    hasCompleted.current = true;
-    onComplete();
+  const handleEnter = useCallback(() => {
+    setIsEntering(true);
+    window.setTimeout(() => {
+      onComplete();
+    }, 280);
   }, [onComplete]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const next = Math.min(prev + 7, 100);
-        if (next >= 100) {
-          clearInterval(interval);
-          setTimeout(finish, 450);
-        }
-
-        return next;
-      });
-    }, 115);
-
-    return () => clearInterval(interval);
-  }, [finish]);
+  const handleSignIn = useCallback(() => {
+    setIsEntering(true);
+    window.setTimeout(() => {
+      onComplete();
+      router.push("/profile");
+    }, 220);
+  }, [onComplete, router]);
 
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        animate={{ opacity: isEntering ? 0 : 1 }}
         transition={{ duration: 0.45 }}
         className="lounge-boot-screen"
-        onClick={finish}
+        onClick={handleEnter}
       >
-        <div className="lounge-boot-card">
+        <div className="lounge-boot-card" onClick={(event) => event.stopPropagation()}>
           <div className="lounge-boot-brand">
             <span>PAGE.OS</span>
             <Sparkles className="h-4 w-4" />
           </div>
 
-          <div className="lounge-boot-orbit" aria-hidden="true">
-            {[0, 1, 2, 3, 4].map((item) => (
-              <motion.div
-                key={item}
-                className={`lounge-boot-book lounge-boot-book-${item + 1}`}
-                initial={{ opacity: 0, y: 16, rotate: 0 }}
-                animate={{ opacity: 1, y: 0, rotate: item % 2 ? 8 : -8 }}
-                transition={{ delay: item * 0.12, duration: 0.55, ease: "easeOut" }}
-              />
-            ))}
+          <div className="lounge-boot-copy">
+            <p className="library-kicker">Quietly built for readers</p>
+            <h1>Step into the Lounge</h1>
+            <p>
+              A calmer shelf for public-domain books, web finds, and long-form
+              reading.
+            </p>
+          </div>
+
+          <div className="lounge-boot-orbit-shell" aria-hidden="true">
+            <motion.div
+              className="lounge-boot-orbit-ring"
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 22, ease: "linear" }}
+            >
+              {loungeBooks.map((book, index) => (
+                <motion.div
+                  key={book.className}
+                  className={`lounge-boot-book ${book.className} ${book.palette}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1, rotate: index % 2 ? 10 : -10 }}
+                  transition={{ delay: index * 0.1, duration: 0.6, ease: "easeOut" }}
+                />
+              ))}
+            </motion.div>
+
             <motion.div
               className="lounge-boot-center"
               initial={{ scale: 0.92, opacity: 0 }}
@@ -141,16 +162,41 @@ function LoungeBootloader({ onComplete }: { onComplete: () => void }) {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <BookOpen className="h-7 w-7" />
-              <span>Opening the Lounge</span>
+              <span>Open a slower page</span>
+              <small>Tap a book or enter below</small>
             </motion.div>
           </div>
 
-          <div className="lounge-boot-progress" aria-label="Loading Library Lounge">
-            <div style={{ width: `${progress}%` }} />
+          <div className="lounge-boot-actions">
+            <Button
+              type="button"
+              className="library-primary-action h-12 px-5"
+              onClick={handleEnter}
+            >
+              Enter the Lounge <ChevronRight className="h-4 w-4" />
+            </Button>
+            {!user && (
+              <Button
+                type="button"
+                variant="outline"
+                className="library-secondary-action h-12 px-5"
+                onClick={handleSignIn}
+              >
+                Sign in <LogIn className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-          <p className="lounge-boot-caption">
-            Curating shelves, chapters, and saved preferences...
-          </p>
+
+          <div className="lounge-boot-footer">
+            <div>
+              <strong>Created by Celeron</strong>
+              <span>Designed for quiet reading sessions and better wandering.</span>
+            </div>
+            <div>
+              <strong>Powered by Gutenberg + Brave</strong>
+              <span>Tap anywhere to continue, or sign in to sync your shelf.</span>
+            </div>
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

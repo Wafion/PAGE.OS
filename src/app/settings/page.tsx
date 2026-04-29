@@ -135,25 +135,16 @@ export default function SettingsPage() {
                 </button>
               </div>
               <div className="flex items-center justify-between rounded-md border border-border/50 p-4">
-                <Label htmlFor="theme-void" className="flex flex-col gap-1 cursor-pointer">
-                  <span>VOID.BLACK</span>
-                  <span className="font-normal text-muted-foreground">Black background, white text.</span>
+                <Label htmlFor="theme-mode" className="flex flex-col gap-1 cursor-pointer">
+                  <span>{theme === 'dark' ? 'VOID.BLACK' : 'PAPER.WHITE'}</span>
+                  <span className="font-normal text-muted-foreground">
+                    Use one toggle to switch between light and dark.
+                  </span>
                 </Label>
-                <Switch 
-                  id="theme-void" 
+                <Switch
+                  id="theme-mode"
                   checked={theme === 'dark'}
-                  onCheckedChange={(checked) => checked && setTheme('dark')}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-md border border-border/50 p-4">
-                <Label htmlFor="theme-paper" className="flex flex-col gap-1 cursor-pointer">
-                  <span>PAPER.WHITE</span>
-                  <span className="font-normal text-muted-foreground">White background, black text.</span>
-                </Label>
-                <Switch 
-                  id="theme-paper" 
-                  checked={theme === 'light'}
-                  onCheckedChange={(checked) => checked && setTheme('light')}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
                 />
               </div>
               <div className="flex items-center justify-between rounded-md border border-border/50 p-4">

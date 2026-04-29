@@ -53,8 +53,9 @@ export function SidebarPopup() {
             size="icon"
             className={cn(
               "rounded-sm border border-dashed",
-              "text-accent bg-white/70 border-border",
-              "dark:bg-black/40 dark:text-terminal dark:border-terminal-border",
+              "text-accent bg-background/80 border-border backdrop-blur-sm",
+              uiMode === "lounge" && "rounded-full border-solid shadow-sm",
+              "dark:bg-background/80 dark:text-foreground dark:border-border",
               "transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             )}
           >
@@ -67,8 +68,9 @@ export function SidebarPopup() {
           side="left"
           className={cn(
             "w-[260px] sm:w-[300px] shadow-xl border-r font-mono text-sm p-4",
-            "bg-white text-black border-border",
-            "dark:bg-terminal dark:text-terminal-foreground dark:border-terminal-border"
+            "bg-background text-foreground border-border",
+            uiMode === "lounge" && "font-body",
+            "dark:bg-background dark:text-foreground dark:border-border"
           )}
         >
           {/* Header */}
@@ -76,7 +78,10 @@ export function SidebarPopup() {
             <div className="flex items-center justify-between">
               <Link
                 href="/"
-                className="font-headline text-2xl text-terminal-accent"
+                className={cn(
+                  "font-headline text-2xl",
+                  uiMode === "lounge" ? "text-accent" : "text-terminal-accent",
+                )}
                 onClick={() => setOpen(false)}
               >
                 PageOS
@@ -99,7 +104,7 @@ export function SidebarPopup() {
                   className={cn(
                     "flex items-center gap-2 rounded-md px-3 py-2",
                     isActive
-                      ? "bg-terminal-accent/10 text-terminal-accent font-medium"
+                      ? "bg-accent/10 text-accent font-medium"
                       : "text-muted-foreground"
                   )}
                 >
@@ -133,7 +138,7 @@ export function SidebarPopup() {
             ) : (
               <Button variant="ghost" asChild className="w-full justify-start gap-2">
                 <Link href="/profile" onClick={() => setOpen(false)}>
-                  <LogIn className="h-4 w-4 text-terminal-accent" />
+                  <LogIn className="h-4 w-4 text-accent" />
                   <span>Login</span>
                 </Link>
               </Button>

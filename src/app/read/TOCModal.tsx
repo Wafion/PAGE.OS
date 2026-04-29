@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import type { TOCEntry } from '@/hooks/useBookLoader';
+import { useReaderSettings } from '@/context/reader-settings-provider';
 
 type TOCModalProps = {
   toc: TOCEntry[];
@@ -18,6 +19,73 @@ export default function TOCModal({
   onClose,
   onSelect,
 }: TOCModalProps) {
+  const { uiMode } = useReaderSettings();
+
+  if (uiMode === 'lounge') {
+    return (
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-4 backdrop-blur-md md:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="library-reader-toc"
+            initial={{ opacity: 0, scale: 0.97, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 18 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 24 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="library-reader-toc-header">
+              <div>
+                <p className="library-kicker">Chapter guide</p>
+                <h2>Find your place</h2>
+                <p>Jump straight to a chapter instead of paging through the whole book.</p>
+              </div>
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                size="icon"
+                aria-label="Close chapter guide"
+                className="rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="library-reader-toc-list">
+              {toc.map((entry, index) => {
+                const nextEntry = toc[index + 1];
+                const isActive =
+                  activeSector >= entry.sectorIndex &&
+                  (!nextEntry || activeSector < nextEntry.sectorIndex);
+
+                return (
+                  <button
+                    key={`${entry.title}-${entry.sectorIndex}`}
+                    type="button"
+                    onClick={() => {
+                      onSelect(entry.sectorIndex);
+                      onClose();
+                    }}
+                    className={isActive ? 'active' : ''}
+                  >
+                    <span>Chapter {String(entry.chapterIndex + 1).padStart(2, '0')}</span>
+                    <strong>{entry.title}</strong>
+                    <small>{entry.pageCount} leaves in this chapter</small>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   return (
     <AnimatePresence>
       <motion.div

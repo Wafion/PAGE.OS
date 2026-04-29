@@ -2,11 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { LogIn, MonitorCog, User } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
 import { useReaderSettings } from "@/context/reader-settings-provider";
-import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,15 +15,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import {
-  User,
-  LogIn,
-  MonitorCog,
-} from "lucide-react";
+import { ThemeToggleButton } from "@/components/theme-toggle-button";
 
 export function AppHeader() {
   const { user } = useAuth();
@@ -38,9 +32,9 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      {/* You can optionally place breadcrumbs or title here */}
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border/50 bg-background/80 px-4 backdrop-blur-sm md:px-6">
       <div className="flex-1" />
+
       <Button
         variant="outline"
         size="sm"
@@ -51,7 +45,12 @@ export function AppHeader() {
         {uiMode === "lounge" ? "Classic UI" : "Library Lounge"}
       </Button>
 
-      {/* 👤 User Dropdown */}
+      <ThemeToggleButton
+        compact
+        className="border-accent/40 text-accent hover:bg-accent/10 hover:text-accent sm:hidden"
+      />
+      <ThemeToggleButton className="hidden border-accent/40 text-accent hover:bg-accent/10 hover:text-accent sm:flex" />
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-accent/50">
