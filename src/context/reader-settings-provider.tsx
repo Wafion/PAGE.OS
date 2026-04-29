@@ -33,7 +33,12 @@ const normalizeUiMode = (value: string | null | undefined): UiMode => {
     return "lounge";
   }
 
-  return "classic";
+  if (value === "classic") {
+    return "classic";
+  }
+
+  // Default first-time visitors to lounge mode.
+  return "lounge";
 };
 
 export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
@@ -41,10 +46,11 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
   const [autoScroll, setAutoScroll] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>(() => {
     if (typeof window === "undefined") {
-      return "classic";
+      return "lounge";
     }
 
-    return normalizeUiMode(window.localStorage.getItem("pageos-ui-mode"));
+    const storedMode = window.localStorage.getItem("pageos-ui-mode");
+    return storedMode ? normalizeUiMode(storedMode) : "lounge";
   });
   const [sourceSettings, setSourceSettings] = useState<SourceSettings>(defaultSourceSettings);
   const [showBootAnimation, setShowBootAnimation] = useState(true);
