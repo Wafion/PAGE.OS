@@ -35,12 +35,12 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
       <Card className="border-border/50 bg-card">
         <CardHeader>
           <CardTitle className="font-headline text-accent/80">
-            {uiMode === 'lounge' ? 'More places to read' : 'External Links Found'}
+            {uiMode === 'lounge' ? 'More places to discover' : 'External Links Found'}
           </CardTitle>
           <CardDescription>
             {uiMode === 'lounge'
-              ? 'These results come from web search. Text files open in the reader, PDFs open in a new tab.'
-              : 'The following are unverified links from Brave Search. TXT files will open in the reader. PDF files will open in a new tab.'}
+              ? 'These results come from web search. PDFs open in a new tab.'
+              : 'The following are unverified links from Brave Search.PDF files will open in a new tab.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
