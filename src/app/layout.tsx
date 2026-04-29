@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/theme-provider";
 import { ReaderSettingsProvider } from "@/context/reader-settings-provider";
 import { AuthProvider } from "@/context/auth-provider";
+import { Analytics } from "@vercel/analytics/next";
 
 const fontHeadline = Orbitron({
   subsets: ["latin"],
@@ -51,6 +52,7 @@ export default function RootLayout({
             </ReaderSettingsProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
