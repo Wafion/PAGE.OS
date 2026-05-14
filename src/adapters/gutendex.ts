@@ -66,24 +66,122 @@ export const FALLBACK_GUTENBERG_BOOKS: MappedGutenbergBook[] = [
   fallbackBook('215', 'The Call of the Wild', 'Jack London', ['adventure', 'animals']),
 ];
 
-export function getFallbackGutenbergBooks(query?: string): MappedGutenbergBook[] {
-  if (!query?.trim()) {
-    return FALLBACK_GUTENBERG_BOOKS;
-  }
+export type GutenbergSearchIntent = {
+  mode: 'all' | 'author';
+  rawQuery: string;
+  normalizedQuery: string;
+  authorQuery?: string;
+};
 
-  const normalizedQuery = query.trim().toLowerCase();
-  return FALLBACK_GUTENBERG_BOOKS.filter((book) => {
-    const haystack = `${book.title} ${book.authors} ${book.subjects?.join(' ') ?? ''}`.toLowerCase();
-    return haystack.includes(normalizedQuery);
-  });
+function normalizeSearchText(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
-/**
- * This file is the specific adapter for the Gutendex API (gutenberg.org).
- * It handles fetching lists of books and the content of a single book.
- */
+function compactSearchText(value: string) {
+  return normalizeSearchText(value).replace(/\s+/g, '');
+}
 
-export async function fetchGutenbergBooks(query?: string, page = 1): Promise<MappedGutenbergBook[]> {
+function getSearchTokens(value: string) {
+  return normalizeSearchText(value).split(/\s+/).filter(Boolean);
+}
+
+export function parseGutenbergSearchIntent(query?: string): GutenbergSearchIntent {
+  const rawQuery = query?.trim() ?? '';
+
+  if (!rawQuery) {
+    return {
+      mode: 'all',
+      rawQuery,
+      normalizedQuery: '',
+    };
+  }
+
+  const authorMatch = rawQuery.match(/^(?:author\s*:?\s+)(.+)$/i);
+  if (authorMatch) {
+    const authorQuery = authorMatch[1].trim();
+    return {
+      mode: 'author',
+      rawQuery,
+      normalizedQuery: normalizeSearchText(authorQuery),
+      authorQuery,
+    };
+  }
+
+  return {
+    mode: 'all',
+    rawQuery,
+    normalizedQuery: normalizeSearchText(rawQuery),
+  };
+}
+
+function matchesGutenbergIntent(book: MappedGutenbergBook, intent: GutenbergSearchIntent) {
+  if (!intent.normalizedQuery) {
+    return true;
+  }
+
+  if (intent.mode === 'author') {
+    return (
+      normalizeSearchText(book.authors).includes(intent.normalizedQuery) ||
+      compactSearchText(book.authors).includes(compactSearchText(intent.normalizedQuery))
+    );
+  }
+
+  const haystack = `${book.title} ${book.authors} ${book.subjects?.join(' ') ?? ''}`;
+  return (
+    normalizeSearchText(haystack).includes(intent.normalizedQuery) ||
+    compactSearchText(haystack).includes(compactSearchText(intent.normalizedQuery))
+  );
+}
+
+function buildQueryVariants(intent: GutenbergSearchIntent) {
+  if (!intent.rawQuery) {
+    return [''];
+  }
+
+  const variants = new Set<string>();
+  const normalized = normalizeSearchText(intent.mode === 'author' ? intent.authorQuery ?? intent.rawQuery : intent.rawQuery);
+  const tokens = getSearchTokens(intent.mode === 'author' ? intent.authorQuery ?? intent.rawQuery : intent.rawQuery);
+
+  variants.add(intent.rawQuery);
+
+  if (normalized) {
+    variants.add(normalized);
+  }
+
+  if (tokens.length > 1) {
+    variants.add(tokens.join(' '));
+  }
+
+  if (tokens.length >= 2) {
+    const expandedInitialTokens = tokens.flatMap((token, index) => {
+      const isLikelyInitialCluster =
+        index < 2 &&
+        /^[a-z]+$/.test(token) &&
+        token.length >= 2 &&
+        token.length <= 3 &&
+        !/[aeiou]/.test(token);
+
+      return isLikelyInitialCluster ? token.split('') : [token];
+    });
+
+    const expandedJoined = expandedInitialTokens.join(' ');
+    if (expandedJoined !== tokens.join(' ')) {
+      variants.add(expandedJoined);
+      variants.add([...expandedInitialTokens].reverse().join(' '));
+    }
+
+    variants.add([...tokens].reverse().join(' '));
+  }
+
+  return [...variants].filter(Boolean);
+}
+
+async function fetchGutenbergVariant(query: string | undefined, page: number) {
   const params = new URLSearchParams();
   if (query) {
     params.set('query', query);
@@ -92,21 +190,59 @@ export async function fetchGutenbergBooks(query?: string, page = 1): Promise<Map
 
   const res = await fetch(`/api/gutendex?${params.toString()}`);
   if (!res.ok) {
-    console.error('Failed to fetch from Gutendex:', res.statusText);
-    return getFallbackGutenbergBooks(query);
+    throw new Error(`Failed to fetch from Gutendex: ${res.statusText}`);
   }
+
   const data: GutenbergAPIResponse = await res.json();
-  // We map the raw API response to our standardized `MappedGutenbergBook` format.
-  // This ensures that data from all sources has a consistent shape within our app.
-  const mapped: MappedGutenbergBook[] = data.results.map(book => ({
+  return data.results.map((book) => ({
     id: String(book.id),
     title: book.title,
-    authors: book.authors.map(a => a.name).join(', '),
+    authors: book.authors.map((a) => a.name).join(', '),
     formats: book.formats,
     source: 'gutendex' as const,
     subjects: book.subjects ?? [],
   }));
-  return mapped.length > 0 ? mapped : getFallbackGutenbergBooks(query);
+}
+
+export function getFallbackGutenbergBooks(query?: string): MappedGutenbergBook[] {
+  const intent = parseGutenbergSearchIntent(query);
+
+  if (!intent.normalizedQuery) {
+    return FALLBACK_GUTENBERG_BOOKS;
+  }
+
+  return FALLBACK_GUTENBERG_BOOKS.filter((book) => matchesGutenbergIntent(book, intent));
+}
+
+/**
+ * This file is the specific adapter for the Gutendex API (gutenberg.org).
+ * It handles fetching lists of books and the content of a single book.
+ */
+
+export async function fetchGutenbergBooks(query?: string, page = 1): Promise<MappedGutenbergBook[]> {
+  const intent = parseGutenbergSearchIntent(query);
+  const variants = buildQueryVariants(intent);
+  let lastError: unknown = null;
+
+  for (const variant of variants) {
+    try {
+      const mapped = await fetchGutenbergVariant(variant || undefined, page);
+      const filtered = mapped.filter((book) => matchesGutenbergIntent(book, intent));
+
+      if (filtered.length > 0) {
+        return filtered;
+      }
+    } catch (error) {
+      lastError = error;
+      console.error('Failed to fetch from Gutendex:', error);
+    }
+  }
+
+  if (lastError) {
+    console.error('All Gutendex query variants failed, using fallback results.');
+  }
+
+  return getFallbackGutenbergBooks(query);
 }
 
 /**

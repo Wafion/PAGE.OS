@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node ./node_modules/next/dist/bin/next dev",
+    "clean": "node ./scripts/clean-next.mjs",
+    "predev": "node ./scripts/clean-next.mjs dev",
+    "dev": "node ./scripts/run-next-dev.mjs",
     "start": "node ./node_modules/next/dist/bin/next start",
     "build": "node ./node_modules/next/dist/bin/next build",
     "lint": "node ./node_modules/next/dist/bin/next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ./scripts/run-typecheck.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

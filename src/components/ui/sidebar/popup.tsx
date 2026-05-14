@@ -23,11 +23,46 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { href: "/", label: "System Feed", icon: Home },
-  { href: "/library", label: "Archive", icon: Library },
-  { href: "/profile", label: "Profile", icon: User },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/legal", label: "Legal", icon: Shield },
+  {
+    href: "/",
+    classicLabel: "System Feed",
+    loungeLabel: "Front Shelf",
+    detail: "Discover books, prompts, and live shelves.",
+    code: "01",
+    icon: Home,
+  },
+  {
+    href: "/library",
+    classicLabel: "Archive",
+    loungeLabel: "Reading Collection",
+    detail: "Return to saved books, bookmarks, and history.",
+    code: "02",
+    icon: Library,
+  },
+  {
+    href: "/profile",
+    classicLabel: "Profile",
+    loungeLabel: "Reader Card",
+    detail: "Identity, sync status, and account memory.",
+    code: "03",
+    icon: User,
+  },
+  {
+    href: "/settings",
+    classicLabel: "Settings",
+    loungeLabel: "Room Controls",
+    detail: "Theme, reader behavior, and source controls.",
+    code: "04",
+    icon: Settings,
+  },
+  {
+    href: "/legal",
+    classicLabel: "Legal",
+    loungeLabel: "House Rules",
+    detail: "Usage terms, privacy, and content policies.",
+    code: "05",
+    icon: Shield,
+  },
 ];
 
 export function SidebarPopup() {
@@ -44,6 +79,21 @@ export function SidebarPopup() {
     }
   };
 
+  const menuTitle = uiMode === "lounge" ? "Navigation Room" : "Gateway Panel";
+  const menuBadge = uiMode === "lounge" ? "Library lounge" : "Terminal grid";
+  const menuSubtitle =
+    uiMode === "lounge"
+      ? "Move through the shelves, settings, and reader spaces."
+      : "Jump between system routes, operator controls, and runtime pages.";
+  const userLabel = user ? user.displayName || "Signed in reader" : "Guest session";
+  const userMeta = user
+    ? uiMode === "lounge"
+      ? "Your preferences and bookmarks are being remembered."
+      : "Authenticated operator with synced state."
+    : uiMode === "lounge"
+      ? "Sign in to carry your room, books, and bookmarks with you."
+      : "Anonymous session. Authentication unlocks synced persistence.";
+
   return (
     <div className="fixed top-4 left-4 z-50">
       <Sheet open={open} onOpenChange={setOpen}>
@@ -51,13 +101,7 @@ export function SidebarPopup() {
           <Button
             variant="ghost"
             size="icon"
-            className={cn(
-              "rounded-sm border border-dashed",
-              "text-accent bg-background/80 border-border backdrop-blur-sm",
-              uiMode === "lounge" && "rounded-full border-solid shadow-sm",
-              "dark:bg-background/80 dark:text-foreground dark:border-border",
-              "transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            )}
+            className="pageos-menu-trigger transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             <PanelLeft className="h-5 w-5" />
             <span className="sr-only">Open Navigation</span>
@@ -66,83 +110,84 @@ export function SidebarPopup() {
 
         <SheetContent
           side="left"
-          className={cn(
-            "w-[260px] sm:w-[300px] shadow-xl border-r font-mono text-sm p-4",
-            "bg-background text-foreground border-border",
-            uiMode === "lounge" && "font-body",
-            "dark:bg-background dark:text-foreground dark:border-border"
-          )}
+          className="pageos-menu-shell w-[320px] max-w-[92vw] border-0 bg-transparent p-0 shadow-none sm:w-[380px] [&>button]:hidden"
         >
-          {/* Header */}
-          <div className="border-b pb-4 mb-4">
-            <div className="flex items-center justify-between">
-              <Link
-                href="/"
-                className={cn(
-                  "font-headline text-2xl",
-                  uiMode === "lounge" ? "text-accent" : "text-terminal-accent",
-                )}
-                onClick={() => setOpen(false)}
-              >
-                PageOS
-              </Link>
-              <span className="text-xs text-muted-foreground">
-                {uiMode === "lounge" ? "lounge" : "v1.0"}
-              </span>
+          <div className="pageos-menu-frame">
+            <div className="pageos-menu-header">
+              <div className="pageos-menu-brand-row">
+                <div>
+                  <p className="pageos-menu-kicker">{menuBadge}</p>
+                  <Link href="/" className="pageos-menu-brand" onClick={() => setOpen(false)}>
+                    PAGE.OS
+                  </Link>
+                </div>
+                <span className="pageos-menu-chip">{uiMode === "lounge" ? "Shelf map" : "v1.0"}</span>
+              </div>
+              <div className="pageos-menu-copy">
+                <h2>{menuTitle}</h2>
+                <p>{menuSubtitle}</p>
+              </div>
             </div>
-          </div>
 
-          {/* Menu */}
-          <nav className="flex-1 space-y-2">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2",
-                    isActive
-                      ? "bg-accent/10 text-accent font-medium"
-                      : "text-muted-foreground"
-                  )}
+            <div className="pageos-menu-status">
+              <div>
+                <span className="pageos-menu-status-label">
+                  {uiMode === "lounge" ? "Reader status" : "Operator status"}
+                </span>
+                <strong>{userLabel}</strong>
+              </div>
+              <p>{userMeta}</p>
+            </div>
+
+            <nav className="pageos-menu-nav">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href;
+                const label = uiMode === "lounge" ? item.loungeLabel : item.classicLabel;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={cn("pageos-menu-item", isActive && "active")}
+                  >
+                    <div className="pageos-menu-item-icon">
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <div className="pageos-menu-item-copy">
+                      <div className="pageos-menu-item-top">
+                        <strong>{label}</strong>
+                        <span>{item.code}</span>
+                      </div>
+                      <p>{item.detail}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="pageos-menu-footer">
+              {user ? (
+                <Button
+                  variant="ghost"
+                  className="pageos-menu-action w-full justify-start gap-3"
+                  onClick={() => {
+                    handleSignOut();
+                    setOpen(false);
+                  }}
                 >
-                  <item.icon className="h-4 w-4" />
-                  <span>
-                    {uiMode === "lounge"
-                      ? item.label
-                          .replace("System Feed", "Discover")
-                          .replace("Archive", "My Library")
-                      : item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="border-t pt-4 mt-4">
-            {user ? (
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2"
-                onClick={() => {
-                  handleSignOut();
-                  setOpen(false);
-                }}
-              >
-                <Power className="h-4 w-4 text-destructive" />
-                <span>Logout</span>
-              </Button>
-            ) : (
-              <Button variant="ghost" asChild className="w-full justify-start gap-2">
-                <Link href="/profile" onClick={() => setOpen(false)}>
-                  <LogIn className="h-4 w-4 text-accent" />
-                  <span>Login</span>
-                </Link>
-              </Button>
-            )}
+                  <Power className="h-4 w-4 text-destructive" />
+                  <span>{uiMode === "lounge" ? "Leave the room" : "Terminate session"}</span>
+                </Button>
+              ) : (
+                <Button variant="ghost" asChild className="pageos-menu-action w-full justify-start gap-3">
+                  <Link href="/profile" onClick={() => setOpen(false)}>
+                    <LogIn className="h-4 w-4 text-accent" />
+                    <span>{uiMode === "lounge" ? "Sign in to save your room" : "Authenticate operator"}</span>
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>

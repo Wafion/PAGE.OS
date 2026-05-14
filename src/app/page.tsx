@@ -1,19 +1,33 @@
-﻿
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CommandSearch } from "@/components/command-search";
 import type { SearchResult } from "@/adapters/sourceManager";
 import { SearchResultCard } from "@/components/search-result-card";
-import { BookOpen, ChevronRight, LoaderCircle, Search, SignalZero, Sparkles } from "lucide-react";
-import { fetchGutenbergBooks, getFallbackGutenbergBooks } from "@/adapters/gutendex";
+import {
+  BookOpen,
+  ChevronRight,
+  LoaderCircle,
+  Search,
+  SignalZero,
+  Sparkles,
+} from "lucide-react";
+import {
+  fetchGutenbergBooks,
+  getFallbackGutenbergBooks,
+  parseGutenbergSearchIntent,
+} from "@/adapters/gutendex";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WebFallbackResults, type WebFallbackResult } from "@/components/web-fallback-results";
+import {
+  WebFallbackResults,
+  type WebFallbackResult,
+} from "@/components/web-fallback-results";
 import { useReaderSettings } from "@/context/reader-settings-provider";
+import type { RecommendationGenreKey } from "@/lib/recommendations";
 
-const shuffleArray = (array: any[]) => {
-  for (let i = array.length - 1; i > 0; i--) {
+const shuffleArray = <T,>(array: T[]) => {
+  for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
@@ -68,68 +82,206 @@ const LOUNGE_GENRES = [
 
 type LoungeGenre = (typeof LOUNGE_GENRES)[number];
 
+type RecommendationShelfResponse = {
+  books: SearchResult[];
+  sourceLabel: string;
+};
+
+type CachedRecommendationShelf = RecommendationShelfResponse & {
+  cachedAt: number;
+};
+
+const RECOMMENDATION_CACHE_PREFIX = "pageos-recommendation-shelf";
+const RECOMMENDATION_CACHE_TTL_MS = 1000 * 60 * 60 * 6;
+
+function getRecommendationCacheKey(genre: RecommendationGenreKey, limit: number) {
+  return `${RECOMMENDATION_CACHE_PREFIX}:${genre}:${limit}`;
+}
+
+function readCachedRecommendationShelf(
+  genre: RecommendationGenreKey,
+  limit: number,
+): RecommendationShelfResponse | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getRecommendationCacheKey(genre, limit));
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as CachedRecommendationShelf;
+    if (
+      !parsed ||
+      !Array.isArray(parsed.books) ||
+      typeof parsed.sourceLabel !== "string" ||
+      typeof parsed.cachedAt !== "number"
+    ) {
+      return null;
+    }
+
+    if (Date.now() - parsed.cachedAt > RECOMMENDATION_CACHE_TTL_MS) {
+      window.localStorage.removeItem(getRecommendationCacheKey(genre, limit));
+      return null;
+    }
+
+    return {
+      books: parsed.books,
+      sourceLabel: parsed.sourceLabel,
+    };
+  } catch (error) {
+    console.warn("Could not read cached recommendation shelf.", error);
+    return null;
+  }
+}
+
+function writeCachedRecommendationShelf(
+  genre: RecommendationGenreKey,
+  limit: number,
+  shelf: RecommendationShelfResponse,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const payload: CachedRecommendationShelf = {
+      ...shelf,
+      cachedAt: Date.now(),
+    };
+
+    window.localStorage.setItem(
+      getRecommendationCacheKey(genre, limit),
+      JSON.stringify(payload),
+    );
+  } catch (error) {
+    console.warn("Could not cache recommendation shelf.", error);
+  }
+}
+
+async function fetchRecommendationShelf(
+  genre: RecommendationGenreKey,
+  limit: number,
+): Promise<RecommendationShelfResponse> {
+  const params = new URLSearchParams({
+    genre,
+    limit: String(limit),
+  });
+
+  const response = await fetch(`/api/recommendations?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch recommendation shelf: ${response.statusText}`);
+  }
+
+  return (await response.json()) as RecommendationShelfResponse;
+}
+
 export default function HomePage() {
   const { uiMode } = useReaderSettings();
   const [primaryResults, setPrimaryResults] = useState<SearchResult[]>([]);
   const [webResults, setWebResults] = useState<WebFallbackResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [featuredBooks, setFeaturedBooks] = useState<SearchResult[]>([]);
-  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
-  const [featuredSourceLabel, setFeaturedSourceLabel] = useState("live network");
+  const [featuredBooks, setFeaturedBooks] = useState<SearchResult[]>(
+    () => shuffleArray([...getFallbackGutenbergBooks().slice(0, 12)]),
+  );
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
+  const [featuredSourceLabel, setFeaturedSourceLabel] = useState("instant shelf");
   const [primaryStatusMessage, setPrimaryStatusMessage] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<LoungeGenre>(LOUNGE_GENRES[0]);
   const [genreBooks, setGenreBooks] = useState<SearchResult[]>([]);
   const [isGenreLoading, setIsGenreLoading] = useState(false);
-  const [genreSourceLabel, setGenreSourceLabel] = useState("Project Gutenberg");
+  const [genreSourceLabel, setGenreSourceLabel] = useState("instant shelf");
+  const [loadedShelves, setLoadedShelves] = useState<
+    Partial<Record<RecommendationGenreKey, RecommendationShelfResponse>>
+  >({});
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadFeaturedBooks() {
-      setIsFeaturedLoading(true);
-      try {
-        const gutenbergBooks = await fetchGutenbergBooks();
-        const featured = gutenbergBooks.length > 0 ? gutenbergBooks : getFallbackGutenbergBooks();
-        setFeaturedBooks(shuffleArray(featured.slice(0, 20)));
-        setFeaturedSourceLabel(
-          gutenbergBooks.length > 0 ? "live network" : "fallback archive",
+      const cachedShelf = readCachedRecommendationShelf("popular", 20);
+      if (cachedShelf && !isCancelled) {
+        setFeaturedBooks(cachedShelf.books);
+        setFeaturedSourceLabel(`${cachedShelf.sourceLabel} / cached`);
+        setLoadedShelves((current) =>
+          current.popular ? current : { ...current, popular: cachedShelf },
         );
+      } else if (!isCancelled) {
+        setIsFeaturedLoading(true);
+      }
+
+      try {
+        const shelf = await fetchRecommendationShelf("popular", 20);
+        if (isCancelled) {
+          return;
+        }
+
+        setFeaturedBooks(shelf.books);
+        setFeaturedSourceLabel(shelf.sourceLabel);
+        setLoadedShelves((current) => ({ ...current, popular: shelf }));
+        writeCachedRecommendationShelf("popular", 20, shelf);
       } catch (error) {
         console.error("Failed to load featured books:", error);
-        setFeaturedBooks(shuffleArray(getFallbackGutenbergBooks().slice(0, 20)));
-        setFeaturedSourceLabel("fallback archive");
+        if (!cachedShelf && !isCancelled) {
+          setFeaturedBooks(shuffleArray([...getFallbackGutenbergBooks().slice(0, 12)]));
+          setFeaturedSourceLabel("fallback archive");
+        }
       } finally {
-        setIsFeaturedLoading(false);
+        if (!isCancelled) {
+          setIsFeaturedLoading(false);
+        }
       }
     }
-    loadFeaturedBooks();
+
+    void loadFeaturedBooks();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!selectedGenre.query) {
+    if (selectedGenre.key === "popular") {
       return;
     }
 
     let isCancelled = false;
+    const genreKey = selectedGenre.key as RecommendationGenreKey;
 
     async function loadGenreBooks() {
-      setIsGenreLoading(true);
-      setGenreSourceLabel("Project Gutenberg");
+      const existingShelf =
+        loadedShelves[genreKey] ?? readCachedRecommendationShelf(genreKey, 12);
+
+      if (existingShelf && !isCancelled) {
+        setGenreBooks(existingShelf.books);
+        setGenreSourceLabel(
+          loadedShelves[genreKey]
+            ? existingShelf.sourceLabel
+            : `${existingShelf.sourceLabel} / cached`,
+        );
+        setLoadedShelves((current) =>
+          current[genreKey] ? current : { ...current, [genreKey]: existingShelf },
+        );
+      } else if (!isCancelled) {
+        setIsGenreLoading(true);
+      }
 
       try {
-        const gutenbergBooks = await fetchGutenbergBooks(selectedGenre.query);
-        const fallbackBooks = getFallbackGutenbergBooks(selectedGenre.query);
-        const resolvedBooks = gutenbergBooks.length > 0 ? gutenbergBooks : fallbackBooks;
-
-        if (!isCancelled) {
-          setGenreBooks(resolvedBooks.slice(0, 12));
-          setGenreSourceLabel(
-            gutenbergBooks.length > 0 ? "Project Gutenberg" : "curated fallback shelf",
-          );
+        const shelf = await fetchRecommendationShelf(genreKey, 12);
+        if (isCancelled) {
+          return;
         }
+
+        setGenreBooks(shelf.books);
+        setGenreSourceLabel(shelf.sourceLabel);
+        setLoadedShelves((current) => ({ ...current, [genreKey]: shelf }));
+        writeCachedRecommendationShelf(genreKey, 12, shelf);
       } catch (error) {
         console.error(`Failed to load ${selectedGenre.label} books:`, error);
-
-        if (!isCancelled) {
+        if (!existingShelf && !isCancelled) {
           setGenreBooks(getFallbackGutenbergBooks(selectedGenre.query).slice(0, 12));
           setGenreSourceLabel("curated fallback shelf");
         }
@@ -140,12 +292,52 @@ export default function HomePage() {
       }
     }
 
-    loadGenreBooks();
+    void loadGenreBooks();
 
     return () => {
       isCancelled = true;
     };
   }, [selectedGenre]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const warmShelves = () => {
+      const genresToWarm = LOUNGE_GENRES
+        .filter((genre) => genre.key !== "popular")
+        .map((genre) => genre.key as RecommendationGenreKey)
+        .filter((genre) => !readCachedRecommendationShelf(genre, 12));
+
+      genresToWarm.forEach((genre, index) => {
+        window.setTimeout(() => {
+          void fetchRecommendationShelf(genre, 12)
+            .then((shelf) => {
+              writeCachedRecommendationShelf(genre, 12, shelf);
+              setLoadedShelves((current) =>
+                current[genre] ? current : { ...current, [genre]: shelf },
+              );
+            })
+            .catch((error) => {
+              console.warn(`Failed to warm ${genre} shelf cache.`, error);
+            });
+        }, index * 250);
+      });
+    };
+
+    if ("requestIdleCallback" in window && "cancelIdleCallback" in window) {
+      const handle = window.requestIdleCallback(warmShelves);
+      return () => {
+        window.cancelIdleCallback(handle);
+      };
+    }
+
+    const handle = setTimeout(warmShelves, 1200);
+    return () => {
+      clearTimeout(handle);
+    };
+  }, []);
 
   const handleSearch = async (query: string) => {
     if (!query) {
@@ -158,20 +350,34 @@ export default function HomePage() {
     setIsLoading(true);
     setHasSearched(true);
 
+    const searchIntent = parseGutenbergSearchIntent(query);
+    const webQuery =
+      searchIntent.mode === "author" && searchIntent.authorQuery
+        ? `${searchIntent.authorQuery} books filetype:pdf`
+        : query;
+
     try {
-      const webSearchPromise = fetch(`/api/brave-search?q=${encodeURIComponent(query)}`).then(res => res.json());
+      const webSearchPromise = fetch(
+        `/api/brave-search?q=${encodeURIComponent(webQuery)}`,
+      ).then((res) => res.json());
       const gutenbergPromise = fetchGutenbergBooks(query);
 
-      const [webData, gutenbergData] = await Promise.allSettled([webSearchPromise, gutenbergPromise]);
-      
-      if (webData.status === 'fulfilled' && !webData.value.error) {
+      const [webData, gutenbergData] = await Promise.allSettled([
+        webSearchPromise,
+        gutenbergPromise,
+      ]);
+
+      if (webData.status === "fulfilled" && !webData.value.error) {
         setWebResults(webData.value || []);
       } else {
-        console.error("Web search failed:", webData.status === 'rejected' ? webData.reason : webData.value.error);
+        console.error(
+          "Web search failed:",
+          webData.status === "rejected" ? webData.reason : webData.value.error,
+        );
         setWebResults([]);
       }
-      
-      if (gutenbergData.status === 'fulfilled') {
+
+      if (gutenbergData.status === "fulfilled") {
         setPrimaryResults(gutenbergData.value || []);
         setPrimaryStatusMessage(
           gutenbergData.value?.length
@@ -185,7 +391,6 @@ export default function HomePage() {
           "Primary archive is currently unavailable. Web scraping is still online.",
         );
       }
-
     } catch (error) {
       console.error("An error occurred during search:", error);
       setPrimaryResults([]);
@@ -205,56 +410,52 @@ export default function HomePage() {
     setWebResults([]);
     setPrimaryStatusMessage("");
   };
-  
+
   const renderPrimaryResults = () => {
     if (primaryResults.length === 0) {
-       return (
+      return (
         <Card className="border-border/50 bg-card text-center col-span-full">
-            <CardHeader>
-              <div className="mx-auto bg-input rounded-full p-3 w-fit">
-                <SignalZero className="h-8 w-8 text-accent" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardTitle className="font-headline text-lg text-accent/80">
-                {uiMode === "lounge" ? "No Library Results" : "NO_PRIMARY_RESULTS"}
-              </CardTitle>
-              <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                {primaryStatusMessage ||
-                  (uiMode === "lounge"
-                    ? "No Gutenberg books matched that search. Web PDF results may still appear below."
-                    : "No data streams in the primary network match the provided signature.")}
-              </p>
-            </CardContent>
-          </Card>
+          <CardHeader>
+            <div className="mx-auto bg-input rounded-full p-3 w-fit">
+              <SignalZero className="h-8 w-8 text-accent" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CardTitle className="font-headline text-lg text-accent/80">
+              {uiMode === "lounge" ? "No Library Results" : "NO_PRIMARY_RESULTS"}
+            </CardTitle>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              {primaryStatusMessage ||
+                (uiMode === "lounge"
+                  ? "No Gutenberg books matched that search. Web PDF results may still appear below."
+                  : "No data streams in the primary network match the provided signature.")}
+            </p>
+          </CardContent>
+        </Card>
       );
     }
+
     return (
       <>
         {primaryResults.map((book, index) => (
-          <SearchResultCard
-            key={`${book.source}-${book.id}-${index}`}
-            book={book}
-          />
+          <SearchResultCard key={`${book.source}-${book.id}-${index}`} book={book} />
         ))}
       </>
     );
   };
-  
+
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="flex justify-center items-center p-8 col-span-full">
           <LoaderCircle className="h-8 w-8 animate-spin text-accent" />
-          <p className="ml-4 text-muted-foreground">
-            Querying transmission nodes...
-          </p>
+          <p className="ml-4 text-muted-foreground">Querying transmission nodes...</p>
         </div>
       );
     }
-    
+
     if (hasSearched) {
-       return (
+      return (
         <>
           <section className="col-span-full">
             <h2 className="font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2">
@@ -269,7 +470,6 @@ export default function HomePage() {
       );
     }
 
-    // Default view: Featured books
     return (
       <section className="col-span-full">
         <h2 className="font-headline text-lg text-accent/80 mb-4">
@@ -277,20 +477,19 @@ export default function HomePage() {
             ? `Recommended Books (${featuredSourceLabel})`
             : `// FEATURED_LOGS from the ${featuredSourceLabel}`}
         </h2>
-        {isFeaturedLoading ? (
+        {isFeaturedLoading && featuredBooks.length === 0 ? (
           <div className="flex justify-center items-center p-8">
             <LoaderCircle className="h-8 w-8 animate-spin text-accent" />
             <p className="ml-4 text-muted-foreground">
-              {uiMode === "lounge" ? "Loading book recommendations..." : "Loading recommendations..."}
+              {uiMode === "lounge"
+                ? "Loading book recommendations..."
+                : "Loading recommendations..."}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {featuredBooks.map((book, index) => (
-              <SearchResultCard
-                key={`${book.source}-${book.id}-${index}`}
-                book={book}
-              />
+              <SearchResultCard key={`${book.source}-${book.id}-${index}`} book={book} />
             ))}
           </div>
         )}
@@ -314,7 +513,8 @@ export default function HomePage() {
     const activeRecommendationBooks =
       selectedGenre.key === "popular" ? featuredBooks.slice(0, 8) : genreBooks.slice(0, 8);
     const recommendationBooks = hasSearched ? primaryResults : activeRecommendationBooks;
-    const spotlightBook = activeRecommendationBooks[0] ?? featuredBooks[0] ?? getFallbackGutenbergBooks()[0];
+    const spotlightBook =
+      activeRecommendationBooks[0] ?? featuredBooks[0] ?? getFallbackGutenbergBooks()[0];
     const shelfBooks =
       selectedGenre.key === "popular" ? featuredBooks.slice(2, 10) : genreBooks.slice(0, 10);
     const isRecommendationLoading =
@@ -426,10 +626,12 @@ export default function HomePage() {
                     <Sparkles className="h-5 w-5 text-accent" />
                   </div>
 
-                  {isRecommendationLoading ? (
+                  {isRecommendationLoading && activeRecommendationBooks.length === 0 ? (
                     <div className="library-loading">
                       <LoaderCircle className="h-6 w-6 animate-spin" />
-                      <span>Curating {selectedGenre.label.toLowerCase()} recommendations...</span>
+                      <span>
+                        Curating {selectedGenre.label.toLowerCase()} recommendations...
+                      </span>
                     </div>
                   ) : spotlightBook ? (
                     <div className="library-spotlight">
@@ -474,7 +676,7 @@ export default function HomePage() {
                     </div>
                     <BookOpen className="h-5 w-5 text-accent" />
                   </div>
-                  {isRecommendationLoading ? (
+                  {isRecommendationLoading && shelfBooks.length === 0 ? (
                     <div className="library-loading">
                       <LoaderCircle className="h-6 w-6 animate-spin" />
                       <span>Curating recommendations...</span>
@@ -504,9 +706,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8">
       <div>
-        <h1 className="text-3xl font-headline text-accent">
-          SYSTEM_FEED
-        </h1>
+        <h1 className="text-3xl font-headline text-accent">SYSTEM_FEED</h1>
         <p className="text-muted-foreground">
           Search for transmissions and memory logs across the network.
         </p>
@@ -514,10 +714,7 @@ export default function HomePage() {
 
       <CommandSearch onSearch={handleSearch} />
 
-      <div className="grid grid-cols-1 gap-8">
-        {renderContent()}
-      </div>
+      <div className="grid grid-cols-1 gap-8">{renderContent()}</div>
     </div>
   );
 }
-
