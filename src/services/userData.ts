@@ -16,6 +16,7 @@ export type LibraryBook = {
   title: string;
   authors: string;
   formats: Record<string, string>;
+  subjects?: string[];
 };
 
 /**
