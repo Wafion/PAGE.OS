@@ -265,26 +265,57 @@
     position: relative;
     z-index: 1;
     min-height: 360px;
+    overflow: hidden;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, rgba(255, 255, 255, 0.22), transparent 25%),
+      radial-gradient(circle at center, rgba(96, 63, 36, 0.08), transparent 64%);
   }
 
   .library-orbit-book {
     position: absolute;
-    width: 78px;
-    height: 108px;
-    border-radius: 0.35rem;
+    left: 50%;
+    top: 50%;
+    width: 84px;
+    height: 118px;
+    margin-left: -42px;
+    margin-top: -59px;
+    border-radius: 0.55rem;
     background: linear-gradient(135deg, #7b0c1c, #d4af64);
     background-size: cover;
     background-position: center;
-    box-shadow: 0 18px 35px rgba(41, 22, 12, 0.22);
+    box-shadow:
+      0 18px 35px rgba(41, 22, 12, 0.22),
+      0 0 0 1px rgba(255, 248, 239, 0.15);
+    transform:
+      rotate(var(--orbit-angle))
+      translateY(-152px)
+      rotate(calc(var(--orbit-angle) * -1 + var(--book-tilt, 0deg)));
+    animation: library-orbit-spin 22s linear infinite;
+    animation-delay: var(--orbit-delay, 0s);
   }
 
-  .orbit-1 { left: 46%; top: 6%; transform: rotate(0deg); }
-  .orbit-2 { left: 16%; top: 20%; transform: rotate(-18deg); }
-  .orbit-3 { right: 14%; top: 20%; transform: rotate(16deg); }
-  .orbit-4 { left: 4%; top: 48%; transform: rotate(-5deg); }
-  .orbit-5 { right: 2%; top: 48%; transform: rotate(8deg); }
-  .orbit-6 { left: 22%; bottom: 6%; transform: rotate(-14deg); }
-  .orbit-7 { right: 24%; bottom: 4%; transform: rotate(13deg); }
+  .library-orbit-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 999px;
+    border: 1px solid rgba(133, 101, 64, 0.16);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .orbit-ring-outer {
+    width: 330px;
+    height: 330px;
+  }
+
+  .orbit-ring-inner {
+    width: 222px;
+    height: 222px;
+    border-style: dashed;
+    border-color: rgba(133, 101, 64, 0.12);
+  }
 
   .library-orbit-title {
     position: absolute;
@@ -298,6 +329,23 @@
     max-width: 230px;
     font-size: clamp(1.5rem, 3vw, 2.4rem);
     line-height: 1.05;
+    text-shadow: 0 8px 30px rgba(26, 18, 11, 0.16);
+  }
+
+  @keyframes library-orbit-spin {
+    from {
+      transform:
+        rotate(var(--orbit-angle))
+        translateY(-152px)
+        rotate(calc(var(--orbit-angle) * -1 + var(--book-tilt, 0deg)));
+    }
+
+    to {
+      transform:
+        rotate(calc(var(--orbit-angle) + 360deg))
+        translateY(-152px)
+        rotate(calc((var(--orbit-angle) + 360deg) * -1 + var(--book-tilt, 0deg)));
+    }
   }
 
   .library-search-card,
@@ -443,6 +491,13 @@
     border-radius: 0.75rem;
   }
 
+  .library-result-copy {
+    display: flex;
+    min-height: 150px;
+    min-width: 0;
+    flex-direction: column;
+  }
+
   .library-result-copy h3 {
     display: -webkit-box;
     margin: 0.2rem 0 0;
@@ -463,13 +518,15 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    margin-top: auto;
+    padding-top: 0.65rem;
   }
 
   .library-result-actions {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-top: 0.65rem;
+    margin-top: 0.55rem;
     color: hsl(var(--accent));
     font-size: 0.82rem;
   }

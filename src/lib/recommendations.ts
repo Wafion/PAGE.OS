@@ -150,7 +150,7 @@ async function fetchOpenLibrarySubject(subject: string, limit: number) {
       Accept: "application/json",
       "User-Agent": "PAGE.OS/1.0 (reader recommendations)",
     },
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(4000),
     next: { revalidate: 21600 },
   });
 
@@ -178,7 +178,7 @@ async function fetchGutendexShelf(query?: string) {
       Accept: "application/json",
       "User-Agent": "PAGE.OS/1.0 (reader recommendations)",
     },
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(4000),
     next: { revalidate: 21600 },
   });
 
@@ -254,10 +254,16 @@ export async function getRecommendationShelf(
   const profile = getProfile(genre);
 
   try {
-    const [subjectGroups, liveGutendexShelf] = await Promise.all([
-      Promise.all(profile.subjects.map((subject) => fetchOpenLibrarySubject(subject, 14))),
+    const [subjectResults, liveGutendexShelf] = await Promise.all([
+      Promise.allSettled(
+        profile.subjects.map((subject) => fetchOpenLibrarySubject(subject, 14)),
+      ),
       fetchGutendexShelf(profile.fallbackQuery || undefined).catch(() => []),
     ]);
+
+    const subjectGroups = subjectResults.flatMap((result) =>
+      result.status === "fulfilled" ? [result.value] : [],
+    );
 
     const topWorks = interleaveGroups(subjectGroups.map((group) => group.slice(0, 8)));
     const fallbackShelf = getFallbackGutenbergBooks(profile.fallbackQuery);

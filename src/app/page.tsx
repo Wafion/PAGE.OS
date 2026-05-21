@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { CommandSearch } from "@/components/command-search";
 import type { SearchResult } from "@/adapters/sourceManager";
@@ -546,14 +546,21 @@ export default function HomePage() {
             {featuredBooks.slice(0, 7).map((book, index) => (
               <div
                 key={`${book.id}-${index}`}
-                className={`library-orbit-book orbit-${index + 1}`}
+                className="library-orbit-book"
                 style={
-                  getBookCover(book)
-                    ? { backgroundImage: `url(${getBookCover(book)})` }
-                    : undefined
+                  {
+                    ...(getBookCover(book)
+                      ? { backgroundImage: `url(${getBookCover(book)})` }
+                      : {}),
+                    ["--orbit-angle" as string]: `${index * (360 / 7)}deg`,
+                    ["--orbit-delay" as string]: `${index * -3.2}s`,
+                    ["--book-tilt" as string]: `${index % 2 === 0 ? -10 : 10}deg`,
+                  } as CSSProperties
                 }
               />
             ))}
+            <div className="library-orbit-ring orbit-ring-outer" />
+            <div className="library-orbit-ring orbit-ring-inner" />
             <div className="library-orbit-title">
               <span>Find your next read</span>
             </div>
