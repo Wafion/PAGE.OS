@@ -11,7 +11,7 @@ import { useAuth } from "@/context/auth-provider";
 const bootSequence = [
   { text: "[ INITIATING BOOTLOADER ]", delay: 80 },
   { text: "> PAGEOS v1.0 - TERMINAL READER ENVIRONMENT", delay: 120 },
-  { text: "> Made with care by Celeron", delay: 100, isAccent: true },
+  { text: "> Made with care by Yash", delay: 100, isAccent: true },
   { text: "> MEMLINK PROTOCOL: ACTIVE", delay: 200 },
   { text: "> LINKING NODE(S): GUTENDEX | WEB", delay: 150, isAccent: true },
   { text: "> MEMORY STREAM STATUS: ONLINE", delay: 150 },
