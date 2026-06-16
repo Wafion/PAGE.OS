@@ -189,7 +189,7 @@ function LoungeBootloader({ onComplete }: { onComplete: () => void }) {
 
           <div className="lounge-boot-footer">
             <div>
-              <strong>Created by Celeron</strong>
+              <strong>Created by Yash</strong>
               <span>Designed for quiet reading sessions and better wandering.</span>
             </div>
             <div>
