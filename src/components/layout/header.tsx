@@ -78,9 +78,6 @@ export function AppHeader() {
               <DropdownMenuItem asChild>
                 <Link href="/settings">Settings</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/statistics">Statistics</Link>
-              </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/50" />
               <DropdownMenuItem
                 onClick={handleSignOut}

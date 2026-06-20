@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { LoaderCircle, Search } from "lucide-react";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { Switch } from "@/components/ui/switch";
-import { fetchGutenbergBooks, parseGutenbergSearchIntent } from "@/adapters/gutendex";
-import type { WebFallbackResult } from "@/components/web-fallback-results";
+import { fetchGutenbergBooks } from "@/adapters/gutendex";
 
 type SearchSuggestion = {
   id: string;
@@ -31,12 +30,10 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [gutenbergSuggestions, setGutenbergSuggestions] = useState<SearchSuggestion[]>([]);
-  const [webSuggestions, setWebSuggestions] = useState<SearchSuggestion[]>([]);
   const { uiMode } = useReaderSettings();
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionRequestRef = useRef(0);
   const gutenbergSuggestionCacheRef = useRef(new Map<string, SearchSuggestion[]>());
-  const webSuggestionCacheRef = useRef(new Map<string, WebFallbackResult[]>());
 
   const trimmedValue = value.trim();
   const effectiveQuery = useMemo(() => {
@@ -69,7 +66,6 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
   useEffect(() => {
     if (trimmedValue.length < 2) {
       setGutenbergSuggestions([]);
-      setWebSuggestions([]);
       setIsSuggesting(false);
       return;
     }
@@ -80,13 +76,6 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
     const timeoutId = setTimeout(async () => {
       setIsSuggesting(true);
 
-      const searchIntent = parseGutenbergSearchIntent(effectiveQuery);
-      const webQuery =
-        searchIntent.mode === "author" && searchIntent.authorQuery
-          ? `${searchIntent.authorQuery} books filetype:pdf`
-          : effectiveQuery;
-      const shouldFetchWebSuggestions = trimmedValue.length >= 4;
-      const cachedWebSuggestions = webSuggestionCacheRef.current.get(webQuery);
       const cachedGutenbergSuggestions = gutenbergSuggestionCacheRef.current.get(effectiveQuery);
 
       if (cachedGutenbergSuggestions) {
@@ -135,66 +124,6 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
             setIsSuggesting(false);
           });
       }
-
-      if (!shouldFetchWebSuggestions) {
-        setWebSuggestions([]);
-        return;
-      }
-
-      if (cachedWebSuggestions) {
-        if (
-          !isCancelled &&
-          suggestionRequestRef.current === requestId
-        ) {
-          setWebSuggestions(
-            cachedWebSuggestions.slice(0, 4).map((result, index) => ({
-              id: `web-${index}-${result.link}`,
-              title: result.title || result.link,
-              meta: `${result.type.toUpperCase()} result`,
-              query: result.title || trimmedValue,
-              source: "web",
-              href: result.link,
-              openInNewTab: true,
-            })),
-          );
-        }
-        return;
-      }
-
-      void fetch(`/api/brave-search?q=${encodeURIComponent(webQuery)}`)
-        .then((res) => res.json())
-        .then((results) => {
-          if (
-            isCancelled ||
-            suggestionRequestRef.current !== requestId ||
-            !Array.isArray(results)
-          ) {
-            return;
-          }
-
-          webSuggestionCacheRef.current.set(webQuery, results as WebFallbackResult[]);
-          setWebSuggestions(
-            (results as WebFallbackResult[]).slice(0, 4).map((result, index) => ({
-              id: `web-${index}-${result.link}`,
-              title: result.title || result.link,
-              meta: `${result.type.toUpperCase()} result`,
-              query: result.title || trimmedValue,
-              source: "web",
-              href: result.link,
-              openInNewTab: true,
-            })),
-          );
-        })
-        .catch(() => {
-          if (
-            isCancelled ||
-            suggestionRequestRef.current !== requestId
-          ) {
-            return;
-          }
-
-          setWebSuggestions([]);
-        });
     }, 260);
 
     return () => {
@@ -221,7 +150,7 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
     router.push(suggestion.href);
   };
 
-  const hasSuggestions = gutenbergSuggestions.length > 0 || webSuggestions.length > 0;
+  const hasSuggestions = gutenbergSuggestions.length > 0;
 
   return (
     <div className={uiMode === "lounge" ? "library-command-search" : "flex flex-col gap-3"}>
@@ -304,31 +233,6 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
                         </div>
                         <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent/80">
                           book
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {webSuggestions.length > 0 && (
-                  <div className={gutenbergSuggestions.length > 0 ? "border-t border-border/40" : ""}>
-                    <div className="px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-accent/80">
-                      {uiMode === "lounge" ? "From web fallback" : "WEB_FALLBACK"}
-                    </div>
-                    {webSuggestions.map((suggestion) => (
-                      <button
-                        key={suggestion.id}
-                        type="button"
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => handleSuggestionSelect(suggestion)}
-                        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-accent/5"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-foreground">{suggestion.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{suggestion.meta}</p>
-                        </div>
-                        <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent/80">
-                          web
                         </span>
                       </button>
                     ))}

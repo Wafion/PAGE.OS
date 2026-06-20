@@ -25,6 +25,7 @@ import {
 } from "@/components/web-fallback-results";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import type { RecommendationGenreKey } from "@/lib/recommendations";
+import { buildWebFallbackQuery } from "@/lib/web-fallback-query";
 
 const shuffleArray = <T,>(array: T[]) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -356,8 +357,8 @@ export default function HomePage() {
     const searchIntent = parseGutenbergSearchIntent(query);
     const webQuery =
       searchIntent.mode === "author" && searchIntent.authorQuery
-        ? searchIntent.authorQuery
-        : query;
+        ? buildWebFallbackQuery(searchIntent.authorQuery)
+        : buildWebFallbackQuery(query);
 
     try {
       const webSearchPromise = fetch(

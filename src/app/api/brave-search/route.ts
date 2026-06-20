@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as cheerio from 'cheerio';
 
 type WebFallbackResult = {
   title: string;
   link: string;
-  type: 'pdf' | 'txt';
+  type: 'pdf';
 };
 
 type WebFallbackCacheEntry = {
@@ -11,70 +12,13 @@ type WebFallbackCacheEntry = {
   expiresAt: number;
 };
 
-type ArchiveSearchDoc = {
-  creator?: string | string[];
-  identifier?: string;
-  title?: string;
-};
-
-type ArchiveSearchResponse = {
-  response?: {
-    docs?: ArchiveSearchDoc[];
-  };
-};
-
-type ArchiveMetadataFile = {
-  format?: string;
-  name?: string;
-};
-
-type ArchiveMetadataResponse = {
-  files?: ArchiveMetadataFile[];
-};
-
 const WEB_FALLBACK_CACHE_TTL_MS = 1000 * 60 * 30;
+const BRAVE_RATE_LIMIT_BACKOFF_MS = 1000 * 60 * 5;
 const webFallbackCache = new Map<string, WebFallbackCacheEntry>();
+let braveRateLimitedUntil = 0;
 
-function makeArchiveSearchURL(query: string) {
-  const params = new URLSearchParams({
-    q: `title:(${query}) AND mediatype:(texts)`,
-    rows: '8',
-    page: '1',
-    output: 'json',
-    sort: 'downloads desc',
-  });
-
-  ['title', 'identifier', 'creator'].forEach((field) => {
-    params.append('fl[]', field);
-  });
-
-  return `https://archive.org/advancedsearch.php?${params.toString()}`;
-}
-
-function normalizeSearchText(value: string) {
-  return value
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-function getMeaningfulQueryTokens(query: string) {
-  const ignoredTokens = new Set(['book', 'books', 'ebook', 'ebooks', 'filetype', 'pdf', 'txt']);
-  return normalizeSearchText(query)
-    .split(/\s+/)
-    .filter((token) => token.length > 2 && !ignoredTokens.has(token));
-}
-
-function matchesQuery(doc: ArchiveSearchDoc, query: string) {
-  const tokens = getMeaningfulQueryTokens(query);
-  if (tokens.length === 0) {
-    return true;
-  }
-
-  const haystack = normalizeSearchText(`${doc.title ?? ''} ${getCreatorLabel(doc.creator)}`);
-  return tokens.every((token) => haystack.includes(token));
+function buildBraveSearchUrl(query: string) {
+  return `https://search.brave.com/search?q=${encodeURIComponent(query)}&source=web`;
 }
 
 function getCachedResults(query: string) {
@@ -92,67 +36,42 @@ function getCachedResults(query: string) {
   return cached.results;
 }
 
-function getCreatorLabel(creator: ArchiveSearchDoc['creator']) {
-  if (Array.isArray(creator)) {
-    return creator.filter(Boolean).slice(0, 2).join(', ');
+function looksLikePdfUrl(url: string) {
+  const lowerUrl = url.toLowerCase();
+
+  if (lowerUrl.endsWith('.pdf')) {
+    return true;
   }
 
-  return creator ?? '';
+  if (lowerUrl.includes('.pdf?') || lowerUrl.includes('.pdf#')) {
+    return true;
+  }
+
+  return false;
 }
 
-function pickReadableArchiveFile(files: ArchiveMetadataFile[] = []) {
-  const textFile = files.find((file) => file.name?.endsWith('_djvu.txt'));
-  if (textFile?.name) {
-    return { name: textFile.name, type: 'txt' as const };
+async function verifyPdfUrl(url: string) {
+  if (looksLikePdfUrl(url)) {
+    return true;
   }
 
-  const pdfFile = files.find((file) => {
-    const name = file.name?.toLowerCase() ?? '';
-    const format = file.format?.toLowerCase() ?? '';
-    return name.endsWith('.pdf') || format.includes('pdf');
-  });
-
-  if (pdfFile?.name) {
-    return { name: pdfFile.name, type: 'pdf' as const };
-  }
-
-  return null;
-}
-
-async function mapArchiveDocToResult(doc: ArchiveSearchDoc) {
-  if (!doc.identifier || !doc.title) {
-    return null;
-  }
-
-  const metadataResponse = await fetch(
-    `https://archive.org/metadata/${encodeURIComponent(doc.identifier)}`,
-    {
+  try {
+    const response = await fetch(url, {
+      method: 'HEAD',
+      redirect: 'follow',
       headers: {
-        Accept: 'application/json',
+        Accept: 'application/pdf,*/*;q=0.8',
         'User-Agent': 'PAGE.OS/1.0 (web fallback)',
       },
       cache: 'no-store',
       signal: AbortSignal.timeout(3000),
-    },
-  );
+    });
 
-  if (!metadataResponse.ok) {
-    return null;
+    const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
+    return contentType.includes('application/pdf');
+  } catch {
+    return false;
   }
-
-  const metadata = (await metadataResponse.json()) as ArchiveMetadataResponse;
-  const readableFile = pickReadableArchiveFile(metadata.files);
-
-  if (!readableFile) {
-    return null;
-  }
-
-  const creator = getCreatorLabel(doc.creator);
-  return {
-    title: creator ? `${doc.title} - ${creator}` : doc.title,
-    link: `https://archive.org/download/${encodeURIComponent(doc.identifier)}/${encodeURIComponent(readableFile.name)}`,
-    type: readableFile.type,
-  } satisfies WebFallbackResult;
 }
 
 export async function GET(req: NextRequest) {
@@ -172,27 +91,77 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  try {
-    const response = await fetch(makeArchiveSearchURL(query), {
+  if (braveRateLimitedUntil > Date.now()) {
+    return NextResponse.json(cachedResults ?? [], {
       headers: {
-        Accept: 'application/json',
-        'User-Agent': 'PAGE.OS/1.0 (web fallback)',
+        'Cache-Control': 'public, max-age=120',
+      },
+    });
+  }
+
+  try {
+    const response = await fetch(buildBraveSearchUrl(query), {
+      headers: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       },
       cache: 'no-store',
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(7000),
     });
 
     if (!response.ok) {
-      throw new Error(`Internet Archive search failed with status: ${response.status}`);
+      if (response.status === 429) {
+        braveRateLimitedUntil = Date.now() + BRAVE_RATE_LIMIT_BACKOFF_MS;
+        return NextResponse.json(cachedResults ?? [], {
+          headers: {
+            'Cache-Control': 'public, max-age=120',
+          },
+        });
+      }
+
+      throw new Error(`Brave search failed with status: ${response.status}`);
     }
 
-    const data = (await response.json()) as ArchiveSearchResponse;
-    const docs = (data.response?.docs ?? []).filter((doc) => matchesQuery(doc, query));
-    const mappedResults = await Promise.all(
-      docs.slice(0, 8).map((doc) => mapArchiveDocToResult(doc).catch(() => null)),
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const rawLinks = $('a[href^="http"]')
+      .map((_, element) => {
+        const href = $(element).attr('href');
+        const title = $(element).text().trim();
+        return href ? { href, title } : null;
+      })
+      .get()
+      .filter((result): result is { href: string; title: string } => result !== null);
+
+    const verifiedCandidates = await Promise.all(
+      rawLinks.slice(0, 30).map(async (result) => {
+        const isPdf = await verifyPdfUrl(result.href);
+        if (!isPdf) {
+          return null;
+        }
+
+        return result;
+      }),
     );
-    const results = mappedResults
-      .filter((result): result is WebFallbackResult => result !== null)
+
+    const seenLinks = new Set<string>();
+    const results = verifiedCandidates
+      .filter((result): result is { href: string; title: string } => result !== null)
+      .map((result) => ({
+        title: result.title || result.href,
+        link: result.href,
+        type: 'pdf' as const,
+      }))
+      .filter((result) => {
+        if (seenLinks.has(result.link)) {
+          return false;
+        }
+
+        seenLinks.add(result.link);
+        return true;
+      })
       .slice(0, 5);
 
     webFallbackCache.set(normalizedQuery, {
@@ -206,7 +175,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Web Fallback] Search route failed:', error);
+    console.error('[Web Fallback] Brave search route failed:', error);
     return NextResponse.json(cachedResults ?? [], {
       headers: {
         'Cache-Control': 'public, max-age=120',

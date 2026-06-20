@@ -1,24 +1,18 @@
 ﻿
 'use client';
 
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson2 } from 'lucide-react';
+import { FileJson2 } from 'lucide-react';
 import { useReaderSettings } from '@/context/reader-settings-provider';
 
 export type WebFallbackResult = {
   title: string;
   link: string;
-  type: 'pdf' | 'txt';
+  type: 'pdf';
 };
 
-const FiletypeIcon = ({ type }: { type: 'pdf' | 'txt' }) => {
-    switch (type) {
-        case 'pdf': return <FileJson2 className="h-5 w-5 text-accent" />;
-        case 'txt': return <FileText className="h-5 w-5 text-accent" />;
-    }
-}
+const FiletypeIcon = () => <FileJson2 className="h-5 w-5 text-accent" />;
 
 export function WebFallbackResults({ results }: { results: WebFallbackResult[] }) {
   const { uiMode } = useReaderSettings();
@@ -46,21 +40,16 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
         <CardContent>
           <ul className="space-y-4">
             {results.map((result, index) => {
-              const isTxt = result.type === 'txt';
-              const Wrapper = isTxt ? Link : 'a';
-              const href = isTxt
-                ? `/read?source=web&url=${encodeURIComponent(result.link)}&title=${encodeURIComponent(result.title)}`
-                : result.link;
-              
-              const linkProps = isTxt
-                ? {}
-                : { target: '_blank', rel: 'noopener noreferrer' };
-
               return (
                 <li key={index} className="rounded-md border border-border/30 p-4 transition-colors hover:bg-input/50">
-                  <Wrapper href={href} {...linkProps} className="group">
+                  <a
+                    href={result.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
                     <div className="flex items-start gap-4">
-                      <FiletypeIcon type={result.type} />
+                      <FiletypeIcon />
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <p className="font-medium text-foreground group-hover:text-accent group-hover:underline">
@@ -75,7 +64,7 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
                         </p>
                       </div>
                     </div>
-                  </Wrapper>
+                  </a>
                 </li>
               );
             })}

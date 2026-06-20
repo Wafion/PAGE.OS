@@ -10,25 +10,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // The domain whitelist has been removed to support the web fallback feature,
-    // which needs to access a wide range of domains discovered through Bing search.
-    // Security is now handled by only fetching specific file types (txt, html)
-    // and by the client-side code which sanitizes the content.
     const targetUrl = new URL(targetUrlString);
-    
+
     const headers = new Headers();
-    const wantsPlainText =
-      targetUrl.pathname.endsWith('.txt') ||
-      targetUrl.pathname.endsWith('.text') ||
-      targetUrl.search.includes('text/plain');
 
     // Use a generic user agent to improve compatibility
     headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
     headers.set(
       'Accept',
-      wantsPlainText
-        ? 'text/plain,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     );
     headers.set('Accept-Language', 'en-US,en;q=0.5');
 
