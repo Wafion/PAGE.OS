@@ -7,7 +7,7 @@ PageOS is a futuristic, sci-fi themed e-book reader and library management appli
 - **Home Screen**: Displays trending books, recently added titles, and genre categories in a transmission card format with reading progress tracking.
 - **Library Screen**: Personal book archive with list and grid view modes, sorting by title, author, or last accessed date.
 - **Reader Screen**: Distraction-free reading experience with scroll, page, and auto-scroll modes, customizable fonts and themes.
-- **Source Manager**: Integrates with Project Gutenberg, Standard Ebooks, and supports custom TXT/EPUB URLs with connection status monitoring.
+- **Source Manager**: Integrates with Project Gutenberg and supports custom TXT/EPUB URLs with connection status monitoring.
 - **Bookmark System**: Save and resume reading positions with memory pins.
 - **Settings Panel**: BIOS-like configuration terminal for appearance, reading modes, and source management.
 - **Profile/History**: Reading history, favorites, and optional Firebase sync across devices.
