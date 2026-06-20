@@ -67,43 +67,6 @@ Forget sterile PDF viewers and boring library apps. PAGE.OS drops you into a uni
 - **React Context**: Global state (theme, auth, settings) managed without prop-drilling hell
 - **Modular UI**: Swap between lounge and classic modes without missing a beat
 
-## ▶️ Getting Your Hands on the Console
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- A terminal emulator (you're probably reading this in one)
-- Optional: [Firebase](https://firebase.google.com/) account for cross-device sync
-
-### Boot Sequence
-```bash
-# Clone the repository (or assimilate it into your collective)
-git clone https://github.com/yourusername/PAGE.OS.git
-cd PAGE.OS
-
-# Install dependencies (engage the replicators)
-npm install
-
-# Configure Firebase (optional but recommended)
-# Copy .env.example to .env and fill in your Firebase credentials
-# Get them from: https://console.firebase.google.com/
-
-# Start the development sequence
-npm run dev
-
-# Point your browser to http://localhost:3000
-# Witness the boot animation... then immerse yourself in literature
-```
-
-### Production Deployment
-```bash
-# Build for production (initiate terraforming sequence)
-npm run build
-
-# Start the production server
-npm run start
-
-# Or deploy to Vercel/Netlify/etc. for instant interstellar availability
-```
 
 ## 🎯 Why PAGE.OS?
 
