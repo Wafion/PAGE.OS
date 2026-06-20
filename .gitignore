@@ -36,6 +36,8 @@ yarn-error.log*
 .push-check-dev.err
 .codex-*.log
 .codex-*.err
+pageos-dev.log
+pageos-dev.err.log
 
 # vercel
 .vercel

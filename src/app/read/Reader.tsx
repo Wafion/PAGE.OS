@@ -19,6 +19,7 @@ import ReaderControls from '@/components/ReaderControls';
 import TOCModal from './TOCModal';
 import useBookLoader from '@/hooks/useBookLoader';
 import useBookmark from '@/hooks/useBookmark';
+import useReadingTracker from '@/hooks/useReadingTracker';
 import { useAuth } from '@/context/auth-provider';
 import { useReaderSettings } from '@/context/reader-settings-provider';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
@@ -43,8 +44,11 @@ export default function Reader() {
     setDirection,
   } = useBookLoader(searchParams);
 
-  const { isBookmarked, isBookmarkLoading, isWebBook, toggleBookmark } =
-    useBookmark(user, book, activeSector, sectors.length);
+  const { isTracking, sessionStartTime, isBookmarked, isBookmarkLoading, isWebBook, toggleBookmark } = useReadingTracker(
+    book,
+    activeSector,
+    sectors.length
+  );
 
   const [showTOC, setShowTOC] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);

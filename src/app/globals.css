@@ -1163,6 +1163,7 @@
   .library-reader-layout {
     flex: 1 1 auto;
     min-height: 0;
+    width: min(100%, 1320px);
     display: grid;
     grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
     gap: clamp(1rem, 3vw, 2rem);
@@ -1177,6 +1178,7 @@
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
     gap: 1rem;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
   }
@@ -1275,7 +1277,10 @@
   }
 
   .library-reader-sheet-viewport {
+    width: 100%;
     min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
     overflow-y: auto;
     padding-right: 0.25rem;
     overscroll-behavior: contain;
@@ -1314,6 +1319,8 @@
 
   .library-reader-sheet {
     border-radius: 1.8rem;
+    width: 100%;
+    min-width: 0;
     min-height: 100%;
     padding: clamp(1.3rem, 4vw, 3rem);
   }
@@ -1345,6 +1352,7 @@
     font-family: Georgia, 'Times New Roman', serif;
     font-size: clamp(1.06rem, 1.7vw, 1.24rem);
     line-height: 1.95;
+    overflow-wrap: anywhere;
   }
 
   .library-reader-prose p {

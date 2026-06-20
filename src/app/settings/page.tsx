@@ -42,7 +42,7 @@ const SourceStatus = ({ status }: { status: Status }) => {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { autoScroll, setAutoScroll, uiMode, setUiMode, sourceSettings, toggleSource, showBootAnimation, setShowBootAnimation } = useReaderSettings();
+  const { autoScroll, setAutoScroll, uiMode, setUiMode, sourceSettings, toggleSource, showBootAnimation, setShowBootAnimation, collectStatistics, setCollectStatistics } = useReaderSettings();
   
   const [sourceStatuses, setSourceStatuses] = useState<Record<string, Status>>({});
 
@@ -178,6 +178,19 @@ export default function SettingsPage() {
                   checked={autoScroll}
                   onCheckedChange={setAutoScroll}
                   disabled
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-border/50 p-4">
+                <Label htmlFor="collect-statistics" className="flex flex-col gap-1 cursor-pointer">
+                  <span>Collect reading statistics</span>
+                  <span className="font-normal text-muted-foreground">
+                    Track your reading habits and progress over time
+                  </span>
+                </Label>
+                <Switch
+                  id="collect-statistics"
+                  checked={collectStatistics}
+                  onCheckedChange={setCollectStatistics}
                 />
               </div>
             </CardContent>

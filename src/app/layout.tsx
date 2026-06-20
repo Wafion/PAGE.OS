@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/theme-provider";
 import { ReaderSettingsProvider } from "@/context/reader-settings-provider";
 import { AuthProvider } from "@/context/auth-provider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CookieConsentBanner } from "@/components/cookie-consent";
 
 const fontHeadline = Orbitron({
   subsets: ["latin"],
@@ -49,10 +49,10 @@ export default function RootLayout({
             <ReaderSettingsProvider>
               <MainLayout>{children}</MainLayout>
               <Toaster />
+              <CookieConsentBanner />
             </ReaderSettingsProvider>
           </AuthProvider>
         </ThemeProvider>
-        <SpeedInsights />
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import {
   getFallbackGutenbergBooks,
   type MappedGutenbergBook,
 } from "@/adapters/gutendex";
+import { fetchProjectGutenbergOpdsBooks } from "@/lib/gutenberg-opds";
 
 type OpenLibrarySearchResponse = {
   docs?: OpenLibraryWork[];
@@ -96,7 +97,7 @@ function mapGutendexBook(book: GutendexBook): MappedGutenbergBook {
 function dedupeBooks(books: MappedGutenbergBook[]) {
   const seen = new Set<string>();
   return books.filter((book) => {
-    const key = `${book.source}:${book.id}`;
+    const key = book.id;
     if (seen.has(key)) {
       return false;
     }
@@ -104,6 +105,61 @@ function dedupeBooks(books: MappedGutenbergBook[]) {
     seen.add(key);
     return true;
   });
+}
+
+function getDailyRecommendationKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function hashSeed(value: string) {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function seededRandom(seed: number) {
+  let state = seed || 1;
+
+  return () => {
+    state = Math.imul(state ^ (state >>> 15), 1 | state);
+    state ^= state + Math.imul(state ^ (state >>> 7), 61 | state);
+    return ((state ^ (state >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(items: T[], seedValue: string) {
+  const shuffled = [...items];
+  const random = seededRandom(hashSeed(seedValue));
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
+function rotateDailyShelf(
+  books: MappedGutenbergBook[],
+  genre: RecommendationGenreKey,
+  limit: number,
+  tier: string,
+) {
+  const dedupedBooks = dedupeBooks(books);
+  const poolSize = Math.min(dedupedBooks.length, Math.max(limit * 3, limit));
+  const dailyKey = getDailyRecommendationKey();
+  const topPool = dedupedBooks.slice(0, poolSize);
+  const remaining = dedupedBooks.slice(poolSize);
+
+  return [
+    ...seededShuffle(topPool, `${dailyKey}:${genre}:${tier}`),
+    ...seededShuffle(remaining, `${dailyKey}:${genre}:${tier}:tail`),
+  ].slice(0, limit);
 }
 
 function scoreOpenLibraryWork(work: OpenLibraryWork) {
@@ -164,14 +220,14 @@ async function fetchOpenLibrarySubject(subject: string, limit: number) {
     .sort((a, b) => scoreOpenLibraryWork(b) - scoreOpenLibraryWork(a));
 }
 
-async function fetchGutendexShelf(query?: string) {
+async function fetchGutendexShelf(query?: string, page = 1) {
   const params = new URLSearchParams();
   if (query) {
     params.set("search", query);
   } else {
     params.set("sort", "popular");
   }
-  params.set("page", "1");
+  params.set("page", String(page));
 
   const response = await fetch(`${GUTENDEX_ENDPOINT}?${params.toString()}`, {
     headers: {
@@ -188,6 +244,32 @@ async function fetchGutendexShelf(query?: string) {
 
   const data = (await response.json()) as GutendexResponse;
   return (data.results ?? []).map(mapGutendexBook);
+}
+
+async function fetchLiveGutenbergShelf(query: string | undefined, genre: RecommendationGenreKey) {
+  const dailyPage = (hashSeed(`${getDailyRecommendationKey()}:${genre}:page`) % 5) + 1;
+  const pages = Array.from(new Set([1, dailyPage]));
+  const [gutendexResult, opdsResult] = await Promise.allSettled([
+    Promise.all(pages.map((page) => fetchGutendexShelf(query, page))).then((groups) =>
+      groups.flat(),
+    ),
+    Promise.all(pages.map((page) => fetchProjectGutenbergOpdsBooks(query, page))).then((groups) =>
+      groups.flat(),
+    ),
+  ]);
+
+  const gutendexBooks = gutendexResult.status === "fulfilled" ? gutendexResult.value : [];
+  const opdsBooks = opdsResult.status === "fulfilled" ? opdsResult.value : [];
+
+  if (gutendexResult.status === "rejected") {
+    console.error("Gutendex recommendation fetch failed:", gutendexResult.reason);
+  }
+
+  if (opdsResult.status === "rejected") {
+    console.error("Project Gutenberg OPDS recommendation fetch failed:", opdsResult.reason);
+  }
+
+  return dedupeBooks([...gutendexBooks, ...opdsBooks]);
 }
 
 function scoreBookAgainstWorks(book: MappedGutenbergBook, works: OpenLibraryWork[], query: string) {
@@ -241,7 +323,8 @@ export async function getRecommendationShelf(
   genre: RecommendationGenreKey,
   limit = 12,
 ): Promise<RecommendationShelfResponse> {
-  const cacheKey = `${genre}:${limit}`;
+  const dailyKey = getDailyRecommendationKey();
+  const cacheKey = `${dailyKey}:${genre}:${limit}`;
   const cachedShelf = recommendationShelfCache.get(cacheKey);
 
   if (cachedShelf && cachedShelf.expiresAt > Date.now()) {
@@ -254,11 +337,11 @@ export async function getRecommendationShelf(
   const profile = getProfile(genre);
 
   try {
-    const [subjectResults, liveGutendexShelf] = await Promise.all([
+    const [subjectResults, liveGutenbergShelf] = await Promise.all([
       Promise.allSettled(
         profile.subjects.map((subject) => fetchOpenLibrarySubject(subject, 14)),
       ),
-      fetchGutendexShelf(profile.fallbackQuery || undefined).catch(() => []),
+      fetchLiveGutenbergShelf(profile.fallbackQuery || undefined, genre).catch(() => []),
     ]);
 
     const subjectGroups = subjectResults.flatMap((result) =>
@@ -268,7 +351,7 @@ export async function getRecommendationShelf(
     const topWorks = interleaveGroups(subjectGroups.map((group) => group.slice(0, 8)));
     const fallbackShelf = getFallbackGutenbergBooks(profile.fallbackQuery);
     const candidateBooks = dedupeBooks([
-      ...liveGutendexShelf,
+      ...liveGutenbergShelf,
       ...fallbackShelf,
       ...FALLBACK_GUTENBERG_BOOKS,
     ]);
@@ -288,15 +371,16 @@ export async function getRecommendationShelf(
       const shelf = {
         books: dedupeBooks([
           ...matchedBooks,
-          ...liveGutendexShelf,
+          ...liveGutenbergShelf,
           ...fallbackShelf,
           ...FALLBACK_GUTENBERG_BOOKS,
-        ]).slice(0, limit),
+        ]),
         sourceLabel:
           matchedBooks.length >= Math.min(limit, 4)
-            ? "reader-loved shelf"
-            : "reader-loved shelf with fallback classics",
+            ? "daily reader-loved shelf"
+            : "daily reader-loved shelf with fallback classics",
       };
+      shelf.books = rotateDailyShelf(shelf.books, genre, limit, "matched");
 
       recommendationShelfCache.set(cacheKey, {
         ...shelf,
@@ -307,8 +391,13 @@ export async function getRecommendationShelf(
     }
 
     const fallbackShelfResult = {
-      books: dedupeBooks([...liveGutendexShelf, ...fallbackShelf, ...FALLBACK_GUTENBERG_BOOKS]).slice(0, limit),
-      sourceLabel: "curated fallback shelf",
+      books: rotateDailyShelf(
+        [...liveGutenbergShelf, ...fallbackShelf, ...FALLBACK_GUTENBERG_BOOKS],
+        genre,
+        limit,
+        "fallback",
+      ),
+      sourceLabel: "daily curated fallback shelf",
     };
 
     recommendationShelfCache.set(cacheKey, {
@@ -320,8 +409,13 @@ export async function getRecommendationShelf(
   } catch (error) {
     console.error("Failed to build recommendation shelf:", error);
     const fallbackShelfResult = {
-      books: getFallbackGutenbergBooks(profile.fallbackQuery).slice(0, limit),
-      sourceLabel: "curated fallback shelf",
+      books: rotateDailyShelf(
+        getFallbackGutenbergBooks(profile.fallbackQuery),
+        genre,
+        limit,
+        "offline",
+      ),
+      sourceLabel: "daily curated fallback shelf",
     };
 
     recommendationShelfCache.set(cacheKey, {

@@ -1,7 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   // Fallback to hardcoded values for local development
@@ -21,9 +20,14 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Initialize analytics only on the client side if a measurementId is provided
-if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
-    getAnalytics(app);
+async function enableOptionalAnalytics() {
+  if (typeof window === 'undefined' || !firebaseConfig.measurementId) {
+    return null;
+  }
+
+  const { getAnalytics, isSupported } = await import('firebase/analytics');
+  const supported = await isSupported();
+  return supported ? getAnalytics(app) : null;
 }
 
-export { app, auth, db, googleProvider };
+export { app, auth, db, googleProvider, enableOptionalAnalytics };

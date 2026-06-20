@@ -94,8 +94,12 @@ type CachedRecommendationShelf = RecommendationShelfResponse & {
 const RECOMMENDATION_CACHE_PREFIX = "pageos-recommendation-shelf";
 const RECOMMENDATION_CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 
+function getRecommendationDayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function getRecommendationCacheKey(genre: RecommendationGenreKey, limit: number) {
-  return `${RECOMMENDATION_CACHE_PREFIX}:${genre}:${limit}`;
+  return `${RECOMMENDATION_CACHE_PREFIX}:${getRecommendationDayKey()}:${genre}:${limit}`;
 }
 
 function readCachedRecommendationShelf(
@@ -168,6 +172,7 @@ async function fetchRecommendationShelf(
   const params = new URLSearchParams({
     genre,
     limit: String(limit),
+    day: getRecommendationDayKey(),
   });
 
   const response = await fetch(`/api/recommendations?${params.toString()}`);
@@ -184,10 +189,8 @@ export default function HomePage() {
   const [webResults, setWebResults] = useState<WebFallbackResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [featuredBooks, setFeaturedBooks] = useState<SearchResult[]>(
-    () => shuffleArray([...getFallbackGutenbergBooks().slice(0, 12)]),
-  );
-  const [isFeaturedLoading, setIsFeaturedLoading] = useState(false);
+  const [featuredBooks, setFeaturedBooks] = useState<SearchResult[]>([]);
+  const [isFeaturedLoading, setIsFeaturedLoading] = useState(true);
   const [featuredSourceLabel, setFeaturedSourceLabel] = useState("instant shelf");
   const [primaryStatusMessage, setPrimaryStatusMessage] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<LoungeGenre>(LOUNGE_GENRES[0]);
@@ -353,7 +356,7 @@ export default function HomePage() {
     const searchIntent = parseGutenbergSearchIntent(query);
     const webQuery =
       searchIntent.mode === "author" && searchIntent.authorQuery
-        ? `${searchIntent.authorQuery} books filetype:pdf`
+        ? searchIntent.authorQuery
         : query;
 
     try {
@@ -367,12 +370,17 @@ export default function HomePage() {
         gutenbergPromise,
       ]);
 
-      if (webData.status === "fulfilled" && !webData.value.error) {
-        setWebResults(webData.value || []);
+      if (webData.status === "fulfilled" &&
+          webData.value != null &&
+          !webData.value.error &&
+          Array.isArray(webData.value)) {
+        setWebResults(webData.value);
       } else {
         console.error(
           "Web search failed:",
-          webData.status === "rejected" ? webData.reason : webData.value.error,
+          webData.status === "rejected" ? webData.reason :
+          (webData.value && webData.value.error) ||
+          "Invalid response format (expected array)",
         );
         setWebResults([]);
       }

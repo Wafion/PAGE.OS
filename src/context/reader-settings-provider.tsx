@@ -2,6 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { FirebaseError } from 'firebase/app';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-provider';
@@ -20,6 +21,8 @@ type ReaderSettings = {
   toggleSource: (sourceKey: SourceKey) => void;
   showBootAnimation: boolean;
   setShowBootAnimation: (value: boolean) => void;
+  collectStatistics: boolean;
+  setCollectStatistics: (value: boolean) => void;
 };
 
 const ReaderSettingsContext = createContext<ReaderSettings | undefined>(undefined);
@@ -41,6 +44,10 @@ const normalizeUiMode = (value: string | null | undefined): UiMode => {
   return "lounge";
 };
 
+function isPermissionDenied(error: unknown) {
+  return error instanceof FirebaseError && error.code === "permission-denied";
+}
+
 export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [autoScroll, setAutoScroll] = useState(false);
@@ -54,6 +61,13 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
   });
   const [sourceSettings, setSourceSettings] = useState<SourceSettings>(defaultSourceSettings);
   const [showBootAnimation, setShowBootAnimation] = useState(true);
+  const [collectStatistics, setCollectStatisticsState] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return true; // Default to enabled
+    }
+    const stored = window.localStorage.getItem('pageos-collect-statistics');
+    return stored ? JSON.parse(stored) : true; // Default to enabled
+  });
 
   const applyUiMode = useCallback((value: UiMode) => {
     const root = window.document.documentElement;
@@ -77,7 +91,9 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
         { merge: true },
       );
     } catch (error) {
-      console.warn(`Error saving UI mode to Firebase: ${error}`);
+      if (!isPermissionDenied(error)) {
+        console.warn(`Error saving UI mode to Firebase: ${error}`);
+      }
     }
   }, [user]);
 
@@ -108,6 +124,15 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       console.warn(`Error setting boot animation setting in localStorage: ${error}`);
     }
     setShowBootAnimation(value);
+  }, []);
+
+  const handleSetCollectStatistics = useCallback((value: boolean) => {
+    try {
+      localStorage.setItem('pageos-collect-statistics', JSON.stringify(value));
+    } catch (error) {
+      console.warn(`Error setting statistics collection setting in localStorage: ${error}`);
+    }
+    setCollectStatisticsState(value);
   }, []);
 
   const toggleSource = useCallback((sourceKey: SourceKey) => {
@@ -141,6 +166,10 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       if (storedBootAnimation !== null) {
         setShowBootAnimation(JSON.parse(storedBootAnimation));
       }
+      const storedCollectStatistics = localStorage.getItem('pageos-collect-statistics');
+      if (storedCollectStatistics !== null) {
+        setCollectStatisticsState(JSON.parse(storedCollectStatistics));
+      }
       const storedUiMode = normalizeUiMode(localStorage.getItem("pageos-ui-mode"));
       localStorage.setItem("pageos-ui-mode", storedUiMode);
       applyUiMode(storedUiMode);
@@ -163,28 +192,39 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
         const preferenceRef = doc(db, "users", userId, "preferences", "interface");
         const preferenceSnapshot = await getDoc(preferenceRef);
         const remoteMode = normalizeUiMode(preferenceSnapshot.data()?.uiMode);
+        const remoteCollectStats = preferenceSnapshot.data()?.collectStatistics ?? true;
+        const hasLocalMode = localStorage.getItem("pageos-ui-mode") !== null;
 
         if (preferenceSnapshot.exists()) {
           if (!isMounted) {
             return;
           }
 
-          localStorage.setItem("pageos-ui-mode", remoteMode);
-          applyUiMode(remoteMode);
+          localStorage.setItem('pageos-collect-statistics', JSON.stringify(remoteCollectStats));
+          setCollectStatisticsState(remoteCollectStats);
+
+          if (!hasLocalMode) {
+            localStorage.setItem("pageos-ui-mode", remoteMode);
+            applyUiMode(remoteMode);
+          }
           return;
         }
 
         const localMode = normalizeUiMode(localStorage.getItem("pageos-ui-mode"));
+        const localCollectStats = collectStatistics;
         await setDoc(
           preferenceRef,
           {
             uiMode: localMode,
+            collectStatistics: localCollectStats,
             updatedAt: new Date().toISOString(),
           },
           { merge: true },
         );
       } catch (error) {
-        console.warn(`Error loading UI mode from Firebase: ${error}`);
+        if (!isPermissionDenied(error)) {
+          console.warn(`Error loading UI mode from Firebase: ${error}`);
+        }
       }
     }
 
@@ -193,7 +233,7 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [applyUiMode, user]);
+  }, [applyUiMode, user, collectStatistics]);
 
 
   const value = {
@@ -205,6 +245,8 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
     toggleSource,
     showBootAnimation,
     setShowBootAnimation: handleSetShowBootAnimation,
+    collectStatistics,
+    setCollectStatistics: handleSetCollectStatistics,
   };
 
   return (
