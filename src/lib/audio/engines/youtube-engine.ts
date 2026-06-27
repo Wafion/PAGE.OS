@@ -92,6 +92,7 @@ export class YouTubePlaybackEngine implements PlaybackEngine {
   private onEndedCb: (() => void) | null = null;
   private onErrorCb: ((error: Error) => void) | null = null;
   private stateCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private _fading = false;
 
   async load(track: TrackMetadata): Promise<void> {
     if (!track.videoID) throw new Error("No video ID for YouTube playback");
@@ -156,6 +157,10 @@ export class YouTubePlaybackEngine implements PlaybackEngine {
     return playerInstance?.getCurrentTime() ?? 0;
   }
 
+  getVolume(): number {
+    return this.volume;
+  }
+
   onEnded(callback: () => void): void {
     this.onEndedCb = callback;
   }
@@ -164,7 +169,45 @@ export class YouTubePlaybackEngine implements PlaybackEngine {
     this.onErrorCb = callback;
   }
 
+  async fadeIn(duration: number, targetVolume?: number): Promise<void> {
+    this._fading = true;
+    const target = (targetVolume ?? this.volume) * 100;
+    const steps = Math.max(1, Math.floor(duration / 50));
+    const increment = target / steps;
+    for (let i = 1; i <= steps; i++) {
+      if (!this._fading) return;
+      playerInstance?.setVolume(i * increment);
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    if (this._fading) {
+      playerInstance?.setVolume(target);
+    }
+    this._fading = false;
+  }
+
+  async fadeOut(duration: number): Promise<void> {
+    this._fading = true;
+    const startVol = playerInstance?.getVolume() ?? 0;
+    if (startVol <= 0) return;
+    const steps = Math.max(1, Math.floor(duration / 50));
+    const decrement = startVol / steps;
+    for (let i = 1; i <= steps; i++) {
+      if (!this._fading) return;
+      playerInstance?.setVolume(startVol - i * decrement);
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    if (this._fading) {
+      playerInstance?.setVolume(0);
+    }
+    this._fading = false;
+  }
+
+  cancelFade(): void {
+    this._fading = false;
+  }
+
   destroy(): void {
+    this._fading = false;
     this.cleanup();
     releasePlayer();
   }

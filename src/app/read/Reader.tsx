@@ -23,7 +23,6 @@ import useReadingTracker from '@/hooks/useReadingTracker';
 import { useAuth } from '@/context/auth-provider';
 import { useReaderSettings } from '@/context/reader-settings-provider';
 import { useAudio } from '@/context/audio-provider';
-import { resolveContextToPlaylist } from '@/lib/audio/orchestrator';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AudioControls } from '@/components/audio/audio-controls';
 
@@ -53,30 +52,14 @@ export default function Reader() {
     sectors.length
   );
 
-  const { setPlaylist } = useAudio();
+  const { suspendMusic, resumeMusic } = useAudio();
 
   useEffect(() => {
-    if (!book) return;
-
-    const subjects =
-      "subjects" in book && Array.isArray(book.subjects)
-        ? (book.subjects as string[])
-        : [];
-
-    const context = {
-      genres: subjects,
-      title: book.title,
-      author: book.authors,
-    };
-
-    resolveContextToPlaylist(context).then((playlist) => {
-      setPlaylist(playlist);
-    });
-
+    suspendMusic();
     return () => {
-      setPlaylist(null);
+      resumeMusic();
     };
-  }, [book, setPlaylist]);
+  }, [suspendMusic, resumeMusic]);
 
   const [showTOC, setShowTOC] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);

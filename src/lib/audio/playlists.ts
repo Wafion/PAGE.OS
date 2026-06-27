@@ -27,14 +27,7 @@ function buildPaths(genre: string, count: number): string[] {
 }
 
 export const LOCAL_PATHS: Record<string, string[]> = {
-  default: buildPaths("ambient", 3),
-  fantasy: buildPaths("fantasy", 3),
-  "science-fiction": buildPaths("science-fiction", 3),
-  mystery: buildPaths("mystery", 3),
-  romance: buildPaths("romance", 3),
-  horror: buildPaths("horror", 3),
-  history: buildPaths("history", 3),
-  adventure: buildPaths("adventure", 3),
+  default: buildPaths("ambient", 1),
 };
 
 export const PLAYLISTS: Record<string, Playlist> = Object.fromEntries(

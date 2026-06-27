@@ -11,7 +11,11 @@ export interface PlaybackEngine {
   unMute(): void;
   getDuration(): number;
   getCurrentTime(): number;
+  getVolume(): number;
   onEnded(callback: () => void): void;
   onError(callback: (error: Error) => void): void;
   destroy(): void;
+  fadeIn(duration: number, targetVolume?: number): Promise<void>;
+  fadeOut(duration: number): Promise<void>;
+  cancelFade(): void;
 }

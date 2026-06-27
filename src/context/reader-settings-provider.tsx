@@ -77,7 +77,8 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       return 0.5;
     }
     const stored = window.localStorage.getItem("pageos-music-volume");
-    return stored !== null ? JSON.parse(stored) : 0.5;
+    const parsed = stored !== null ? JSON.parse(stored) : 0.5;
+    return Math.max(0, Math.min(1, parsed));
   });
   const [collectStatistics, setCollectStatisticsState] = useState<boolean>(() => {
     if (typeof window === "undefined") {
