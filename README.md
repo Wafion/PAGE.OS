@@ -30,7 +30,6 @@ Forget sterile PDF viewers and boring library apps. PAGE.OS drops you into a uni
 ### 🔍 **Discovery & Access**
 - Direct pipeline to **Project Gutenberg**—tap into tens of thousands of free ebooks from the public domain
 - Ability to search and retrieve content from publicly available web archives and open texts
-- Bring your own sources: Drop in TXT/EPUB files or point to any public web text
 - Smart recommendations that actually *get* your taste (powered by Open Library and Gutendex popularity)
 
 ### 🔧 **Sysadmin-Level Controls**
