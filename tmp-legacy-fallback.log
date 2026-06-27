@@ -1,9 +1,0 @@
-  ▲ Next.js 14.2.35
-  - Local:        http://localhost:3015
-  - Environments: .env.local
-
- ✓ Starting...
- ✓ Ready in 18.5s
- ○ Compiling /api/brave-search ...
- ✓ Compiled /api/brave-search in 5.7s (316 modules)
- GET /api/brave-search?q=Dracula 200 in 8371ms
