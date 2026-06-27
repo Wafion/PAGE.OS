@@ -1,0 +1,107 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3014
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 11.7s
+ ○ Compiling /api/brave-search ...
+ ✓ Compiled /api/brave-search in 3.2s (316 modules)
+========== BRAVE SEARCH ==========
+Query: Dracula
+GOOGLE Query: "Dracula" ebook filetype:pdf
+GOOGLE Fetching: https://www.google.com/search?q=%22Dracula%22%20ebook%20filetype%3Apdf&hl=en
+BRAVE Query: "Dracula" ebook filetype:pdf
+BRAVE Fetching: https://search.brave.com/search?q=%22Dracula%22%20ebook%20filetype%3Apdf&source=web
+GOOGLE Status: 200
+GOOGLE HTML Length: 91289
+<!DOCTYPE html><html lang="en-IN"><head><title>Google Search</title><style>body{background-color:var(--xhUGwc)}</style><script nonce="hFPA0w31PfPlLDLV3Ojgkg">window.google = window.google || {};window.google.c = window.google.c || {cap:0};</script></head><body><noscript><style>table,div,span,p{display:none}</style><meta content="0;url=/httpservice/retry/enablejs?sei=J7M_aoOMO-jLkPIP1avquQ4" http-equiv="refresh"><div style="display:block">Please click <a href="/httpservice/retry/enablejs?sei=J7M_aoOMO-jLkPIP1avquQ4">here</a> if you are not redirected within a few seconds.</div></noscript><script nonce="hFPA0w31PfPlLDLV3Ojgkg">(function(){var sctm=false;(function(){sctm&&google.tick("load","pbsst");}).call(this);})();</script><script nonce="hFPA0w31PfPlLDLV3Ojgkg">//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjogMywic291cmNlcyI6WyIiXSwic291cmNlc0NvbnRlbnQiOlsiICJdLCJuYW1lcyI6WyJjbG9zdXJlRHluYW1pY0J1dHRvbiJdLCJtYXBwaW5ncyI6IkFBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEifQ==
+(function(){var h=function(N,Y,Q,H,F,O,e,V,f,n){{f=36;while(f!=70){if(f==55)return n;if(f==51){a:{if(V=(e=H,B.trustedTypes),!V||!V.createPolicy){n=e;break a}try{e=V.createPolicy(O,{createHTML:w,createScript:w,createScriptURL:w})}catch(q){if(B.console)B.console[F](q.message)}n=e}f=55}else f==2?f=(Q<<N&Y)>=0&&(Q|3)<19?32:65:f==36?f=2:f==65?f=(Q^26)>>4?55:51:f==32&&(n=H,f=65)}}},w=function(N){return h.call(this,1,7,3,N)},B=this||self;(0,eval)(function(N,Y){while(Number()==![undefi
+GOOGLE Raw links found: 1
+┌─────────┬────────────────────────────────────────┬────────────┐
+│ (index) │ href                                   │ title      │
+├─────────┼────────────────────────────────────────┼────────────┤
+│ 0       │ 'https://support.google.com/websearch' │ 'feedback' │
+└─────────┴────────────────────────────────────────┴────────────┘
+BRAVE Status: 200
+BRAVE HTML Length: 168667
+<!doctype html>
+<html class="" lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Register error handler before SvelteKit loads. See $lib/errorHandler/errorHandler.ts -->
+    <script nonce="LC9YzATvVnZPXQjwuuhO+A==">
+      "use strict";(()=>{var s=e=>{var n,t;try{let r=e instanceof ErrorEvent?(n=e.error)!=null?n:"".concat(e.message," (").concat(e.filename,":").concat(e.lineno,":").concat(e.colno,")"):e instanceof PromiseRejectionEvent?e.reason:e,i;if(r instanceof Error)i=(t=r.stack)!=null?t:"".concat(r.name,": ").concat(r.message);else if(typeof r=="string")i=r;else try{i=JSON.stringify(r)}catch(o){i=String(r)}if(!i.includes("_app/immutable/"))return;fetch("/api/metrics/serpkit-errors",{method:"POST",keepalive:!0,headers:{"Content-Type":"application/json"},body:JSON.stringify({stack:i})})}catch(r){}};addEventListener("error",s);addEventListener("unhandledrejection",s);})();
+
+    </script>
+    <link href="https://cdn.search.brave.com" rel="preconnect" crossorigin="anonymous" />
+<link href="https://imgs.search.brave.com" rel="preconnect" crossorigin="anonymous" />
+<link href="https://tiles.search.brave.com" rel="preconnect" crossorigin="anonymous" />
+<link href="https://cdn.search.brave.com/serp/v3/_app/immutable/assets/inter-latin-wght-normal.Dx4kXJAl.woff2" crossorigin="anonymous" rel="preload" as="font" type="font/woff2" /> <!--12qhfyh--><meta name="color-scheme" content=""/> <meta http-equiv="x-ua-compatible" content="IE=edge,chrome=1"/> <!--[-1--><!--]--> <!--[0-
+BRAVE Raw links found: 33
+┌─────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ (index) │ href                                                                                                                                                   │ title                                                                                                                                                                                                                                 │
+├─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 0       │ 'https://www.planetebook.com/free-ebooks/dracula.pdf'                                                                                                  │ 'Planet eBook planetebook.com › free-ebooks  › dracula.pdf pdf  Dracula'                                                                                                                                                              │
+│ 1       │ 'http://sauze.english.free.fr/IMG/pdf/dracula.pdf'                                                                                                     │ 'Free sauze.english.free.fr › IMG  › pdf  › dracula.pdf pdf  Dracula, by Bram Stoker'                                                                                                                                                 │
+│ 2       │ 'https://www.bramstoker.org/pdf/novels/05dracula.pdf'                                                                                                  │ "Bram Stoker bramstoker.org › pdf  › novels  › 05dracula.pdf pdf  DRACULA by Bram Stoker 1897 edition CHAPTER 1 Jonathan Harker's Journal"                                                                                            │
+│ 3       │ 'https://epub.us/wp-content/books/dracula-by-bram-stoker.pdf'                                                                                          │ 'epub.us epub.us › wp-content  › books  › dracula-by-bram-stoker.pdf pdf  dracula-by-bram-stoker.pdf'                                                                                                                                 │
+│ 4       │ 'https://dn721607.ca.archive.org/0/items/dracula-bram-stoker/Dracula%20-%20Bram%20Stoker.pdf'                                                          │ 'Archive dn721607.ca.archive.org › 0  › items  › dracula-bram-stoker  › Dracula - Bram Stoker.pdf pdf  Dracula - Bram Stoker [PDF]'                                                                                                   │
+│ 5       │ 'https://it.pearson.com/content/dam/region-core/italy/pearson-italy/pdf/Amazing%20readers/AMAZING%20READERS%20-%20PDF%20-%20risorse%20-%20dracula.pdf' │ 'Pearson it.pearson.com › content  › dam  › region-core  › italy  › pearson-italy  › pdf  › Amazing readers  › AMAZING READERS - PDF - risorse - dracula.pdf pdf  Dracula pearsonenglishreaders.com © Pearson Education Limited 2016' │
+│ 6       │ 'https://download.e-bookshelf.de/download/0010/4660/75/L-G-0010466075-0024172331.pdf'                                                                  │ 'E-bookshelf download.e-bookshelf.de › download  › 0010  › 4660  › 75  › L-G-0010466075-0024172331.pdf pdf  DRACULA An International Perspective Edited by Marius-Mircea Crisan'                                                      │
+│ 7       │ 'http://original.ompersonal.com.ar/omlibrary/BOOKS/DRACULA-BramStoker.pdf'                                                                             │ 'Ompersonal original.ompersonal.com.ar › omlibrary  › BOOKS  › DRACULA-BramStoker.pdf pdf  DRACULA 1 DRACULA In the mountains of Transylvania'                                                                                        │
+│ 8       │ 'http://eslnms.weebly.com/uploads/5/5/3/0/5530796/dracula.pdf'                                                                                         │ 'Weebly eslnms.weebly.com › uploads  › 5  › 5  › 3  › 0  › 5530796  › dracula.pdf pdf  dracula.pdf'                                                                                                                                   │
+│ 9       │ 'https://ww2.jacksonms.gov/Resources/o61DAx/5OK095/bram-stoker__dracula_ebook.pdf'                                                                     │ 'Jacksonms ww2.jacksonms.gov › Resources  › o61DAx  › 5OK095  › bram-stoker__dracula_ebook.pdf   ww2.jacksonms.gov - bram stoker dracula ebook'                                                                                       │
+│ 10      │ 'https://www.bramstoker.org/pdf/stories/03guest/01guest.pdf'                                                                                           │ "Bram Stoker bramstoker.org › pdf  › stories  › 03guest  › 01guest.pdf pdf  Dracula's Guest by Bram Stoker"                                                                                                                           │
+│ 11      │ 'https://etc.usf.edu/lit2go/pdf/passage/4121/dracula-007-chapter-7.pdf'                                                                                │ 'ETC USF etc.usf.edu › lit2go  › pdf  › passage  › 4121  › dracula-007-chapter-7.pdf pdf  Dracula by Bram Stoker Chapter 7 CUTTING FROM "THE DAILYGRAPH", 8 AUGUST'                                                                   │
+│ 12      │ 'https://ijels.com/upload_document/issue_files/19IJELS-105202315-Findingout.pdf'                                                                       │ 'Ijels ijels.com › upload_document  › issue_files  › 19IJELS-105202315-Findingout.pdf pdf  Finding out why Bram Stoker Wrote Dracula'                                                                                                 │
+│ 13      │ 'https://s5c72370525492609.jimcontent.com/download/version/1642938487/module/7393286759/name/INTERMEDIATE-Bram-Stoker-Dracula.pdf'                     │ 'Jimcontent s5c72370525492609.jimcontent.com › download  › version  › 1642938487  › module  › 7393286759  › name  › INTERMEDIATE-Bram-Stoker-Dracula.pdf pdf  INTERMEDIATE-Bram-Stoker-Dracula.pdf'                                   │
+│ 14      │ 'https://beq.ebooksgratuits.com/vents/Stoker-Dracula.pdf'                                                                                              │ 'EbooksGratuits beq.ebooksgratuits.com › vents  › Stoker-Dracula.pdf pdf  Bram Stoker Dracula BeQ'                                                                                                                                    │
+│ 15      │ 'https://www.skylabstudios.it/dracula/dracula.pdf'                                                                                                     │ 'Skylabstudios skylabstudios.it › dracula  › dracula.pdf pdf  dracula.pdf'                                                                                                                                                            │
+│ 16      │ 'https://darom32014.files.wordpress.com/2014/05/stoker-bram-dracula.pdf'                                                                               │ 'Wordpress darom32014.files.wordpress.com › 2014  › 05  › stoker-bram-dracula.pdf pdf  Stoker Bram - Dracula'                                                                                                                         │
+│ 17      │ 'https://www.suneo.mx/literatura/subidas/Bram%20Sttoker%20Dracula.pdf'                                                                                 │ 'Suneo suneo.mx › literatura  › subidas  › Bram Sttoker Dracula.pdf pdf  53 1. DRÁCULA Bram Stoker (1847-1912)'                                                                                                                       │
+│ 18      │ 'https://account.brave.com/?intent=checkout&product=search'                                                                                            │ 'Brave Search Premium'                                                                                                                                                                                                                │
+│ 19      │ 'https://brave.com/transparency/'                                                                                                                      │ 'Transparency Report'                                                                                                                                                                                                                 │
+└─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  [#0] Quick-accepted (URL pattern): https://www.planetebook.com/free-ebooks/dracula.pdf
+  [#1] Quick-accepted (URL pattern): http://sauze.english.free.fr/IMG/pdf/dracula.pdf
+  [#2] Quick-accepted (URL pattern): https://www.bramstoker.org/pdf/novels/05dracula.pdf
+  [#3] Quick-accepted (URL pattern): https://epub.us/wp-content/books/dracula-by-bram-stoker.pdf
+  [#4] Quick-accepted (URL pattern): https://dn721607.ca.archive.org/0/items/dracula-bram-stoker/Dracula%20-%20Bram%20Stoker.pdf
+  [#5] Quick-accepted (URL pattern): https://it.pearson.com/content/dam/region-core/italy/pearson-italy/pdf/Amazing%20readers/AMAZING%20READERS%20-%20PDF%20-%20risorse%20-%20dracula.pdf
+  [#6] Quick-accepted (URL pattern): https://download.e-bookshelf.de/download/0010/4660/75/L-G-0010466075-0024172331.pdf
+  [#7] Quick-accepted (URL pattern): http://original.ompersonal.com.ar/omlibrary/BOOKS/DRACULA-BramStoker.pdf
+  [#8] Quick-accepted (URL pattern): http://eslnms.weebly.com/uploads/5/5/3/0/5530796/dracula.pdf
+  [#9] Quick-accepted (URL pattern): https://ww2.jacksonms.gov/Resources/o61DAx/5OK095/bram-stoker__dracula_ebook.pdf
+  [#10] Quick-accepted (URL pattern): https://www.bramstoker.org/pdf/stories/03guest/01guest.pdf
+  [#11] Quick-accepted (URL pattern): https://etc.usf.edu/lit2go/pdf/passage/4121/dracula-007-chapter-7.pdf
+  [#12] Quick-accepted (URL pattern): https://ijels.com/upload_document/issue_files/19IJELS-105202315-Findingout.pdf
+  [#13] Quick-accepted (URL pattern): https://s5c72370525492609.jimcontent.com/download/version/1642938487/module/7393286759/name/INTERMEDIATE-Bram-Stoker-Dracula.pdf
+  [#14] Quick-accepted (URL pattern): https://beq.ebooksgratuits.com/vents/Stoker-Dracula.pdf
+  [#15] Quick-accepted (URL pattern): https://www.skylabstudios.it/dracula/dracula.pdf
+  [#16] Quick-accepted (URL pattern): https://darom32014.files.wordpress.com/2014/05/stoker-bram-dracula.pdf
+  [#17] Quick-accepted (URL pattern): https://www.suneo.mx/literatura/subidas/Bram%20Sttoker%20Dracula.pdf
+  [#19] Rejected: https://brave.com/transparency/ | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#18] Rejected: https://account.brave.com/?intent=checkout&product=search | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#24] Rejected: https://brave.com/wallet/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#22] Rejected: https://brave.com/download/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#27] Rejected: https://brave.com/playlist/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#28] Rejected: https://brave.com/brave-news/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#29] Rejected: https://brave.com/brave-rewards/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#26] Rejected: https://brave.com/firewall-vpn/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#25] Rejected: https://talk.brave.com/?mtm_source=brave-search&mtm_medium=searchfooter&mtm_campaign=brave-search&mtm_content=evergreen | status=206 | content-type=text/html | reason=returned non-PDF content-type
+  [#23] Rejected: https://search.brave.com | status=206 | content-type=text/html; charset=utf-8 | reason=returned non-PDF content-type
+  [#20] Rejected: https://hackerone.com/brave | status=200 | content-type=text/html; charset=utf-8 | reason=returned non-PDF content-type
+  [#21] Rejected: https://status.brave.app/ | status=200 | content-type=text/html; charset=utf-8 | reason=returned non-PDF content-type
+Verified candidates: 18
+Returning 5 results
+┌─────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┬───────┐
+│ (index) │ title                                                                                                                                      │ link                                                                                          │ type  │
+├─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼───────┤
+│ 0       │ 'Planet eBook planetebook.com › free-ebooks  › dracula.pdf pdf  Dracula'                                                                   │ 'https://www.planetebook.com/free-ebooks/dracula.pdf'                                         │ 'pdf' │
+│ 1       │ 'Free sauze.english.free.fr › IMG  › pdf  › dracula.pdf pdf  Dracula, by Bram Stoker'                                                      │ 'http://sauze.english.free.fr/IMG/pdf/dracula.pdf'                                            │ 'pdf' │
+│ 2       │ "Bram Stoker bramstoker.org › pdf  › novels  › 05dracula.pdf pdf  DRACULA by Bram Stoker 1897 edition CHAPTER 1 Jonathan Harker's Journal" │ 'https://www.bramstoker.org/pdf/novels/05dracula.pdf'                                         │ 'pdf' │
+│ 3       │ 'epub.us epub.us › wp-content  › books  › dracula-by-bram-stoker.pdf pdf  dracula-by-bram-stoker.pdf'                                      │ 'https://epub.us/wp-content/books/dracula-by-bram-stoker.pdf'                                 │ 'pdf' │
+│ 4       │ 'Archive dn721607.ca.archive.org › 0  › items  › dracula-bram-stoker  › Dracula - Bram Stoker.pdf pdf  Dracula - Bram Stoker [PDF]'        │ 'https://dn721607.ca.archive.org/0/items/dracula-bram-stoker/Dracula%20-%20Bram%20Stoker.pdf' │ 'pdf' │
+└─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┴───────┘
+==================================
+ GET /api/brave-search?q=Dracula 200 in 10016ms

@@ -23,6 +23,10 @@ type ReaderSettings = {
   setShowBootAnimation: (value: boolean) => void;
   collectStatistics: boolean;
   setCollectStatistics: (value: boolean) => void;
+  musicEnabled: boolean;
+  setMusicEnabled: (value: boolean) => void;
+  musicVolume: number;
+  setMusicVolume: (value: number) => void;
 };
 
 const ReaderSettingsContext = createContext<ReaderSettings | undefined>(undefined);
@@ -61,6 +65,20 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
   });
   const [sourceSettings, setSourceSettings] = useState<SourceSettings>(defaultSourceSettings);
   const [showBootAnimation, setShowBootAnimation] = useState(true);
+  const [musicEnabled, setMusicEnabledState] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    const stored = window.localStorage.getItem("pageos-music-enabled");
+    return stored !== null ? JSON.parse(stored) : true;
+  });
+  const [musicVolume, setMusicVolumeState] = useState<number>(() => {
+    if (typeof window === "undefined") {
+      return 0.5;
+    }
+    const stored = window.localStorage.getItem("pageos-music-volume");
+    return stored !== null ? JSON.parse(stored) : 0.5;
+  });
   const [collectStatistics, setCollectStatisticsState] = useState<boolean>(() => {
     if (typeof window === "undefined") {
       return true; // Default to enabled
@@ -117,6 +135,25 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
     void saveUiModeToFirebase(value);
   }, [applyUiMode, saveUiModeToFirebase]);
   
+  const handleSetMusicEnabled = useCallback((value: boolean) => {
+    try {
+      localStorage.setItem("pageos-music-enabled", JSON.stringify(value));
+    } catch (error) {
+      console.warn(`Error setting music enabled in localStorage: ${error}`);
+    }
+    setMusicEnabledState(value);
+  }, []);
+
+  const handleSetMusicVolume = useCallback((value: number) => {
+    const clamped = Math.max(0, Math.min(1, value));
+    try {
+      localStorage.setItem("pageos-music-volume", JSON.stringify(clamped));
+    } catch (error) {
+      console.warn(`Error setting music volume in localStorage: ${error}`);
+    }
+    setMusicVolumeState(clamped);
+  }, []);
+
   const handleSetShowBootAnimation = useCallback((value: boolean) => {
     try {
       localStorage.setItem('pageos-show-boot-animation', JSON.stringify(value));
@@ -165,6 +202,14 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       const storedBootAnimation = localStorage.getItem('pageos-show-boot-animation');
       if (storedBootAnimation !== null) {
         setShowBootAnimation(JSON.parse(storedBootAnimation));
+      }
+      const storedMusicEnabled = localStorage.getItem('pageos-music-enabled');
+      if (storedMusicEnabled !== null) {
+        setMusicEnabledState(JSON.parse(storedMusicEnabled));
+      }
+      const storedMusicVolume = localStorage.getItem('pageos-music-volume');
+      if (storedMusicVolume !== null) {
+        setMusicVolumeState(JSON.parse(storedMusicVolume));
       }
       const storedCollectStatistics = localStorage.getItem('pageos-collect-statistics');
       if (storedCollectStatistics !== null) {
@@ -247,6 +292,10 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
     setShowBootAnimation: handleSetShowBootAnimation,
     collectStatistics,
     setCollectStatistics: handleSetCollectStatistics,
+    musicEnabled,
+    setMusicEnabled: handleSetMusicEnabled,
+    musicVolume,
+    setMusicVolume: handleSetMusicVolume,
   };
 
   return (

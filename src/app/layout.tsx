@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/context/theme-provider";
 import { ReaderSettingsProvider } from "@/context/reader-settings-provider";
 import { AuthProvider } from "@/context/auth-provider";
+import { AudioProvider } from "@/context/audio-provider";
+import { NowPlayingBar } from "@/components/audio/now-playing-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent";
 
 const fontHeadline = Orbitron({
@@ -47,7 +49,10 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <ReaderSettingsProvider>
-              <MainLayout>{children}</MainLayout>
+              <AudioProvider>
+                <MainLayout>{children}</MainLayout>
+                <NowPlayingBar />
+              </AudioProvider>
               <Toaster />
               <CookieConsentBanner />
             </ReaderSettingsProvider>

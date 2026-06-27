@@ -22,7 +22,10 @@ import useBookmark from '@/hooks/useBookmark';
 import useReadingTracker from '@/hooks/useReadingTracker';
 import { useAuth } from '@/context/auth-provider';
 import { useReaderSettings } from '@/context/reader-settings-provider';
+import { useAudio } from '@/context/audio-provider';
+import { resolveContextToPlaylist } from '@/lib/audio/orchestrator';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
+import { AudioControls } from '@/components/audio/audio-controls';
 
 export default function Reader() {
   const searchParams = useSearchParams();
@@ -49,6 +52,31 @@ export default function Reader() {
     activeSector,
     sectors.length
   );
+
+  const { setPlaylist } = useAudio();
+
+  useEffect(() => {
+    if (!book) return;
+
+    const subjects =
+      "subjects" in book && Array.isArray(book.subjects)
+        ? (book.subjects as string[])
+        : [];
+
+    const context = {
+      genres: subjects,
+      title: book.title,
+      author: book.authors,
+    };
+
+    resolveContextToPlaylist(context).then((playlist) => {
+      setPlaylist(playlist);
+    });
+
+    return () => {
+      setPlaylist(null);
+    };
+  }, [book, setPlaylist]);
 
   const [showTOC, setShowTOC] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);
@@ -161,6 +189,7 @@ export default function Reader() {
           </div>
 
           <div className="library-reader-actions">
+            <AudioControls />
             <ThemeToggleButton compact className="border-accent/30 hover:bg-accent/10 hover:text-accent" />
             <Button
               variant="outline"
@@ -399,6 +428,7 @@ export default function Reader() {
         </div>
 
         <div className="flex items-center gap-1">
+          <AudioControls />
           <ThemeToggleButton compact className="border-border/50 text-muted-foreground hover:text-accent" />
           {toc.length > 0 && (
             <Button variant="ghost" size="icon" onClick={() => setShowTOC(true)}>

@@ -16,7 +16,6 @@ import {
 import {
   fetchGutenbergBooks,
   getFallbackGutenbergBooks,
-  parseGutenbergSearchIntent,
 } from "@/adapters/gutendex";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -25,7 +24,6 @@ import {
 } from "@/components/web-fallback-results";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import type { RecommendationGenreKey } from "@/lib/recommendations";
-import { buildWebFallbackQuery } from "@/lib/web-fallback-query";
 
 const shuffleArray = <T,>(array: T[]) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -354,15 +352,9 @@ export default function HomePage() {
     setIsLoading(true);
     setHasSearched(true);
 
-    const searchIntent = parseGutenbergSearchIntent(query);
-    const webQuery =
-      searchIntent.mode === "author" && searchIntent.authorQuery
-        ? buildWebFallbackQuery(searchIntent.authorQuery)
-        : buildWebFallbackQuery(query);
-
     try {
       const webSearchPromise = fetch(
-        `/api/brave-search?q=${encodeURIComponent(webQuery)}`,
+        `/api/brave-search?q=${encodeURIComponent(query)}`,
       ).then((res) => res.json());
       const gutenbergPromise = fetchGutenbergBooks(query);
 

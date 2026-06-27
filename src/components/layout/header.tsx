@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
+import { AudioControls } from "@/components/audio/audio-controls";
 
 export function AppHeader() {
   const { user } = useAuth();
@@ -44,6 +45,8 @@ export function AppHeader() {
         <MonitorCog className="h-3.5 w-3.5" />
         {uiMode === "lounge" ? "Classic UI" : "Library Lounge"}
       </Button>
+
+      <AudioControls />
 
       <ThemeToggleButton
         compact
