@@ -26,6 +26,7 @@ async function fetchFromMet(): Promise<MediaItem[]> {
           if (data.isPublicDomain !== true) return null;
           if (!data.title || data.title.length < 3) return null;
           return {
+            id: `met-${data.objectID}`,
             url: data.primaryImageSmall,
             width: data.primaryImageSmallWidth || 500,
             height: data.primaryImageSmallHeight || 500,
@@ -34,6 +35,21 @@ async function fetchFromMet(): Promise<MediaItem[]> {
             year: data.objectDate || '',
             type: 'artwork',
             source: 'met' as const,
+            sourceName: 'The Metropolitan Museum of Art',
+            sourceUrl: data.objectURL || 'https://www.metmuseum.org/art/collection',
+            detailUrl: data.primaryImage || data.primaryImageSmall,
+            description: data.creditLine || data.objectName || '',
+            tags: [data.classification, data.culture, data.period]
+              .filter((value): value is string => typeof value === 'string' && value.length > 0)
+              .slice(0, 6),
+            medium: data.medium || 'Painting',
+            dimensions: data.dimensions || '',
+            location: data.repository || 'The Metropolitan Museum of Art',
+            collection: data.department || 'Open Access Collection',
+            accessionNumber: data.accessionNumber || '',
+            creditLine: data.creditLine || '',
+            attribution: [data.title, data.objectDate, data.artistDisplayName].filter(Boolean).join(', '),
+            rightsLabel: data.isPublicDomain ? 'Public Domain' : 'Archive Source',
           };
         } catch { return null; }
       }));

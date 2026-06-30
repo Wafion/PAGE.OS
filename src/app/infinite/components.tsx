@@ -8,7 +8,7 @@ import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from '.
 // ── global image cache ──
 const imageStateCache = new Map<string, { loaded: boolean; error: boolean }>();
 
-export function MediaCard({ item }: { item: MediaItem }) {
+export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (item: MediaItem) => void }) {
   const [loaded, setLoaded] = React.useState(() => imageStateCache.get(item.url)?.loaded ?? false);
   const [error, setError] = React.useState(() => imageStateCache.get(item.url)?.error ?? false);
   const mountedRef = React.useRef(true);
@@ -48,6 +48,15 @@ export function MediaCard({ item }: { item: MediaItem }) {
   return (
     <div
       className="break-inside-avoid mb-4 rounded-lg overflow-hidden bg-card border border-border hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+      onClick={() => onSelect?.(item)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect?.(item);
+        }
+      }}
+      role="button"
+      tabIndex={0}
     >
       <div className="relative w-full bg-muted/30">
         {error ? (
@@ -96,9 +105,11 @@ export const MediaCardMemo = React.memo(MediaCard);
 export function MasonryChunk({
   coord,
   items,
+  onSelect,
 }: {
   coord: ChunkCoord;
   items: MediaItem[];
+  onSelect?: (item: MediaItem) => void;
 }) {
   return (
     <div
@@ -111,7 +122,7 @@ export function MasonryChunk({
     >
       <div className="columns-[180px] md:columns-[200px] gap-4">
         {items.map((item, i) => (
-          <MediaCardMemo key={`${coord.cx}x${coord.cy}-${i}`} item={item} />
+          <MediaCardMemo key={`${coord.cx}x${coord.cy}-${i}`} item={item} onSelect={onSelect} />
         ))}
       </div>
     </div>

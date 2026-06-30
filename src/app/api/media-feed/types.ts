@@ -1,10 +1,30 @@
 export interface MediaItem {
+  id?: string;
   url: string;
   width: number;
   height: number;
   title: string;
   creator: string;
   year: string;
-  type: string;
-  source?: 'met' | 'wiki';
+  type: "artwork" | "book";
+  source?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  detailUrl?: string;
+  description?: string;
+  tags?: string[];
+  genres?: string[];
+  language?: string;
+  firstPublished?: string;
+  fileFormats?: string[];
+  pages?: string;
+  isbn?: string;
+  medium?: string;
+  dimensions?: string;
+  location?: string;
+  collection?: string;
+  accessionNumber?: string;
+  creditLine?: string;
+  attribution?: string;
+  rightsLabel?: string;
 }

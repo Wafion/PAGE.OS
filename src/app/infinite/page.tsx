@@ -5,6 +5,7 @@ import type { MediaItem } from './types';
 import { useCamera } from './useCamera';
 import { useChunkVisibility, useGetChunkItems } from './useChunks';
 import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk } from './components';
+import { MediaDetailDialog } from './detail-dialog';
 
 function useMediaFeed() {
   const [items, setItems] = React.useState<MediaItem[]>([]);
@@ -31,6 +32,7 @@ function useMediaFeed() {
 export default function InfinitePage() {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = React.useState({ w: 0, h: 0 });
+  const [selectedItem, setSelectedItem] = React.useState<MediaItem | null>(null);
   const centered = React.useRef(false);
 
   const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition } = useCamera(containerRef);
@@ -92,6 +94,7 @@ export default function InfinitePage() {
                     key={`${c.cx},${c.cy}`}
                     coord={c}
                     items={chunkItems}
+                    onSelect={setSelectedItem}
                   />
                 );
               })}
@@ -106,6 +109,13 @@ export default function InfinitePage() {
       </div>
 
       <BottomControls camera={camera} />
+      <MediaDetailDialog
+        item={selectedItem}
+        open={selectedItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedItem(null);
+        }}
+      />
     </div>
   );
 }

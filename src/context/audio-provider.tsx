@@ -64,18 +64,28 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const positionCacheRef = useRef<Map<string, number>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
+  const musicEnabledRef = useRef(musicEnabled);
+  musicEnabledRef.current = musicEnabled;
   const transitioningRef = useRef(false);
   const pendingVolumeRef = useRef<number | null>(null);
   const suspendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const playWithInteractionGate = useCallback(
     async (engine: PlaybackEngine): Promise<void> => {
+      if (!musicEnabledRef.current) {
+        return;
+      }
+
       if (!interactionRef.current) {
         return new Promise<void>((resolve) => {
           const handler = () => {
             interactionRef.current = true;
             document.removeEventListener("click", handler);
             document.removeEventListener("keydown", handler);
+            if (!musicEnabledRef.current) {
+              resolve();
+              return;
+            }
             engine.play().catch(() => {}).then(() => resolve(), () => resolve());
           };
           document.addEventListener("click", handler);
@@ -194,8 +204,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
           currentTrack: track,
           currentPlaylist: playlist,
           playlistLabel: effectiveLabel,
-          playing: true,
+          playing: musicEnabledRef.current,
         }));
+
+        if (!musicEnabledRef.current) {
+          return;
+        }
 
         await playWithInteractionGate(engine);
         engine.fadeIn(isFirstPlay ? FADE_INITIAL_MS : FADE_MS, musicVolume);
