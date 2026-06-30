@@ -19,6 +19,7 @@ import {
   Power,
   LogIn,
   Shield,
+  Infinity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,11 +41,19 @@ const menuItems = [
     icon: Library,
   },
   {
+    href: "/infinite",
+    classicLabel: "Discover",
+    loungeLabel: "Deep Space",
+    detail: "Explore artworks and ideas across time and space.",
+    code: "03",
+    icon: Infinity,
+  },
+  {
     href: "/profile",
     classicLabel: "Profile",
     loungeLabel: "Reader Card",
     detail: "Identity, sync status, and account memory.",
-    code: "03",
+    code: "04",
     icon: User,
   },
   {
@@ -52,7 +61,7 @@ const menuItems = [
     classicLabel: "Settings",
     loungeLabel: "Room Controls",
     detail: "Theme, reader behavior, and source controls.",
-    code: "04",
+    code: "05",
     icon: Settings,
   },
   {
@@ -60,7 +69,7 @@ const menuItems = [
     classicLabel: "Legal",
     loungeLabel: "House Rules",
     detail: "Usage terms, privacy, and content policies.",
-    code: "05",
+    code: "06",
     icon: Shield,
   },
 ];
