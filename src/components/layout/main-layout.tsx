@@ -11,6 +11,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { showBootAnimation } = useReaderSettings();
   const [isBooting, setIsBooting] = useState(true);
   const pathname = usePathname();
+  const isInfinitePage = pathname.startsWith("/infinite");
 
   useEffect(() => {
     try {
@@ -45,7 +46,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-screen flex-col">
       <SidebarPopup />
       <AppHeader />
-      <main className="flex-1 animate-fade-in">{children}</main>
+      <main
+        className={`flex-1 animate-fade-in${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
+      >
+        {children}
+      </main>
     </div>
   );
 }

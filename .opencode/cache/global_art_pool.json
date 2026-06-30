@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastUpdated": 1782801649377,
-    "hydrationLevel": 50
+    "lastUpdated": 1782807174759,
+    "hydrationLevel": 67
   },
   "seen_urls": [
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-14286-001.jpg",
@@ -53,7 +53,24 @@
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP234678.jpg",
     "https://images.metmuseum.org/CRDImages/rl/web-large/DP318246.jpg",
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP349564.jpg",
-    "https://images.metmuseum.org/CRDImages/ep/web-large/DT1945.jpg"
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DT1945.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP-36365-001.jpg",
+    "https://images.metmuseum.org/CRDImages/rl/web-large/DP221485.jpg",
+    "https://images.metmuseum.org/CRDImages/as/web-large/DP-12232-187.jpg",
+    "https://images.metmuseum.org/CRDImages/as/web-large/LC-2015_300_33ab_001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP-31520-001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP-16333-001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP323394.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DT7240.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP159891.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DT1910.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP-19712-001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP344253.jpg",
+    "https://images.metmuseum.org/CRDImages/as/web-large/DP-12232-175.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP280846.jpg",
+    "https://images.metmuseum.org/CRDImages/as/web-large/DP-13582-001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP346475.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DT1025.jpg"
   ],
   "items": [
     {
@@ -553,6 +570,176 @@
       "title": "Gray Weather, Grande Jatte",
       "creator": "Georges Seurat",
       "year": "ca. 1886–88",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-36365-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Christ on the Cross",
+      "creator": "Cecco del Caravaggio (Francesco Buoneri)",
+      "year": "ca. 1615–20",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/rl/web-large/DP221485.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Portrait of Alvise Contarini(?); (verso) A Tethered Roebuck",
+      "creator": "Jacometto (Jacometto Veneziano)",
+      "year": "ca. 1485–95",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/as/web-large/DP-12232-187.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Evening Glow in a Mountain Village and Calligraphy",
+      "creator": "Ike no Taiga",
+      "year": "late 18th–early 19th century",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/as/web-large/LC-2015_300_33ab_001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "“A Lovely Garland” (Tamakazura), from The Tale of Genji",
+      "creator": "Tosa Mitsuyoshi 土佐光吉",
+      "year": "early 17th century",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-31520-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "The Forest in Winter at Sunset",
+      "creator": "Théodore Rousseau",
+      "year": "ca. 1846–67",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-16333-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Don Andrés de Andrade y la Cal",
+      "creator": "Bartolomé Estebán Murillo",
+      "year": "ca. 1665–72",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP323394.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "The Love Song",
+      "creator": "Sir Edward Burne-Jones",
+      "year": "1868–77",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DT7240.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Virgin and Child",
+      "creator": "Dieric Bouts",
+      "year": "1475–99",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP159891.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Portrait of a Woman with a Man at a Casement",
+      "creator": "Fra Filippo Lippi",
+      "year": "ca. 1440",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DT1910.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "A Woman Ironing",
+      "creator": "Edgar Degas",
+      "year": "1873",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP-19712-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "The Flight into Egypt",
+      "creator": "Carlo Maratti",
+      "year": "ca. 1664",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP344253.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Saint Maurice",
+      "creator": "Lucas Cranach the Elder and Workshop",
+      "year": "ca. 1520–25",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/as/web-large/DP-12232-175.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Mountain and Calligraphy",
+      "creator": "Ike no Taiga",
+      "year": "18th–19th century",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP280846.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Virgin and Child with Saint Anne",
+      "creator": "Albrecht Dürer",
+      "year": "probably 1519",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/as/web-large/DP-13582-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Woodcutters and Fishermen",
+      "creator": "Matsumura Goshun",
+      "year": "ca. 1790–95",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP346475.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Roses",
+      "creator": "Vincent van Gogh",
+      "year": "1890",
+      "type": "artwork",
+      "source": "met"
+    },
+    {
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DT1025.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Ia Orana Maria (Hail Mary)",
+      "creator": "Paul Gauguin",
+      "year": "1891",
       "type": "artwork",
       "source": "met"
     }
