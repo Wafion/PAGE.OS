@@ -262,10 +262,63 @@ function pickChunkItems(cx: number, cy: number, pool: MediaItem[]): MediaItem[] 
   return items;
 }
 
+async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
+  const objectId = Number(itemId.replace(/^met-/, ''));
+  if (!Number.isFinite(objectId)) return null;
+
+  try {
+    const res = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectId}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data.primaryImageSmall) return null;
+
+    return {
+      id: `met-${data.objectID}`,
+      url: data.primaryImageSmall,
+      width: data.primaryImageSmallWidth || 500,
+      height: data.primaryImageSmallHeight || 500,
+      title: data.title,
+      creator: data.artistDisplayName || 'Unknown Artist',
+      year: data.objectDate || '',
+      type: 'artwork',
+      source: 'met',
+      sourceName: 'The Metropolitan Museum of Art',
+      sourceUrl: data.objectURL || 'https://www.metmuseum.org/art/collection',
+      detailUrl: data.primaryImage || data.primaryImageSmall,
+      description: data.creditLine || data.objectName || '',
+      tags: [data.classification, data.culture, data.period]
+        .filter((value): value is string => typeof value === 'string' && value.length > 0)
+        .slice(0, 6),
+      medium: data.medium || 'Painting',
+      dimensions: data.dimensions || '',
+      location: data.repository || 'The Metropolitan Museum of Art',
+      collection: data.department || 'Open Access Collection',
+      accessionNumber: data.accessionNumber || '',
+      creditLine: data.creditLine || '',
+      attribution: [data.title, data.objectDate, data.artistDisplayName].filter(Boolean).join(', '),
+      rightsLabel: data.isPublicDomain ? 'Public Domain' : 'Archive Source',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cx = searchParams.get('cx');
   const cy = searchParams.get('cy');
+  const itemId = searchParams.get('itemId');
+
+  if (itemId?.startsWith('met-')) {
+    const item = await fetchMetItemById(itemId);
+    if (item) {
+      return NextResponse.json(item);
+    }
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   const poolManager = GlobalPool.getInstance();
   let pool = await poolManager.getPool();

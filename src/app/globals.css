@@ -2262,8 +2262,11 @@
   margin: 0.6rem 0 0;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2.2rem, 4vw, 4rem);
-  line-height: 0.98;
+  line-height: 0.92;
   letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .pageos-detail-chip-row,
@@ -2465,7 +2468,8 @@
   }
 
   .pageos-detail-title {
-    font-size: 2.4rem;
+    font-size: 2rem;
+    line-height: 0.96;
   }
 
   .pageos-detail-meta-row {

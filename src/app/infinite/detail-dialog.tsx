@@ -81,6 +81,86 @@ function getAccentClasses(item: MediaItem) {
       };
 }
 
+function getFilenameFromUrl(url: string) {
+  try {
+    const pathname = new URL(url).pathname;
+    const lastSegment = pathname.split("/").filter(Boolean).pop();
+    return lastSegment ? decodeURIComponent(lastSegment) : null;
+  } catch {
+    return null;
+  }
+}
+
+function deriveFullResolutionUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "upload.wikimedia.org") {
+      return url;
+    }
+
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    const thumbIndex = parts.indexOf("thumb");
+    if (thumbIndex === -1 || parts.length < thumbIndex + 4) {
+      return url;
+    }
+
+    const fullResParts = parts.slice(0, thumbIndex).concat(parts.slice(thumbIndex + 1, thumbIndex + 4));
+    return `${parsed.origin}/${fullResParts.join("/")}`;
+  } catch {
+    return url;
+  }
+}
+
+function deriveSourceUrl(item: MediaItem) {
+  if (item.sourceUrl) return item.sourceUrl;
+
+  const filename = getFilenameFromUrl(item.url);
+  if (filename && item.url.includes("upload.wikimedia.org")) {
+    return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(filename)}`;
+  }
+
+  return item.detailUrl ?? item.url;
+}
+
+function deriveSourceName(item: MediaItem) {
+  if (item.sourceName) return item.sourceName;
+
+  if (item.url.includes("upload.wikimedia.org")) {
+    return "Wikimedia Commons";
+  }
+
+  if (item.source === "moma") {
+    return "The Museum of Modern Art (MoMA)";
+  }
+
+  if (item.source === "met") {
+    return "The Metropolitan Museum of Art";
+  }
+
+  return "Public archive";
+}
+
+function normalizeArtworkItem(item: MediaItem): MediaItem {
+  if (item.type !== "artwork") {
+    return item;
+  }
+
+  const normalizedDetailUrl = item.detailUrl ?? deriveFullResolutionUrl(item.url);
+  const normalizedSourceUrl = deriveSourceUrl({ ...item, detailUrl: normalizedDetailUrl });
+  const normalizedSourceName = deriveSourceName(item);
+
+  return {
+    ...item,
+    detailUrl: normalizedDetailUrl,
+    sourceUrl: normalizedSourceUrl,
+    sourceName: normalizedSourceName,
+    rightsLabel: item.rightsLabel ?? "Public Domain",
+    attribution:
+      item.attribution ??
+      `${item.title}, ${item.year}. ${item.creator}. ${normalizedSourceName}.`,
+  };
+}
+
 function getMetadata(item: MediaItem) {
   if (item.type === "book") {
     return [
@@ -105,6 +185,11 @@ function getMetadata(item: MediaItem) {
 
 export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialogProps) {
   const [activeTab, setActiveTab] = React.useState<DetailTabKey>("about");
+  const [resolvedItem, setResolvedItem] = React.useState<MediaItem | null>(item);
+
+  React.useEffect(() => {
+    setResolvedItem(item);
+  }, [item]);
 
   React.useEffect(() => {
     if (open) {
@@ -112,19 +197,56 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
     }
   }, [open, item?.id, item?.url]);
 
-  if (!item) {
+  React.useEffect(() => {
+    if (!open || !item || item.type !== "artwork" || !item.id?.startsWith("met-")) {
+      return;
+    }
+
+    const hasRichDetails =
+      Boolean(item.sourceName) &&
+      Boolean(item.sourceUrl) &&
+      Boolean(item.medium) &&
+      Boolean(item.collection);
+
+    if (hasRichDetails) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch(`/api/media-feed?itemId=${encodeURIComponent(item.id!)}`);
+        if (!response.ok) return;
+        const refreshed = (await response.json()) as MediaItem;
+        if (!cancelled) {
+          setResolvedItem((current) => ({ ...current, ...refreshed }));
+        }
+      } catch {
+        // Best-effort enrichment for legacy cached items.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, item]);
+
+  if (!resolvedItem) {
     return null;
   }
 
-  const tabs = TABS_BY_TYPE[item.type];
-  const accents = getAccentClasses(item);
-  const metadata = getMetadata(item);
-  const tags = item.tags ?? item.genres ?? [];
+  const displayItem =
+    resolvedItem.type === "artwork" ? normalizeArtworkItem(resolvedItem) : resolvedItem;
+  const tabs = TABS_BY_TYPE[displayItem.type];
+  const accents = getAccentClasses(displayItem);
+  const metadata = getMetadata(displayItem);
+  const tags = displayItem.tags ?? displayItem.genres ?? [];
   const description =
-    item.description ??
-    (item.type === "book"
-      ? `${item.title} is a public-domain title by ${item.creator}.`
-      : `${item.title} is a public-domain artwork by ${item.creator}.`);
+    displayItem.description ??
+    (displayItem.type === "book"
+      ? `${displayItem.title} is a public-domain title by ${displayItem.creator}.`
+      : `${displayItem.title} is a public-domain artwork by ${displayItem.creator}.`);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,26 +274,26 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
 
           <div className="pageos-detail-grid">
             <div className="pageos-detail-art-column">
-              <div className={cn("pageos-detail-image-shell", item.type === "book" ? "book" : "artwork")}>
-                <img src={item.url} alt={item.title} className="pageos-detail-image" />
+              <div className={cn("pageos-detail-image-shell", displayItem.type === "book" ? "book" : "artwork")}>
+                <img src={displayItem.url} alt={displayItem.title} className="pageos-detail-image" />
               </div>
 
               <div className="flex flex-wrap gap-3">
-                {item.type === "book" ? (
+                {displayItem.type === "book" ? (
                   <>
                     <Button asChild className={cn("h-11 rounded-xl px-5", accents.primaryButton)}>
-                      <Link href={buildReadHref(item)}>
+                      <Link href={buildReadHref(displayItem)}>
                         <BookOpen className="h-4 w-4" />
                         Start Reading
                       </Link>
                     </Button>
-                    {item.detailUrl && (
+                    {displayItem.detailUrl && (
                       <Button
                         asChild
                         variant="outline"
                         className="h-11 rounded-xl border-white/10 bg-transparent px-5 text-foreground hover:bg-white/5"
                       >
-                        <a href={item.detailUrl} target="_blank" rel="noreferrer">
+                        <a href={displayItem.detailUrl} target="_blank" rel="noreferrer">
                           Download
                           <ArrowUpRight className="h-4 w-4" />
                         </a>
@@ -180,21 +302,21 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
                   </>
                 ) : (
                   <>
-                    {item.detailUrl && (
+                    {displayItem.detailUrl && (
                       <Button asChild className={cn("h-11 rounded-xl px-5", accents.primaryButton)}>
-                        <a href={item.detailUrl} target="_blank" rel="noreferrer">
+                        <a href={displayItem.detailUrl} target="_blank" rel="noreferrer">
                           View Full Resolution
                           <ArrowUpRight className="h-4 w-4" />
                         </a>
                       </Button>
                     )}
-                    {item.sourceUrl && (
+                    {displayItem.sourceUrl && (
                       <Button
                         asChild
                         variant="outline"
                         className="h-11 rounded-xl border-white/10 bg-transparent px-5 text-foreground hover:bg-white/5"
                       >
-                        <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+                        <a href={displayItem.sourceUrl} target="_blank" rel="noreferrer">
                           Visit Source
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -207,10 +329,10 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
 
             <div className="pageos-detail-copy">
               <div>
-                <p className={cn("pageos-detail-kicker", accents.kicker)}>{formatLabel(item)}</p>
-                <h2 className="pageos-detail-title">{item.title}</h2>
-                <p className={cn("mt-3 text-xl", accents.kicker)}>{item.creator}</p>
-                <p className="mt-2 text-sm text-white/70">{item.year}</p>
+                <p className={cn("pageos-detail-kicker", accents.kicker)}>{formatLabel(displayItem)}</p>
+                <h2 className="pageos-detail-title">{displayItem.title}</h2>
+                <p className={cn("mt-3 text-xl break-words", accents.kicker)}>{displayItem.creator}</p>
+                <p className="mt-2 text-sm text-white/70">{displayItem.year}</p>
               </div>
 
               {tags.length > 0 && (
@@ -253,7 +375,7 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
           <div className="pageos-detail-lower">
             <div className="pageos-detail-section">
               <p className="pageos-detail-section-kicker">
-                {item.type === "book" ? "Summary" : "Description"}
+                {displayItem.type === "book" ? "Summary" : "Description"}
               </p>
               <p className="pageos-detail-description">{description}</p>
             </div>
@@ -275,24 +397,24 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
           <div className="pageos-detail-credits">
             <div className="pageos-detail-credits-header">
               <p className="pageos-detail-section-kicker">Credits & Source</p>
-              {item.rightsLabel && <span className="pageos-detail-badge">{item.rightsLabel}</span>}
+              {displayItem.rightsLabel && <span className="pageos-detail-badge">{displayItem.rightsLabel}</span>}
             </div>
 
             <div className="pageos-detail-credits-grid">
               <div className="pageos-detail-credit-card">
-                <div className="pageos-detail-credit-logo">{item.sourceName?.slice(0, 4) ?? "PD"}</div>
+                <div className="pageos-detail-credit-logo">{displayItem.sourceName?.slice(0, 4) ?? "PD"}</div>
                 <div className="space-y-2">
                   <p className="text-base font-medium text-white/92">
-                    Provided by {item.sourceName ?? "Public archive"}
+                    Provided by {displayItem.sourceName ?? "Public archive"}
                   </p>
                   <p className="text-sm leading-7 text-white/64">
-                    {item.type === "book"
+                    {displayItem.type === "book"
                       ? "This work is available through a public-domain library source."
                       : "This artwork is available through a public-domain museum or archive source."}
                   </p>
-                  {item.sourceUrl && (
+                  {displayItem.sourceUrl && (
                     <a
-                      href={item.sourceUrl}
+                      href={displayItem.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 text-sm text-sky-300 hover:text-sky-200"
@@ -307,7 +429,7 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
               <div className="pageos-detail-attribution">
                 <p className="text-base font-medium text-white/92">Attribution</p>
                 <p className="text-sm leading-7 text-white/64">
-                  {item.attribution ?? `${item.title}, ${item.year}. ${item.creator}.`}
+                  {displayItem.attribution ?? `${displayItem.title}, ${displayItem.year}. ${displayItem.creator}.`}
                 </p>
               </div>
             </div>

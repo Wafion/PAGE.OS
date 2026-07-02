@@ -68,6 +68,8 @@ export default function InfinitePage() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={onPointerUp}
       >
         {/* world */}
         <div
