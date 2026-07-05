@@ -23,8 +23,14 @@ export interface MediaItem {
   dimensions?: string;
   location?: string;
   collection?: string;
+  country?: string;
+  region?: string;
+  culture?: string;
+  period?: string;
   accessionNumber?: string;
   creditLine?: string;
   attribution?: string;
   rightsLabel?: string;
+  licenseUrl?: string;
+  sourceRecordId?: string;
 }

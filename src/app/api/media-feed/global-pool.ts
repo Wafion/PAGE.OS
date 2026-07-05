@@ -23,6 +23,7 @@ export class GlobalPool {
   }
 
   private async writeCache(data: CacheData): Promise<void> {
+    await fs.mkdir(path.dirname(CACHE_PATH), { recursive: true });
     await fs.writeFile(CACHE_PATH, JSON.stringify(data, null, 2), 'utf-8');
   }
 
@@ -38,10 +39,15 @@ export class GlobalPool {
 
   async addItems(newItems: MediaItem[]): Promise<{ added: number; total: number }> {
     const cache = await this.readCache();
+    const seenKeys = new Set(
+      cache.items.map((item) => item.sourceRecordId || item.id || item.sourceUrl || item.url).filter(Boolean),
+    );
     const unique: MediaItem[] = [];
 
     for (const item of newItems) {
-      if (item.url && !cache.seen_urls.includes(item.url)) {
+      const uniqueKey = item.sourceRecordId || item.id || item.sourceUrl || item.url;
+      if (item.url && uniqueKey && !seenKeys.has(uniqueKey) && !cache.seen_urls.includes(item.url)) {
+        seenKeys.add(uniqueKey);
         cache.seen_urls.push(item.url);
         unique.push(item);
       }

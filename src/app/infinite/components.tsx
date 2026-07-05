@@ -175,10 +175,10 @@ export function BottomControls({
 }) {
   return (
     <div
-      className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex items-center justify-center px-6 py-3"
+      className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex items-end justify-center px-3 pb-3 pt-2 sm:items-center sm:px-6 sm:py-3"
     >
       <div
-        className="pointer-events-auto flex w-full max-w-4xl items-center justify-between gap-3 rounded-lg px-4 py-3"
+        className="pointer-events-auto flex w-full max-w-4xl flex-col gap-3 rounded-xl px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4"
         style={{
           background: 'hsl(var(--background) / 0.85)',
           backdropFilter: 'blur(16px)',
@@ -188,30 +188,30 @@ export function BottomControls({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[11px] font-body text-muted-foreground">
             <Compass className="h-3 w-3" />
-            <span>{wander.active ? wander.status : 'Drag or scroll to explore'}</span>
-            <span className="opacity-40">/</span>
-            <span>{wander.waypointLabel}</span>
+            <span className="truncate">{wander.active ? wander.status : 'Drag or scroll to explore'}</span>
+            <span className="hidden opacity-40 sm:inline">/</span>
+            <span className="hidden truncate sm:inline">{wander.waypointLabel}</span>
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-body">
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-body sm:mt-2">
             <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
               Discoveries {wander.discoveries}
             </span>
             <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
               Streak {wander.streak}
             </span>
-            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            <span className="hidden rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground sm:inline-flex">
               X {Math.round(camera.x)}
             </span>
-            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+            <span className="hidden rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground sm:inline-flex">
               Y {Math.round(camera.y)}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1 font-body text-xs bg-muted/60 rounded-md p-0.5">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-1 font-body text-xs bg-transparent sm:bg-muted/60 rounded-md p-0 sm:p-0.5">
           <button
             type="button"
             onClick={onToggleWander}
-            className={`flex items-center gap-1 rounded-sm px-3 py-1 transition ${
+            className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 transition sm:rounded-sm sm:py-1 ${
               wander.active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
             }`}
           >
@@ -221,19 +221,21 @@ export function BottomControls({
           <button
             type="button"
             onClick={onResetWander}
-            className="flex items-center gap-1 rounded-sm px-3 py-1 text-muted-foreground transition hover:text-foreground"
+            className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground transition hover:text-foreground sm:rounded-sm sm:py-1"
           >
             <Sparkles className="w-3 h-3" />
             Reset trail
           </button>
-          <button className="flex items-center gap-1 px-3 py-1 rounded-sm bg-background text-foreground shadow-sm">
+          <button className="flex items-center justify-center gap-1 rounded-md bg-background px-3 py-2 text-foreground shadow-sm sm:rounded-sm sm:py-1">
             <Infinity className="w-3 h-3" /> Infinite
           </button>
-          <button className="flex items-center gap-1 px-3 py-1 rounded-sm text-muted-foreground">
-            <Grid3x3 className="w-3 h-3" /> Grid
+          <button className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground sm:rounded-sm sm:py-1">
+            <Grid3x3 className="w-3 h-3" />
+            <span className="hidden sm:inline">Grid</span>
           </button>
-          <button className="flex items-center gap-1 px-3 py-1 rounded-sm text-muted-foreground">
-            <Clock className="w-3 h-3" /> Timeline
+          <button className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground sm:rounded-sm sm:py-1">
+            <Clock className="w-3 h-3" />
+            <span className="hidden sm:inline">Timeline</span>
           </button>
         </div>
       </div>

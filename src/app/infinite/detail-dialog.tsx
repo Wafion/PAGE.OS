@@ -186,10 +186,27 @@ function getMetadata(item: MediaItem) {
 export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialogProps) {
   const [activeTab, setActiveTab] = React.useState<DetailTabKey>("about");
   const [resolvedItem, setResolvedItem] = React.useState<MediaItem | null>(item);
+  const [isSaved, setIsSaved] = React.useState(false);
+  const [isActionsOpen, setIsActionsOpen] = React.useState(false);
 
   React.useEffect(() => {
     setResolvedItem(item);
   }, [item]);
+
+  React.useEffect(() => {
+    if (!resolvedItem) {
+      setIsSaved(false);
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem("pageos-infinite-saved-items");
+      const parsed: string[] = saved ? JSON.parse(saved) : [];
+      setIsSaved(parsed.includes(resolvedItem.id ?? resolvedItem.url));
+    } catch {
+      setIsSaved(false);
+    }
+  }, [resolvedItem?.id, resolvedItem?.url]);
 
   React.useEffect(() => {
     if (open) {
@@ -248,6 +265,55 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
       ? `${displayItem.title} is a public-domain title by ${displayItem.creator}.`
       : `${displayItem.title} is a public-domain artwork by ${displayItem.creator}.`);
 
+  const storageKey = displayItem.id ?? displayItem.url;
+  const saveLabel = isSaved ? "Saved" : "Save";
+  const creditText = `${displayItem.title} by ${displayItem.creator} (${displayItem.year}). ${displayItem.attribution ?? ""}`.trim();
+
+  const persistSavedItem = () => {
+    try {
+      const saved = localStorage.getItem("pageos-infinite-saved-items");
+      const parsed: string[] = saved ? JSON.parse(saved) : [];
+      const exists = parsed.includes(storageKey);
+      const next = exists ? parsed.filter((entry) => entry !== storageKey) : [...parsed, storageKey];
+      localStorage.setItem("pageos-infinite-saved-items", JSON.stringify(next));
+      setIsSaved(!exists);
+    } catch {
+      // Local save is best-effort only.
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
+  };
+
+  const handleShare = async () => {
+    const shareUrl = displayItem.sourceUrl ?? displayItem.detailUrl ?? displayItem.url;
+    const title = `${displayItem.title} by ${displayItem.creator}`;
+    const shareData = {
+      title,
+      text: creditText,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await copyToClipboard(`${title}\n${shareUrl}\n${creditText}`);
+    } catch {
+      await copyToClipboard(`${title}\n${shareUrl}\n${creditText}`).catch(() => {});
+    }
+  };
+
+  const handleCopyCredits = async () => {
+    await copyToClipboard(creditText).catch(() => {});
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="pageos-detail-dialog border-0 bg-transparent p-0 shadow-none [&>button]:hidden sm:max-w-[min(1120px,94vw)]">
@@ -260,17 +326,63 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
             </DialogClose>
 
             <div className="flex items-center gap-2">
-              <button className="pageos-detail-icon-button" aria-label="Save item">
+              <button
+                type="button"
+                className="pageos-detail-icon-button"
+                aria-label={saveLabel}
+                aria-pressed={isSaved}
+                onClick={persistSavedItem}
+              >
                 <Bookmark className="h-4 w-4" />
               </button>
-              <button className="pageos-detail-icon-button" aria-label="Share item">
+              <button
+                type="button"
+                className="pageos-detail-icon-button"
+                aria-label="Share item"
+                onClick={handleShare}
+              >
                 <Share2 className="h-4 w-4" />
               </button>
-              <button className="pageos-detail-icon-button" aria-label="More actions">
+              <button
+                type="button"
+                className="pageos-detail-icon-button"
+                aria-label="More actions"
+                aria-expanded={isActionsOpen}
+                onClick={() => setIsActionsOpen((prev) => !prev)}
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </div>
           </div>
+
+          {isActionsOpen && (
+            <div className="pageos-detail-actions-panel">
+              <button type="button" className="pageos-detail-action-button" onClick={persistSavedItem}>
+                <Bookmark className="h-4 w-4" />
+                <span>{saveLabel} to device</span>
+              </button>
+              <button type="button" className="pageos-detail-action-button" onClick={handleShare}>
+                <Share2 className="h-4 w-4" />
+                <span>Share item</span>
+              </button>
+              <button type="button" className="pageos-detail-action-button" onClick={handleCopyCredits}>
+                <FileText className="h-4 w-4" />
+                <span>Copy credits</span>
+              </button>
+              {displayItem.sourceUrl && (
+                <a
+                  href={displayItem.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pageos-detail-action-button"
+                  onClick={() => setIsActionsOpen(false)}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Open source</span>
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="pageos-detail-grid">
             <div className="pageos-detail-art-column">

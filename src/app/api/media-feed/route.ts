@@ -3,16 +3,12 @@ import { GlobalPool } from './global-pool';
 import { hydratePool } from './resolvers';
 import type { MediaItem } from './types';
 
-function lcg(seed: number): () => number {
-  let s = seed | 0;
-  return () => { s = (s * 1664525 + 1013904223) | 0; return (s >>> 0) / 4294967296; };
-}
-
-const CACHE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000;
 
 const CURATED_MEDIA: MediaItem[] = [
   {
     id: 'gutendex-215',
+    sourceRecordId: 'gutendex:215',
     url: 'https://www.gutenberg.org/cache/epub/215/pg215.cover.medium.jpg',
     width: 420,
     height: 640,
@@ -31,12 +27,13 @@ const CURATED_MEDIA: MediaItem[] = [
     firstPublished: '1903',
     fileFormats: ['EPUB', 'PDF', 'TXT'],
     pages: '232',
-    isbn: '—',
+    isbn: '--',
     attribution: 'London, Jack. The Call of the Wild. Project Gutenberg.',
     rightsLabel: 'Public Domain',
   },
   {
     id: 'gutendex-84',
+    sourceRecordId: 'gutendex:84',
     url: 'https://www.gutenberg.org/cache/epub/84/pg84.cover.medium.jpg',
     width: 420,
     height: 640,
@@ -49,18 +46,19 @@ const CURATED_MEDIA: MediaItem[] = [
     sourceUrl: 'https://www.gutenberg.org/ebooks/84',
     detailUrl: 'https://www.gutenberg.org/ebooks/84',
     description:
-      'Victor Frankenstein’s experiment in creating life leads to one of literature’s most enduring meditations on ambition, creation, and isolation.',
+      'Victor Frankenstein\'s experiment in creating life leads to one of literature\'s most enduring meditations on ambition, creation, and isolation.',
     genres: ['Gothic', 'Science Fiction', 'Classics'],
     language: 'English',
     firstPublished: '1818',
     fileFormats: ['EPUB', 'PDF', 'TXT'],
     pages: '280',
-    isbn: '—',
+    isbn: '--',
     attribution: 'Shelley, Mary Wollstonecraft. Frankenstein. Project Gutenberg.',
     rightsLabel: 'Public Domain',
   },
   {
     id: 'gutendex-1342',
+    sourceRecordId: 'gutendex:1342',
     url: 'https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg',
     width: 420,
     height: 640,
@@ -73,22 +71,53 @@ const CURATED_MEDIA: MediaItem[] = [
     sourceUrl: 'https://www.gutenberg.org/ebooks/1342',
     detailUrl: 'https://www.gutenberg.org/ebooks/1342',
     description:
-      'Austen’s novel follows Elizabeth Bennet as wit, pride, and first impressions reshape her understanding of love and class.',
+      'Austen\'s novel follows Elizabeth Bennet as wit, pride, and first impressions reshape her understanding of love and class.',
     genres: ['Romance', 'Classics', 'Society'],
     language: 'English',
     firstPublished: '1813',
     fileFormats: ['EPUB', 'PDF', 'TXT'],
     pages: '279',
-    isbn: '—',
+    isbn: '--',
     attribution: 'Austen, Jane. Pride and Prejudice. Project Gutenberg.',
     rightsLabel: 'Public Domain',
   },
 ];
 
+function lcg(seed: number): () => number {
+  let state = seed | 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) | 0;
+    return (state >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(items: T[], rand: () => number): T[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rand() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
+}
+
+function dedupeItems(items: MediaItem[]): MediaItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.sourceRecordId || item.id || item.sourceUrl || item.url;
+    if (!key || seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 function getFallbackArtworks(): MediaItem[] {
   return [
     {
       id: 'art-starry-night',
+      sourceRecordId: 'fallback:starry-night',
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/500px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
       width: 500,
       height: 398,
@@ -96,44 +125,35 @@ function getFallbackArtworks(): MediaItem[] {
       creator: 'Vincent van Gogh',
       year: '1889',
       type: 'artwork',
-      source: 'moma',
-      sourceName: 'The Museum of Modern Art (MoMA)',
-      sourceUrl: 'https://www.moma.org/collection/works/79802',
+      source: 'wikimedia',
+      sourceName: 'Wikimedia Commons',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
       detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
-      description:
-        'The Starry Night is one of Van Gogh’s most famous works, depicting the view from Saint-Remy with a swirling sky over a quiet village.',
-      tags: ['Post-Impressionism', 'Painting', 'Landscape', 'Night Scene', 'Sky', 'Village'],
       medium: 'Oil on canvas',
-      dimensions: '73.7 x 92.1 cm',
-      location: 'The Museum of Modern Art (MoMA)',
-      collection: 'European Paintings',
-      accessionNumber: 'MoMA 313.1941',
-      creditLine: 'Gift of Lillie P. Bliss',
-      attribution: 'The Starry Night, 1889. Vincent van Gogh. The Museum of Modern Art, New York.',
+      region: 'Western Europe',
       rightsLabel: 'Public Domain',
     },
     {
       id: 'art-scream',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg/500px-Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg',
+      sourceRecordId: 'fallback:scream',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/The_Scream.jpg/500px-The_Scream.jpg',
       width: 500,
-      height: 632,
+      height: 630,
       title: 'The Scream',
       creator: 'Edvard Munch',
       year: '1893',
       type: 'artwork',
       source: 'wikimedia',
       sourceName: 'Wikimedia Commons',
-      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg',
-      detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/86/Edvard_Munch_-_The_Scream_-_Google_Art_Project.jpg',
-      tags: ['Expressionism', 'Painting', 'Emotion'],
-      medium: 'Oil, tempera, pastel and crayon on cardboard',
-      dimensions: '91 x 73.5 cm',
-      location: 'National Museum, Oslo',
-      collection: 'Painting collection',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:The_Scream.jpg',
+      detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f4/The_Scream.jpg',
+      medium: 'Oil, tempera and pastel on cardboard',
+      region: 'Northern Europe',
       rightsLabel: 'Public Domain',
     },
     {
       id: 'art-mona-lisa',
+      sourceRecordId: 'fallback:mona-lisa',
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/500px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
       width: 500,
       height: 690,
@@ -145,75 +165,13 @@ function getFallbackArtworks(): MediaItem[] {
       sourceName: 'Wikimedia Commons',
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg',
       detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg',
-      tags: ['Renaissance', 'Portrait', 'Oil Painting'],
       medium: 'Oil on poplar panel',
-      dimensions: '77 x 53 cm',
-      location: 'Musee du Louvre',
-      collection: 'Department of Paintings',
-      rightsLabel: 'Public Domain',
-    },
-    {
-      id: 'art-creation-adam',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg/500px-Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg',
-      width: 500,
-      height: 242,
-      title: 'The Creation of Adam',
-      creator: 'Michelangelo',
-      year: '1512',
-      type: 'artwork',
-      source: 'wikimedia',
-      sourceName: 'Wikimedia Commons',
-      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Michelangelo_-_Creation_of_Adam_(cropped).jpg',
-      detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg',
-      tags: ['High Renaissance', 'Fresco', 'Biblical'],
-      medium: 'Fresco',
-      dimensions: '280 x 570 cm',
-      location: 'Sistine Chapel',
-      collection: 'Vatican Museums',
-      rightsLabel: 'Public Domain',
-    },
-    {
-      id: 'art-persistence-memory',
-      url: 'https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg/500px-The_Persistence_of_Memory.jpg',
-      width: 500,
-      height: 375,
-      title: 'The Persistence of Memory',
-      creator: 'Salvador Dali',
-      year: '1931',
-      type: 'artwork',
-      source: 'moma',
-      sourceName: 'The Museum of Modern Art (MoMA)',
-      sourceUrl: 'https://www.moma.org/collection/works/79018',
-      detailUrl: 'https://upload.wikimedia.org/wikipedia/en/d/dd/The_Persistence_of_Memory.jpg',
-      tags: ['Surrealism', 'Painting', 'Dreamlike'],
-      medium: 'Oil on canvas',
-      dimensions: '24 x 33 cm',
-      location: 'The Museum of Modern Art (MoMA)',
-      collection: 'Painting and Sculpture',
-      rightsLabel: 'Public Domain',
-    },
-    {
-      id: 'art-nighthawks',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Nighthawks.jpg/500px-Nighthawks.jpg',
-      width: 500,
-      height: 284,
-      title: 'Nighthawks',
-      creator: 'Edward Hopper',
-      year: '1942',
-      type: 'artwork',
-      source: 'wikimedia',
-      sourceName: 'Art Institute of Chicago / Wikimedia Commons',
-      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Nighthawks.jpg',
-      detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Nighthawks.jpg',
-      tags: ['Realism', 'Painting', 'Urban'],
-      medium: 'Oil on canvas',
-      dimensions: '84.1 x 152.4 cm',
-      location: 'Art Institute of Chicago',
-      collection: 'American Art',
+      region: 'Southern Europe',
       rightsLabel: 'Public Domain',
     },
     {
       id: 'art-night-watch',
+      sourceRecordId: 'fallback:night-watch',
       url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rembrandt_van_Rijn_-_The_Night_Watch_-_Google_Art_Project.jpg/500px-Rembrandt_van_Rijn_-_The_Night_Watch_-_Google_Art_Project.jpg',
       width: 500,
       height: 406,
@@ -222,44 +180,89 @@ function getFallbackArtworks(): MediaItem[] {
       year: '1642',
       type: 'artwork',
       source: 'wikimedia',
-      sourceName: 'Rijksmuseum / Wikimedia Commons',
+      sourceName: 'Wikimedia Commons',
       sourceUrl: 'https://commons.wikimedia.org/wiki/File:Rembrandt_van_Rijn_-_The_Night_Watch_-_Google_Art_Project.jpg',
       detailUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/bf/Rembrandt_van_Rijn_-_The_Night_Watch_-_Google_Art_Project.jpg',
-      tags: ['Baroque', 'Painting', 'Militia Portrait'],
       medium: 'Oil on canvas',
-      dimensions: '363 x 437 cm',
-      location: 'Rijksmuseum, Amsterdam',
-      collection: 'Dutch Golden Age',
+      region: 'Western Europe',
       rightsLabel: 'Public Domain',
     },
   ];
 }
 
 function getCombinedPool(pool: MediaItem[]) {
-  return [...CURATED_MEDIA, ...pool];
+  return dedupeItems([...pool, ...CURATED_MEDIA]);
 }
 
-function pickChunkItems(cx: number, cy: number, pool: MediaItem[]): MediaItem[] {
-  if (pool.length === 0) return [];
-  const seed = cx * 31337 + cy * 7919;
-  const rand = lcg(seed);
-  const used = new Set<number>();
-  const items: MediaItem[] = [];
+function getRegionBucket(item: MediaItem): string {
+  return item.region || item.country || item.culture || item.collection || 'Global';
+}
 
-  for (let i = 0; i < 10; i++) {
-    if (used.size >= pool.length) break;
-    let idx = Math.floor(rand() * pool.length);
-    let attempts = 0;
-    while (used.has(idx) && attempts < 50) {
-      idx = Math.floor(rand() * pool.length);
-      attempts++;
-    }
-    if (!used.has(idx)) {
-      used.add(idx);
-      items.push(pool[idx]);
-    }
+function getMediumBucket(item: MediaItem): string {
+  const source = (item.medium || item.tags?.[0] || item.collection || '').toLowerCase();
+  if (source.includes('manuscript') || source.includes('scroll')) return 'Manuscript';
+  if (source.includes('textile')) return 'Textile';
+  if (source.includes('print') || source.includes('woodblock')) return 'Print';
+  if (source.includes('sculpt') || source.includes('bronze') || source.includes('stone')) return 'Sculpture';
+  if (source.includes('photo')) return 'Photography';
+  if (source.includes('oil') || source.includes('canvas') || source.includes('painting')) return 'Painting';
+  if (item.type === 'book') return 'Book';
+  return 'Artwork';
+}
+
+function buildDiverseSelection(seed: number, pool: MediaItem[], limit: number): MediaItem[] {
+  const rand = lcg(seed);
+  const artworks = seededShuffle(pool.filter((item) => item.type === 'artwork'), rand);
+  const books = seededShuffle(pool.filter((item) => item.type === 'book'), rand);
+  const regionBuckets = new Map<string, MediaItem[]>();
+
+  for (const artwork of artworks) {
+    const bucket = getRegionBucket(artwork);
+    const items = regionBuckets.get(bucket) ?? [];
+    items.push(artwork);
+    regionBuckets.set(bucket, items);
   }
-  return items;
+
+  const orderedRegions = seededShuffle([...regionBuckets.keys()], rand);
+  for (const region of orderedRegions) {
+    regionBuckets.set(region, seededShuffle(regionBuckets.get(region) ?? [], rand));
+  }
+
+  const selection: MediaItem[] = [];
+  const recentMediums: string[] = [];
+  let regionCursor = 0;
+
+  while (selection.length < Math.max(limit - Math.min(books.length, 2), 0) && orderedRegions.length > 0) {
+    const region = orderedRegions[regionCursor % orderedRegions.length];
+    const bucket = regionBuckets.get(region) ?? [];
+    if (bucket.length === 0) {
+      orderedRegions.splice(regionCursor % orderedRegions.length, 1);
+      if (orderedRegions.length === 0) {
+        break;
+      }
+      continue;
+    }
+
+    const mediumIndex = bucket.findIndex((item) => !recentMediums.includes(getMediumBucket(item)));
+    const [picked] = bucket.splice(mediumIndex >= 0 ? mediumIndex : 0, 1);
+    selection.push(picked);
+
+    const medium = getMediumBucket(picked);
+    recentMediums.push(medium);
+    while (recentMediums.length > 3) {
+      recentMediums.shift();
+    }
+
+    regionCursor += 1;
+  }
+
+  const maxBooks = limit >= 10 ? Math.min(books.length, 2) : Math.min(books.length, 1);
+  for (let index = 0; index < maxBooks; index += 1) {
+    const insertAt = Math.min(selection.length, 3 + index * 5);
+    selection.splice(insertAt, 0, books[index]);
+  }
+
+  return selection.slice(0, limit);
 }
 
 async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
@@ -277,6 +280,7 @@ async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
 
     return {
       id: `met-${data.objectID}`,
+      sourceRecordId: `met:${data.objectID}`,
       url: data.primaryImageSmall,
       width: data.primaryImageSmallWidth || 500,
       height: data.primaryImageSmallHeight || 500,
@@ -298,8 +302,15 @@ async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
       collection: data.department || 'Open Access Collection',
       accessionNumber: data.accessionNumber || '',
       creditLine: data.creditLine || '',
-      attribution: [data.title, data.objectDate, data.artistDisplayName].filter(Boolean).join(', '),
+      country: data.country || undefined,
+      region: data.region || data.country || data.culture || undefined,
+      culture: data.culture || undefined,
+      period: data.period || undefined,
+      attribution: [data.title, data.objectDate, data.artistDisplayName, 'The Metropolitan Museum of Art']
+        .filter(Boolean)
+        .join('. '),
       rightsLabel: data.isPublicDomain ? 'Public Domain' : 'Archive Source',
+      licenseUrl: data.isPublicDomain ? 'https://creativecommons.org/publicdomain/zero/1.0/' : undefined,
     };
   } catch {
     return null;
@@ -324,21 +335,16 @@ export async function GET(request: Request) {
   let pool = await poolManager.getPool();
   const lastUpdated = await poolManager.getLastUpdated();
 
-  // Trigger background hydration if cache is old or pool is small
-  if (Date.now() - lastUpdated > CACHE_REFRESH_INTERVAL || pool.length < 100) {
-    // We don't 'await' this to ensure the user gets an instant response
-    hydratePool().catch(err => console.error('Hydration error:', err));
+  if (Date.now() - lastUpdated > CACHE_REFRESH_INTERVAL || pool.length < 120) {
+    hydratePool().catch((error) => console.error('Hydration error:', error));
   }
 
-  // Fallback: known-valid URLs resolved via Wikipedia API (verified correct hash prefixes)
   pool = getCombinedPool(pool.length === 0 ? getFallbackArtworks() : pool);
 
-  // Per-chunk: deterministic selection from the shared global pool
   if (cx !== null && cy !== null) {
-    return NextResponse.json(pickChunkItems(parseInt(cx), parseInt(cy), pool));
+    const seed = parseInt(cx, 10) * 31337 + parseInt(cy, 10) * 7919;
+    return NextResponse.json(buildDiverseSelection(seed, pool, 10));
   }
 
-  // Bulk: return a shuffled slice of the pool for general feed
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return NextResponse.json(shuffled.slice(0, 100));
+  return NextResponse.json(buildDiverseSelection(Date.now(), pool, 100));
 }
