@@ -4,6 +4,14 @@ export interface CameraState {
   zoom: number;
 }
 
+export interface WanderStats {
+  active: boolean;
+  status: string;
+  discoveries: number;
+  streak: number;
+  waypointLabel: string;
+}
+
 export interface ChunkCoord {
   cx: number;
   cy: number;

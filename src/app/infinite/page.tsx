@@ -6,6 +6,7 @@ import { useCamera } from './useCamera';
 import { useChunkVisibility, useGetChunkItems } from './useChunks';
 import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk } from './components';
 import { MediaDetailDialog } from './detail-dialog';
+import { useWander } from './useWander';
 
 function useMediaFeed() {
   const [items, setItems] = React.useState<MediaItem[]>([]);
@@ -33,12 +34,46 @@ export default function InfinitePage() {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = React.useState({ w: 0, h: 0 });
   const [selectedItem, setSelectedItem] = React.useState<MediaItem | null>(null);
+  const [wanderEnabled, setWanderEnabled] = React.useState(true);
+  const [wanderPaused, setWanderPaused] = React.useState(false);
   const centered = React.useRef(false);
 
-  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition } = useCamera(containerRef);
+  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef);
   const { items, loading } = useMediaFeed();
   const visibleChunks = useChunkVisibility(camera, viewportSize.w, viewportSize.h);
   const getChunkItems = useGetChunkItems(items);
+
+  React.useEffect(() => {
+    if (!wanderEnabled) {
+      setWanderPaused(false);
+      return;
+    }
+
+    const elapsed = Date.now() - lastInteractionAt;
+    if (elapsed < 2400) {
+      setWanderPaused(true);
+      const timeout = window.setTimeout(() => {
+        setWanderPaused(false);
+      }, 2500 - elapsed);
+      return () => window.clearTimeout(timeout);
+    }
+
+    setWanderPaused(false);
+  }, [lastInteractionAt, wanderEnabled]);
+
+  React.useEffect(() => {
+    if (!selectedItem || !wanderEnabled) return;
+    setWanderPaused(true);
+  }, [selectedItem, wanderEnabled]);
+
+  const { stats: wanderStats, resetProgress } = useWander({
+    enabled: wanderEnabled,
+    paused: wanderPaused || selectedItem !== null,
+    camera,
+    viewportW: viewportSize.w,
+    viewportH: viewportSize.h,
+    onCameraChange: setCameraState,
+  });
 
   React.useEffect(() => {
     const el = containerRef.current;
@@ -110,12 +145,25 @@ export default function InfinitePage() {
 
       </div>
 
-      <BottomControls camera={camera} />
+      <BottomControls
+        camera={camera}
+        wander={wanderStats}
+        onToggleWander={() => {
+          setWanderEnabled((prev) => !prev);
+          setWanderPaused(false);
+        }}
+        onResetWander={resetProgress}
+      />
       <MediaDetailDialog
         item={selectedItem}
         open={selectedItem !== null}
         onOpenChange={(open) => {
-          if (!open) setSelectedItem(null);
+          if (!open) {
+            setSelectedItem(null);
+            if (wanderEnabled) {
+              window.setTimeout(() => setWanderPaused(false), 250);
+            }
+          }
         }}
       />
     </div>

@@ -5,7 +5,10 @@ import type { CameraState } from './types';
 
 export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
   const [camera, setCamera] = useState<CameraState>({ x: 0, y: 0, zoom: 1 });
+  const [lastInteractionAt, setLastInteractionAt] = useState(0);
   const isDragging = useRef(false);
+  const pendingDrag = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
   const lastPos = useRef({ x: 0, y: 0 });
   const vel = useRef({ x: 0, y: 0 });
   const activePointers = useRef(new Map<number, { x: number; y: number }>());
@@ -19,6 +22,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
   } | null>(null);
   const keysDown = useRef(new Set<string>());
   const animFrame = useRef<number>();
+  const dragThreshold = 6;
 
   // ── unified animation loop (inertia + keyboard) ──
   useEffect(() => {
@@ -49,8 +53,8 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
       if (!isDragging.current && (vel.current.x !== 0 || vel.current.y !== 0)) {
         setCamera((prev) => ({
           ...prev,
-          x: prev.x - vel.current.x,
-          y: prev.y - vel.current.y,
+          x: prev.x + vel.current.x,
+          y: prev.y + vel.current.y,
         }));
       }
 
@@ -83,10 +87,11 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
   // ── pointer handlers ──
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    setLastInteractionAt(Date.now());
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    e.currentTarget.setPointerCapture?.(e.pointerId);
 
     if (activePointers.current.size >= 2) {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
       const [first, second] = [...activePointers.current.values()];
       const centerX = (first.x + second.x) / 2;
       const centerY = (first.y + second.y) / 2;
@@ -107,17 +112,21 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
       });
 
       isDragging.current = false;
+      pendingDrag.current = false;
       vel.current = { x: 0, y: 0 };
       return;
     }
 
-    isDragging.current = true;
+    isDragging.current = false;
+    pendingDrag.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
     lastPos.current = { x: e.clientX, y: e.clientY };
     vel.current = { x: 0, y: 0 };
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!activePointers.current.has(e.pointerId)) return;
+    setLastInteractionAt(Date.now());
 
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -142,7 +151,22 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
       }
 
       isDragging.current = false;
+      pendingDrag.current = false;
       vel.current = { x: 0, y: 0 };
+      return;
+    }
+
+    if (!isDragging.current && pendingDrag.current) {
+      const moveX = e.clientX - dragStart.current.x;
+      const moveY = e.clientY - dragStart.current.y;
+      if (Math.hypot(moveX, moveY) < dragThreshold) {
+        return;
+      }
+
+      isDragging.current = true;
+      pendingDrag.current = false;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      lastPos.current = { x: e.clientX, y: e.clientY };
       return;
     }
 
@@ -160,7 +184,9 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     activePointers.current.delete(e.pointerId);
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    }
 
     if (activePointers.current.size < 2) {
       pinchState.current = null;
@@ -169,12 +195,15 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
     if (activePointers.current.size === 1) {
       const [remainingPointer] = [...activePointers.current.values()];
       lastPos.current = { x: remainingPointer.x, y: remainingPointer.y };
-      isDragging.current = true;
+      isDragging.current = false;
+      pendingDrag.current = true;
+      dragStart.current = { x: remainingPointer.x, y: remainingPointer.y };
       vel.current = { x: 0, y: 0 };
       return;
     }
 
     isDragging.current = false;
+    pendingDrag.current = false;
   }, []);
 
   // ── native wheel (passive:false) ──
@@ -184,6 +213,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
     const handler = (e: WheelEvent) => {
       e.preventDefault();
+      setLastInteractionAt(Date.now());
       setCamera((prev) => {
         if (e.ctrlKey || e.metaKey) {
           const rect = el.getBoundingClientRect();
@@ -212,9 +242,11 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
   const resetCamera = useCallback(() => {
     setCamera({ x: 0, y: 0, zoom: 1 });
+    setLastInteractionAt(Date.now());
     vel.current = { x: 0, y: 0 };
     activePointers.current.clear();
     pinchState.current = null;
+    pendingDrag.current = false;
   }, []);
 
   const setPosition = useCallback((x: number, y: number) => {
@@ -222,5 +254,10 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
     vel.current = { x: 0, y: 0 };
   }, []);
 
-  return { camera, onPointerDown, onPointerMove, onPointerUp, resetCamera, setPosition };
+  const setCameraState = useCallback((next: CameraState) => {
+    setCamera(next);
+    vel.current = { x: 0, y: 0 };
+  }, []);
+
+  return { camera, onPointerDown, onPointerMove, onPointerUp, resetCamera, setPosition, setCameraState, lastInteractionAt };
 }

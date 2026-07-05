@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Infinity, Grid3x3, Clock } from 'lucide-react';
-import type { CameraState, ChunkCoord, MediaItem } from './types';
+import { Compass, Infinity, Grid3x3, Clock, Pause, Play, Sparkles } from 'lucide-react';
+import type { CameraState, ChunkCoord, MediaItem, WanderStats } from './types';
 import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from './useChunks';
 
 // ── global image cache ──
@@ -162,23 +162,70 @@ export function HeroSection() {
 }
 
 // ── bottom controls bar ──
-export function BottomControls({ camera }: { camera: CameraState }) {
+export function BottomControls({
+  camera,
+  wander,
+  onToggleWander,
+  onResetWander,
+}: {
+  camera: CameraState;
+  wander: WanderStats;
+  onToggleWander: () => void;
+  onResetWander: () => void;
+}) {
   return (
     <div
       className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex items-center justify-center px-6 py-3"
     >
       <div
-        className="pointer-events-auto flex items-center justify-between w-full max-w-md rounded-lg px-4 py-2"
+        className="pointer-events-auto flex w-full max-w-4xl items-center justify-between gap-3 rounded-lg px-4 py-3"
         style={{
           background: 'hsl(var(--background) / 0.85)',
           backdropFilter: 'blur(16px)',
           border: '1px solid hsl(var(--border) / 0.4)',
         }}
       >
-        <span className="font-body text-[11px] text-muted-foreground flex items-center gap-1.5">
-          <Infinity className="w-3 h-3" /> Drag or scroll to explore
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-[11px] font-body text-muted-foreground">
+            <Compass className="h-3 w-3" />
+            <span>{wander.active ? wander.status : 'Drag or scroll to explore'}</span>
+            <span className="opacity-40">/</span>
+            <span>{wander.waypointLabel}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-body">
+            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
+              Discoveries {wander.discoveries}
+            </span>
+            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-foreground">
+              Streak {wander.streak}
+            </span>
+            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+              X {Math.round(camera.x)}
+            </span>
+            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 text-muted-foreground">
+              Y {Math.round(camera.y)}
+            </span>
+          </div>
+        </div>
         <div className="flex items-center gap-1 font-body text-xs bg-muted/60 rounded-md p-0.5">
+          <button
+            type="button"
+            onClick={onToggleWander}
+            className={`flex items-center gap-1 rounded-sm px-3 py-1 transition ${
+              wander.active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+            }`}
+          >
+            {wander.active ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            Wander
+          </button>
+          <button
+            type="button"
+            onClick={onResetWander}
+            className="flex items-center gap-1 rounded-sm px-3 py-1 text-muted-foreground transition hover:text-foreground"
+          >
+            <Sparkles className="w-3 h-3" />
+            Reset trail
+          </button>
           <button className="flex items-center gap-1 px-3 py-1 rounded-sm bg-background text-foreground shadow-sm">
             <Infinity className="w-3 h-3" /> Infinite
           </button>
