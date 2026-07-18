@@ -121,7 +121,7 @@ export default function Reader() {
     ? Math.max(currentSector.pageCountInChapter - currentSector.pageNumberInChapter, 0)
     : 0;
 
-  const sourceLabel = book?.source === 'gutendex' ? 'Project Gutenberg' : 'Web text';
+  const sourceLabel = book?.source === 'gutendex' ? 'Project Gutenberg' : 'Open archive text';
 
   const variants = {
     enter: (dir: number) => ({ x: dir > 0 ? '8%' : '-8%', opacity: 0 }),

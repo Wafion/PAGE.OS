@@ -8,6 +8,7 @@ import { SearchResultCard } from "@/components/search-result-card";
 import {
   BookOpen,
   ChevronRight,
+  Images,
   LoaderCircle,
   Search,
   SignalZero,
@@ -353,26 +354,26 @@ export default function HomePage() {
     setHasSearched(true);
 
     try {
-      const webSearchPromise = fetch(
-        `/api/brave-search?q=${encodeURIComponent(query)}`,
+      const openArchiveSearchPromise = fetch(
+        `/api/open-archive-search?q=${encodeURIComponent(query)}`,
       ).then((res) => res.json());
       const gutenbergPromise = fetchGutenbergBooks(query);
 
-      const [webData, gutenbergData] = await Promise.allSettled([
-        webSearchPromise,
+      const [openArchiveData, gutenbergData] = await Promise.allSettled([
+        openArchiveSearchPromise,
         gutenbergPromise,
       ]);
 
-      if (webData.status === "fulfilled" &&
-          webData.value != null &&
-          !webData.value.error &&
-          Array.isArray(webData.value)) {
-        setWebResults(webData.value);
+      if (openArchiveData.status === "fulfilled" &&
+          openArchiveData.value != null &&
+          !openArchiveData.value.error &&
+          Array.isArray(openArchiveData.value)) {
+        setWebResults(openArchiveData.value);
       } else {
         console.error(
-          "Web search failed:",
-          webData.status === "rejected" ? webData.reason :
-          (webData.value && webData.value.error) ||
+          "Open archive search failed:",
+          openArchiveData.status === "rejected" ? openArchiveData.reason :
+          (openArchiveData.value && openArchiveData.value.error) ||
           "Invalid response format (expected array)",
         );
         setWebResults([]);
@@ -389,7 +390,7 @@ export default function HomePage() {
         console.error("Gutenberg search failed:", gutenbergData.reason);
         setPrimaryResults([]);
         setPrimaryStatusMessage(
-          "Primary archive is currently unavailable. Web scraping is still online.",
+          "Primary archive is currently unavailable. Open archive discovery is still online.",
         );
       }
     } catch (error) {
@@ -397,7 +398,7 @@ export default function HomePage() {
       setPrimaryResults([]);
       setWebResults([]);
       setPrimaryStatusMessage(
-        "Primary archive is currently unavailable. Web scraping is still online.",
+        "Primary archive is currently unavailable. Open archive discovery is still online.",
       );
     } finally {
       setIsLoading(false);
@@ -428,8 +429,8 @@ export default function HomePage() {
             <p className="text-muted-foreground mt-2 max-w-md mx-auto">
               {primaryStatusMessage ||
                 (uiMode === "lounge"
-                  ? "No Gutenberg books matched that search. Web PDF results may still appear below."
-                  : "No data streams in the primary network match the provided signature.")}
+                  ? "No Gutenberg books matched that search. Open archive PDF/TXT results may still appear below."
+                  : "No data streams in the primary network match the provided signature. Open archive results may still appear below.")}
             </p>
           </CardContent>
         </Card>
@@ -450,7 +451,7 @@ export default function HomePage() {
       return (
         <div className="flex justify-center items-center p-8 col-span-full">
           <LoaderCircle className="h-8 w-8 animate-spin text-accent" />
-          <p className="ml-4 text-muted-foreground">Querying transmission nodes...</p>
+          <p className="ml-4 text-muted-foreground">Querying open knowledge nodes...</p>
         </div>
       );
     }
@@ -530,8 +531,8 @@ export default function HomePage() {
             <p className="library-kicker">PAGE.OS</p>
             <h1>Escape into a world of words</h1>
             <p>
-              Discover classics, web PDFs, and public-domain gems in a calmer
-              reading space built for browsing first.
+              Discover public-domain books, open knowledge, and artwork from
+              trusted cultural archives in a calmer space built for wandering.
             </p>
             <div className="library-actions">
               <a href="#recommendations" className="library-primary-action">
@@ -540,6 +541,9 @@ export default function HomePage() {
               <a href="#search" className="library-secondary-action">
                 Search Library
               </a>
+              <Link href="/infinite" className="library-secondary-action">
+                Explore Artwork <Images className="h-4 w-4" />
+              </Link>
             </div>
           </div>
 
@@ -571,7 +575,7 @@ export default function HomePage() {
         <section id="search" className="library-search-card">
           <div>
             <h2>What do you want to read?</h2>
-            <p>Search by title, author, genre, topic, or PDF query.</p>
+            <p>Search by title, author, genre, topic, or open archive query.</p>
           </div>
           <CommandSearch onSearch={handleSearch} />
         </section>
@@ -614,7 +618,7 @@ export default function HomePage() {
                       <SignalZero className="mx-auto h-8 w-8 text-accent" />
                       <h3 className="mt-3 font-semibold">No Gutenberg matches</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Brave PDF/web results may still be available below.
+                        Open archive PDF/TXT results may still be available below.
                       </p>
                     </CardContent>
                   </Card>

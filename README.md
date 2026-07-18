@@ -1,97 +1,74 @@
-# 🚀 PAGE.OS: Where Literature Meets the Terminal
+# PAGE.OS
 
-> *"In the beginning, there was the command line. And the command line was with Gutenberg, and the command line was Gutenberg."*
-> — *The Book of Page, 1:1*
+PAGE.OS is a gateway to open-source, public-domain, and openly accessible culture. It blends a terminal-inspired reader with a calm library lounge, then connects readers to public-domain books, open archive texts, and public-domain artwork.
 
-## 📜 Overview
+The goal is simple: make exploration of free knowledge feel intentional, beautiful, and alive.
 
-PAGE.OS is a **knowledge discovery platform** wrapped in a dual-interface sci-fi terminal experience. Imagine booting up a vintage mainframe—one moment you're staring at a glowing command prompt, the next you're wandering through a digital lounge filled with literary treasures. Whether you prefer the stark beauty of a terminal screen or the cozy ambiance of a virtual library, PAGE.OS adapts to your mood while connecting you to vast archives of public domain literature and openly accessible web resources.
+## What It Does
 
-Core systems include:
-- **Home Screen**: Displays trending books, recently added titles, and genre categories in a transmission card format with reading progress tracking.
-- **Library Screen**: Personal book archive with list and grid view modes, sorting by title, author, or last accessed date.
-- **Reader Screen**: Distraction-free reading experience with scroll, page, and auto-scroll modes, customizable fonts and themes.
-- **Source Manager**: Integrates with Project Gutenberg and supports custom TXT/EPUB URLs with connection status monitoring.
-- **Bookmark System**: Save and resume reading positions with memory pins.
-- **Settings Panel**: BIOS-like configuration terminal for appearance, reading modes, and source management.
-- **Profile/History**: Reading history, favorites, and optional Firebase sync across devices.
+- Searches Project Gutenberg and Gutenberg-compatible indexes for public-domain books.
+- Surfaces direct TXT/PDF files from open archive collections through Internet Archive metadata.
+- Provides an infinite public-domain artwork wander space powered by open cultural collections.
+- Opens TXT books directly in the PAGE.OS reader and launches PDFs in a dedicated browser tab.
+- Tracks saved books, bookmarks, reading progress, and optional reading statistics.
+- Offers two interface modes: a classic terminal grid and a softer library lounge.
 
-Forget sterile PDF viewers and boring library apps. PAGE.OS drops you into a universe where:
-- Your bookshelf glows like a server rack in Classic Mode or warms like a reading nook in Lounge Mode
-- Page turns feel like issuing terminal commands or gently flipping pages in a cherished volume  
-- Discovering your next read is a treasure hunt through the digital ether, guided by intelligent recommendations
+## Source Philosophy
 
-## 🌟 Key Features
+PAGE.OS is intentionally oriented around sources that preserve and share knowledge:
 
-### ⚡ **Dual-Mode Interface**
-- **🖤 Classic Mode**: Step into the brig of a starship—pure terminal aesthetics with a black background, crisp green monospace text, and the subtle hum of a system ready for adventure. Ideal for those who love the raw, command-driven experience.
-- **🛋️ Lounge Mode**: Relax in a virtual literary lounge—warmer tones, softer contrasts, and a comforting atmosphere that feels like your favorite reading chair, perfect for extended sessions without the terminal glare.
+- Project Gutenberg for public-domain literature.
+- Internet Archive for open archive texts and scanned works.
+- Wikimedia Commons, The Metropolitan Museum of Art, and Cleveland Museum of Art open-access collections for artwork.
+- Open-source libraries and tools that keep the experience inspectable and remixable.
 
-### 🔍 **Discovery & Access**
-- Direct pipeline to **Project Gutenberg**—tap into tens of thousands of free ebooks from the public domain
-- Ability to search and retrieve content from publicly available web archives and open texts
-- Smart recommendations that actually *get* your taste (powered by Open Library and Gutendex popularity)
+PAGE.OS is not a general-purpose search scraper. Discovery is routed through open/public-domain focused sources wherever possible.
 
-### 🔧 **Sysadmin-Level Controls**
-- The **Settings Terminal** isn't just a menu—it's a full BIOS-esque configuration suite
-- Tweak fonts, themes, reading modes, and source connections like you're overclocking a rig
-- Toggle between scroll, page, and auto-scroll modes with the finesse of a UNIX wizard
-- Customize your reading experience down to the kerning (because even in dystopian futures, typography matters)
+## Core Screens
 
-### 🔖 **Never Lose Your Place**
-- **Memory Pin** bookmarking system: Drop a marker and return exactly where you left off
-- Reading progress tracked like mission elapsed time
-- Optional Firebase sync to keep your library and progress alive across devices
+- Home: public-domain book discovery, recommendations, and open archive search.
+- Infinite Gallery: an explorable field of public-domain and CC0 artwork.
+- Library: saved books, bookmarks, history, and reading progress.
+- Reader: distraction-free long-form reading with lounge and classic presentations.
+- Settings: interface, reader preferences, and open source-node monitoring.
+- Legal: usage terms, privacy notes, and content policy.
 
-### 📖 **Reader That Respects the Craft**
-- Distraction-free interface that puts the text front and center
-- Multiple rendered formats: scroll, paginated, and auto-scrolling (for when you want the book to read *to* you)
-- Beautiful typography with sci-fi-approved fonts: JetBrains Mono, Orbitron, IBM Plex Mono
-- PDF support via PDF.js for those weirdly formatted documents you can't avoid
+## Built With
 
-## 🛠️ Under the Hood
+- Next.js 14 and React.
+- TypeScript.
+- Tailwind CSS.
+- Radix UI.
+- Framer Motion.
+- Firebase for optional sync.
+- PDF.js for readable document extraction.
 
-### 🧱 Built With
-- **Next.js 14** (App Router) — because even terminals need React
-- **TypeScript** — for when you want your space station to not explode
-- **Tailwind CSS** — styling that's as snappy as a command prompt
-- **Radix UI** — accessible components that won't trigger your inner sysadmin's rage
-- **Framer Motion** — animations smoother than a fresh kernel compile
-- **Firebase** — optional cloud sync for your Literary Mainframe
-- **PDF.js** — because sometimes you need to read a scanned manual from 1983
+## Development
 
-### 🔌 Architecture Highlights
-- **Source Adapter Pattern**: Clean abstraction over Gutenberg, web search, and custom sources
-- **Proxy API Routes**: Securely fetch content without exposing keys (like a proper bastion host)
-- **React Context**: Global state (theme, auth, settings) managed without prop-drilling hell
-- **Modular UI**: Swap between lounge and classic modes without missing a beat
+Install dependencies:
 
+```bash
+npm install
+```
 
-## 🎯 Why PAGE.OS?
+Run the development server:
 
-Because discovering knowledge shouldn't feel like using software—it should feel like **booting into a cyberpunk library mainframe or stepping into a holographic reading lounge**, where every page turn is a command executed, every bookmark a saved state, and every completed journey a successful mission.
+```bash
+npm run dev
+```
 
-Whether you're:
-- A retrocomputing enthusiast who dreams of reading *Neuromancer* on a VT100 terminal (Classic Mode)
-- A literature lover wanting a cozy, distraction-free way to devour the classics (Lounge Mode)
-- An explorer who enjoys switching between stark terminals and warm reading nooks depending on your mood
-- Or just someone who thinks their discovery tool needs more blinking lights, monospace fonts, and ambient lighting options
+Run type checks:
 
-...PAGE.OS is your portal to a more exciting way to seek, find, and immerse yourself in knowledge.
+```bash
+npm run typecheck
+```
 
-## 📜 License
+Build for production:
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+```bash
+npm run build
+```
 
-## 👨‍🚀 Acknowledgments
+## License
 
-- [**Project Gutenberg**](https://www.gutenberg.org/) for making literature free and accessible
-- The open-source community for the amazing libraries that make this possible
-- All the sci-fi writers who imagined terminals like this decades ago
-
----
-
-*Made with ⌨️ and ☕ by travelers in the digital realms.*
-
-*"The only way to discover the limits of the possible is to go beyond them into the impossible."*
-— Arthur C. Clarke (probably would've used PAGE.OS)
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.

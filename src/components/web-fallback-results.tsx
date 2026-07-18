@@ -11,6 +11,9 @@ export type WebFallbackResult = {
   title: string;
   link: string;
   type: 'pdf' | 'txt';
+  sourceName?: string;
+  rightsLabel?: string;
+  detailUrl?: string;
 };
 
 const FiletypeIcon = ({ type }: { type: 'pdf' | 'txt' }) => {
@@ -32,17 +35,17 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
   return (
     <section className={uiMode === 'lounge' ? 'library-web-results' : 'col-span-full'}>
       <h2 className="font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2">
-        {uiMode === 'lounge' ? 'PDFs and web books' : '// WEB_FALLBACK_RESULTS'}
+        {uiMode === 'lounge' ? 'Open archive texts' : '// OPEN_ARCHIVE_RESULTS'}
       </h2>
       <Card className="border-border/50 bg-card">
         <CardHeader>
           <CardTitle className="font-headline text-accent/80">
-            {uiMode === 'lounge' ? 'More places to discover' : 'External Links Found'}
+            {uiMode === 'lounge' ? 'More public knowledge to discover' : 'Open Knowledge Links Found'}
           </CardTitle>
           <CardDescription>
             {uiMode === 'lounge'
-              ? 'These results come from web search. TXT files open in the reader. PDFs open in a new tab.'
-              : 'The following are unverified links from Brave Search. TXT files open in the reader. PDF files open in a new tab.'}
+              ? 'These results come from open archives. TXT files open in the reader. PDFs open in a new tab.'
+              : 'Direct files from open archives. TXT files open in the reader. PDF files open in a new tab.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -57,7 +60,7 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
 
               return (
                 <li key={index} className="rounded-md border border-border/30 p-4 transition-colors hover:bg-input/50">
-                  <Wrapper href={href} {...linkProps} className="group">
+                  <Wrapper href={href} {...linkProps} className="group block">
                     <div className="flex items-start gap-4">
                       <FiletypeIcon type={result.type} />
                       <div className="flex-1">
@@ -75,6 +78,24 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
                       </div>
                     </div>
                   </Wrapper>
+                  {(result.sourceName || result.rightsLabel || result.detailUrl) && (
+                    <p className="mt-3 pl-9 text-xs text-muted-foreground">
+                      {[result.sourceName, result.rightsLabel].filter(Boolean).join(' / ')}
+                      {result.detailUrl && (
+                        <>
+                          {' '}
+                          <a
+                            href={result.detailUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent/80 underline-offset-4 hover:underline"
+                          >
+                            source record
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  )}
                 </li>
               );
             })}

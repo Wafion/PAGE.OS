@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Home,
+  Images,
   Library,
   Settings,
   User,
@@ -23,16 +24,24 @@ const menuItems = [
     href: "/",
     classicLabel: "System Feed",
     loungeLabel: "Front Shelf",
-    detail: "Discover books, prompts, and live shelves.",
+    detail: "Discover public-domain books and open knowledge.",
     code: "01",
     icon: Home,
+  },
+  {
+    href: "/infinite",
+    classicLabel: "Open Gallery",
+    loungeLabel: "Artwork Wander",
+    detail: "Drift through public-domain and CC0 artwork.",
+    code: "02",
+    icon: Images,
   },
   {
     href: "/library",
     classicLabel: "Archive",
     loungeLabel: "Reading Collection",
     detail: "Return to saved books, bookmarks, and history.",
-    code: "02",
+    code: "03",
     icon: Library,
   },
   {
@@ -40,7 +49,7 @@ const menuItems = [
     classicLabel: "Profile",
     loungeLabel: "Reader Card",
     detail: "Identity, sync status, and account memory.",
-    code: "03",
+    code: "04",
     icon: User,
   },
   {
@@ -48,7 +57,7 @@ const menuItems = [
     classicLabel: "Settings",
     loungeLabel: "Room Controls",
     detail: "Theme, reader behavior, and source controls.",
-    code: "04",
+    code: "05",
     icon: Settings,
   },
   {
@@ -56,7 +65,7 @@ const menuItems = [
     classicLabel: "Legal",
     loungeLabel: "House Rules",
     detail: "Usage terms, privacy, and content policies.",
-    code: "05",
+    code: "06",
     icon: Shield,
   },
 ];
@@ -92,8 +101,8 @@ export function AppSidebar() {
           <h2>{uiMode === "lounge" ? "Navigation Room" : "Gateway Panel"}</h2>
           <p>
             {uiMode === "lounge"
-              ? "Move through the shelves, settings, and reader spaces."
-              : "Jump between system routes, operator controls, and runtime pages."}
+              ? "Move through books, artwork, settings, and reader spaces."
+              : "Jump between open knowledge routes, operator controls, and runtime pages."}
           </p>
         </div>
       </div>

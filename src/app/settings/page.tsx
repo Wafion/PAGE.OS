@@ -16,6 +16,8 @@ type Status = 'Online' | 'Offline' | 'Error' | 'Checking';
 
 const ALL_SOURCES = [
   { key: 'gutendex', name: 'Project Gutenberg', checkUrl: 'https://gutendex.com/books/?search=a' },
+  { key: 'internetArchive', name: 'Internet Archive', checkUrl: 'https://archive.org/advancedsearch.php?q=collection:gutenberg&rows=1&output=json' },
+  { key: 'openArt', name: 'Open Art Collections', checkUrl: 'https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=painting' },
 ];
 
 
@@ -201,7 +203,7 @@ export default function SettingsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="font-headline text-lg text-accent/80">TRANSMISSION_NODES</CardTitle>
-                <CardDescription>Manage and monitor content sources.</CardDescription>
+                <CardDescription>Manage and monitor open knowledge and artwork sources.</CardDescription>
               </div>
               <Button variant="outline" size="icon" className="border-border/50" onClick={checkSourceStatuses}>
                 <RefreshCw className="h-4 w-4" />
@@ -222,11 +224,11 @@ export default function SettingsPage() {
                  </div>
               ))}
               <div className="pt-4">
-                <Label htmlFor="add-source" className="text-accent/80">IMPORT FROM NODE URL</Label>
+                <Label htmlFor="add-source" className="text-accent/80">IMPORT OPEN FILE URL</Label>
                 <div className="flex items-center gap-2 mt-2">
                     <Input 
                       id="add-source" 
-                      placeholder="https://example.com/book.epub" 
+                      placeholder="https://archive.org/download/example/book.txt" 
                       className="bg-input border-border/50"
                       value={newSourceUrl}
                       onChange={(e) => setNewSourceUrl(e.target.value)}

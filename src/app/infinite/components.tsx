@@ -143,15 +143,16 @@ export function HeroSection() {
       }}
     >
       <p className="font-body text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        Infinite Discovery
+        Public Domain Gateway
       </p>
       <h1 className="mt-3 font-headline text-4xl md:text-5xl xl:text-6xl leading-[1.08] pointer-events-none select-none">
-        Endless worlds,
+        Open artwork,
         <br />
-        limitless curiosity.
+        shared knowledge.
       </h1>
       <p className="mt-4 font-body text-sm leading-relaxed text-muted-foreground max-w-md pointer-events-none select-none">
-        Explore books, artworks, ideas, and moments that inspire across time and space.
+        Explore public-domain and CC0 works from cultural collections, Commons,
+        and open archives.
       </p>
       <div className="mt-8 flex items-center gap-2 font-body text-sm text-muted-foreground pointer-events-none select-none">
         <span>Scroll to explore</span>

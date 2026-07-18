@@ -7,7 +7,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-provider';
 
-type SourceKey = "gutendex" | "web";
+type SourceKey = "gutendex" | "internetArchive" | "openArt";
 export type UiMode = "classic" | "lounge";
 
 export type SourceSettings = Partial<Record<SourceKey, boolean>>;
@@ -33,6 +33,8 @@ const ReaderSettingsContext = createContext<ReaderSettings | undefined>(undefine
 
 const defaultSourceSettings: SourceSettings = {
   gutendex: true,
+  internetArchive: true,
+  openArt: true,
 };
 
 const normalizeUiMode = (value: string | null | undefined): UiMode => {

@@ -13,7 +13,7 @@ const bootSequence = [
   { text: "> PAGEOS v1.0 - TERMINAL READER ENVIRONMENT", delay: 120 },
   { text: "> Made with care by Yash", delay: 100, isAccent: true },
   { text: "> MEMLINK PROTOCOL: ACTIVE", delay: 200 },
-  { text: "> LINKING NODE(S): GUTENDEX | WEB", delay: 150, isAccent: true },
+  { text: "> LINKING NODE(S): GUTENDEX | INTERNET ARCHIVE | OPEN ART", delay: 150, isAccent: true },
   { text: "> MEMORY STREAM STATUS: ONLINE", delay: 150 },
   { text: "> DECODER ENGINE: READY", delay: 200, isAccent: true },
   { text: "progress", delay: 100 },
@@ -133,8 +133,8 @@ function LoungeBootloader({ onComplete }: { onComplete: () => void }) {
             <p className="library-kicker">Quietly built for readers</p>
             <h1>Step into the Lounge</h1>
             <p>
-              A calmer shelf for public-domain books, web finds, and long-form
-              reading.
+              A calmer gateway for public-domain books, open knowledge, and
+              artwork you can wander through.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ function LoungeBootloader({ onComplete }: { onComplete: () => void }) {
               <span>Designed for quiet reading sessions and better wandering.</span>
             </div>
             <div>
-              <strong>Powered by Gutenberg + Brave</strong>
+              <strong>Powered by Gutenberg + open archives</strong>
               <span>Tap anywhere to continue, or sign in to sync your shelf.</span>
             </div>
           </div>

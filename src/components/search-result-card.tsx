@@ -29,6 +29,10 @@ function getBookCover(book: SearchResult) {
   return "";
 }
 
+function getSourceLabel(book: SearchResult) {
+  return book.source === "gutendex" ? "Project Gutenberg" : "Open archive";
+}
+
 export function SearchResultCard({
   book,
   variant,
@@ -53,7 +57,7 @@ export function SearchResultCard({
         />
         <div className="library-result-copy">
           <p className="library-result-source">
-            {book.source === "gutendex" ? "Project Gutenberg" : "Web result"}
+            {getSourceLabel(book)}
           </p>
           <h3>{book.title}</h3>
           <p className="library-result-author">by {book.authors || "Unknown author"}</p>
@@ -92,7 +96,7 @@ export function SearchResultCard({
         </CardContent>
         <CardFooter className="flex-col items-start p-4 pt-0">
           <p className="text-xs text-muted-foreground/80 w-full">
-            <span className="text-accent">{uiMode === "lounge" ? "Source:" : "src:"}</span> {book.source === "gutendex" && uiMode === "lounge" ? "Project Gutenberg" : book.source}
+            <span className="text-accent">{uiMode === "lounge" ? "Source:" : "src:"}</span> {getSourceLabel(book)}
           </p>
           {book.progress !== undefined && book.progress > 0 && (
             <div className="w-full mt-2">
