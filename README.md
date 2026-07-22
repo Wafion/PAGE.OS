@@ -43,31 +43,7 @@ PAGE.OS is not a general-purpose search scraper. Discovery is routed through ope
 - Firebase for optional sync.
 - PDF.js for readable document extraction.
 
-## Development
 
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Run type checks:
-
-```bash
-npm run typecheck
-```
-
-Build for production:
-
-```bash
-npm run build
-```
 
 ## License
 
