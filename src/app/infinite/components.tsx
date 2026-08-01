@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Compass, Infinity, Grid3x3, Clock, Pause, Play, Sparkles } from 'lucide-react';
+import { Compass, Infinity, Grid3x3, Pause, Play, Sparkles, Search, Plus, Zap, ChevronDown } from 'lucide-react';
 import type { CameraState, ChunkCoord, MediaItem, WanderStats } from './types';
 import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from './useChunks';
 
@@ -101,6 +101,91 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
 
 export const MediaCardMemo = React.memo(MediaCard);
 
+function GalleryFeedCard({
+  item,
+  index,
+  onSelect,
+}: {
+  item: MediaItem;
+  index: number;
+  onSelect?: (item: MediaItem) => void;
+}) {
+  const [imageError, setImageError] = React.useState(false);
+
+  return (
+    <button type="button" className="art-feed-card" onClick={() => onSelect?.(item)}>
+      {imageError ? (
+        <span className="art-feed-missing-image" aria-label={`${item.title} image unavailable`}>
+          <span>Archive image</span>
+        </span>
+      ) : (
+        <img
+          src={item.url}
+          alt={item.title}
+          loading={index < 12 ? 'eager' : 'lazy'}
+          onError={() => setImageError(true)}
+        />
+      )}
+      <span className="art-feed-card-info">
+        <strong>{item.title}</strong>
+        {(item.creator || item.year) && <small>{[item.creator, item.year].filter(Boolean).join(' · ')}</small>}
+      </span>
+    </button>
+  );
+}
+
+/** A conventional, scrollable alternative to the spatial explorer. */
+export function GalleryFeed({
+  items,
+  loading,
+  onSelect,
+}: {
+  items: MediaItem[];
+  loading: boolean;
+  onSelect?: (item: MediaItem) => void;
+}) {
+  return (
+    <section className="art-feed" aria-label="Artwork feed">
+      <header className="art-feed-toolbar">
+        <div className="art-feed-brand">
+          <span className="art-feed-mark" aria-hidden="true"><i /><i /><i /><i /></span>
+          <span>PAGE.OS</span>
+        </div>
+        <nav className="art-feed-tabs" aria-label="Artwork sections">
+          <button type="button" className="active">For you</button>
+          <button type="button">Following</button>
+          <button type="button">Explore</button>
+        </nav>
+        <label className="art-feed-search">
+          <Search className="h-4 w-4" />
+          <input aria-label="Search artwork" placeholder="Try ‘nocturnal landscapes’" />
+          <span className="art-feed-search-spark"><Sparkles className="h-4 w-4" /></span>
+        </label>
+        <div className="art-feed-actions">
+          <button type="button" className="art-feed-create"><Plus className="h-4 w-4" /> Create</button>
+          <button type="button" className="art-feed-icon" aria-label="Activity"><Zap className="h-4 w-4" /></button>
+          <button type="button" className="art-feed-avatar" aria-label="Account"><ChevronDown className="h-4 w-4" /></button>
+        </div>
+      </header>
+
+      <div className="art-feed-grid">
+        {loading
+          ? Array.from({ length: 15 }).map((_, index) => (
+              <div key={index} className="art-feed-skeleton" style={{ aspectRatio: `${[1.2, 0.7, 1.45, 0.9, 1.1][index % 5]}` }} />
+            ))
+          : items.map((item, index) => (
+              <GalleryFeedCard
+                key={`${item.id ?? item.url}-${index}`}
+                item={item}
+                index={index}
+                onSelect={onSelect}
+              />
+            ))}
+      </div>
+    </section>
+  );
+}
+
 // ── masonry chunk ──
 export function MasonryChunk({
   coord,
@@ -168,11 +253,15 @@ export function BottomControls({
   wander,
   onToggleWander,
   onResetWander,
+  viewMode = 'infinite',
+  onViewModeChange,
 }: {
   camera: CameraState;
   wander: WanderStats;
   onToggleWander: () => void;
   onResetWander: () => void;
+  viewMode?: 'infinite' | 'feed';
+  onViewModeChange?: (mode: 'infinite' | 'feed') => void;
 }) {
   return (
     <div
@@ -189,7 +278,7 @@ export function BottomControls({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[11px] font-body text-muted-foreground">
             <Compass className="h-3 w-3" />
-            <span className="truncate">{wander.active ? wander.status : 'Drag or scroll to explore'}</span>
+            <span className="truncate">{viewMode === 'feed' ? 'Scroll to discover public-domain art' : wander.active ? wander.status : 'Drag or scroll to explore'}</span>
             <span className="hidden opacity-40 sm:inline">/</span>
             <span className="hidden truncate sm:inline">{wander.waypointLabel}</span>
           </div>
@@ -209,7 +298,7 @@ export function BottomControls({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-nowrap sm:items-center sm:gap-1 font-body text-xs bg-transparent sm:bg-muted/60 rounded-md p-0 sm:p-0.5">
-          <button
+          {viewMode === 'infinite' && <button
             type="button"
             onClick={onToggleWander}
             className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 transition sm:rounded-sm sm:py-1 ${
@@ -218,25 +307,29 @@ export function BottomControls({
           >
             {wander.active ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             Wander
-          </button>
-          <button
+          </button>}
+          {viewMode === 'infinite' && <button
             type="button"
             onClick={onResetWander}
             className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground transition hover:text-foreground sm:rounded-sm sm:py-1"
           >
             <Sparkles className="w-3 h-3" />
             Reset trail
-          </button>
-          <button className="flex items-center justify-center gap-1 rounded-md bg-background px-3 py-2 text-foreground shadow-sm sm:rounded-sm sm:py-1">
+          </button>}
+          <button
+            type="button"
+            onClick={() => onViewModeChange?.('infinite')}
+            className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 sm:rounded-sm sm:py-1 ${viewMode === 'infinite' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+          >
             <Infinity className="w-3 h-3" /> Infinite
           </button>
-          <button className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground sm:rounded-sm sm:py-1">
+          <button
+            type="button"
+            onClick={() => onViewModeChange?.('feed')}
+            className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 sm:rounded-sm sm:py-1 ${viewMode === 'feed' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+          >
             <Grid3x3 className="w-3 h-3" />
-            <span className="hidden sm:inline">Grid</span>
-          </button>
-          <button className="flex items-center justify-center gap-1 rounded-md px-3 py-2 text-muted-foreground sm:rounded-sm sm:py-1">
-            <Clock className="w-3 h-3" />
-            <span className="hidden sm:inline">Timeline</span>
+            <span className="hidden sm:inline">Feed</span>
           </button>
         </div>
       </div>

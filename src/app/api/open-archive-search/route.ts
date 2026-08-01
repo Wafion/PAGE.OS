@@ -4,6 +4,7 @@ type ArchiveSearchDoc = {
   identifier?: string;
   title?: string | string[];
   creator?: string | string[];
+  subject?: string | string[];
   date?: string;
   year?: string;
   licenseurl?: string;
@@ -21,6 +22,7 @@ type ArchiveMetadataFile = {
   name?: string;
   format?: string;
   source?: string;
+  size?: string;
 };
 
 type ArchiveMetadataResponse = {
@@ -46,7 +48,16 @@ function normalizeText(value: string | string[] | undefined) {
 
 function buildArchiveQuery(query: string) {
   const safeQuery = query.replace(/[()[\]{}"]/g, ' ').replace(/\s+/g, ' ').trim();
-  return `mediatype:texts AND (${safeQuery}) AND (${OPEN_RIGHTS_QUERY})`;
+  return `mediatype:texts AND (title:(${safeQuery}) OR creator:(${safeQuery}) OR subject:(${safeQuery})) AND (${OPEN_RIGHTS_QUERY})`;
+}
+
+function matchesBibliographicQuery(doc: ArchiveSearchDoc, query: string) {
+  const haystack = [doc.title, doc.creator, doc.subject]
+    .map(normalizeText)
+    .join(' ')
+    .toLocaleLowerCase();
+  const terms = query.toLocaleLowerCase().split(/\s+/).filter((term) => term.length > 1);
+  return terms.length > 0 && terms.some((term) => haystack.includes(term));
 }
 
 function getDownloadUrl(identifier: string, fileName: string) {
@@ -58,12 +69,27 @@ function chooseReadableFile(files: ArchiveMetadataFile[] | undefined) {
     return null;
   }
 
-  const readableFiles = files.filter((file) => file.name && file.source !== 'metadata');
-  const txt = readableFiles.find((file) => {
+  const readableFiles = files.filter((file) => {
+    const name = file.name?.toLowerCase() ?? '';
+    return Boolean(
+      file.name &&
+      file.source !== 'metadata' &&
+      !name.includes('scandata') &&
+      !name.endsWith('_djvu.xml') &&
+      !name.endsWith('_text.pdf') &&
+      !name.endsWith('.json') &&
+      !name.endsWith('.xml'),
+    );
+  });
+  const textFiles = readableFiles.filter((file) => {
     const name = file.name?.toLowerCase() ?? '';
     const format = file.format?.toLowerCase() ?? '';
     return name.endsWith('.txt') || format === 'text' || format === 'djvutxt';
   });
+
+  // Prefer a publisher/plain-text transcription over OCR output. OCR remains a
+  // fallback for archive items that do not contain another readable text file.
+  const txt = textFiles.find((file) => !file.name?.toLowerCase().includes('_djvu')) ?? textFiles[0];
 
   if (txt?.name) {
     return { name: txt.name, type: 'txt' as const };
@@ -115,7 +141,7 @@ export async function GET(req: NextRequest) {
       sort: 'downloads desc',
     });
 
-    ['identifier', 'title', 'creator', 'date', 'year', 'licenseurl', 'rights', 'collection'].forEach((field) => {
+    ['identifier', 'title', 'creator', 'subject', 'date', 'year', 'licenseurl', 'rights', 'collection'].forEach((field) => {
       params.append('fl[]', field);
     });
 
@@ -123,7 +149,9 @@ export async function GET(req: NextRequest) {
       `https://archive.org/advancedsearch.php?${params.toString()}`,
     );
 
-    const docs = search.response?.docs?.filter((doc) => doc.identifier) ?? [];
+    const docs = search.response?.docs?.filter(
+      (doc) => doc.identifier && matchesBibliographicQuery(doc, query),
+    ) ?? [];
     const hydrated = await Promise.all(
       docs.slice(0, 8).map(async (doc) => {
         const identifier = doc.identifier!;
@@ -137,6 +165,7 @@ export async function GET(req: NextRequest) {
         }
 
         return {
+          id: `${identifier}/${readableFile.name}`,
           title: normalizeText(doc.title) || identifier,
           link: getDownloadUrl(identifier, readableFile.name),
           type: readableFile.type,

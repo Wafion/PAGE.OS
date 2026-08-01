@@ -4,7 +4,7 @@ import * as React from 'react';
 import type { MediaItem } from './types';
 import { useCamera } from './useCamera';
 import { useChunkVisibility, useGetChunkItems } from './useChunks';
-import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk } from './components';
+import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk, GalleryFeed } from './components';
 import { MediaDetailDialog } from './detail-dialog';
 import { useWander } from './useWander';
 
@@ -36,6 +36,7 @@ export default function InfinitePage() {
   const [selectedItem, setSelectedItem] = React.useState<MediaItem | null>(null);
   const [wanderEnabled, setWanderEnabled] = React.useState(true);
   const [wanderPaused, setWanderPaused] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<'infinite' | 'feed'>('infinite');
   const centered = React.useRef(false);
 
   const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef);
@@ -94,30 +95,32 @@ export default function InfinitePage() {
   }, [setPosition]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'hsl(var(--background))' }}>
-        {/* viewport */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden select-none"
-        style={{ touchAction: 'none', cursor: 'grab', position: 'relative' }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={onPointerUp}
-      >
-        {/* world */}
+    <div className={`flex-1 flex flex-col min-h-0${viewMode === 'feed' ? ' art-feed-page' : ''}`} style={{ background: viewMode === 'feed' ? '#111111' : 'hsl(var(--background))' }}>
+      {viewMode === 'feed' ? (
+        <GalleryFeed items={items} loading={loading} onSelect={setSelectedItem} />
+      ) : (
         <div
-          style={{
-            position: 'relative',
-            width: 0,
-            height: 0,
-            transformOrigin: '0 0',
-            transform: `scale(${camera.zoom}) translate(${-camera.x}px, ${-camera.y}px)`,
-            willChange: 'transform',
-          }}
+          ref={containerRef}
+          className="flex-1 overflow-hidden select-none"
+          style={{ touchAction: 'none', cursor: 'grab', position: 'relative' }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onPointerLeave={onPointerUp}
         >
-          <HeroSection />
+          {/* world */}
+          <div
+            style={{
+              position: 'relative',
+              width: 0,
+              height: 0,
+              transformOrigin: '0 0',
+              transform: `scale(${camera.zoom}) translate(${-camera.x}px, ${-camera.y}px)`,
+              willChange: 'transform',
+            }}
+          >
+            <HeroSection />
 
           {loading
             ? visibleChunks.slice(0, 6).map((c) => (
@@ -136,14 +139,14 @@ export default function InfinitePage() {
                 );
               })}
 
-          {!loading && items.length === 0 && (
-            <div className="absolute px-10" style={{ left: 0, top: 240 }}>
-              <p className="text-sm text-muted-foreground">No media available. Try again later.</p>
-            </div>
-          )}
+            {!loading && items.length === 0 && (
+              <div className="absolute px-10" style={{ left: 0, top: 240 }}>
+                <p className="text-sm text-muted-foreground">No media available. Try again later.</p>
+              </div>
+            )}
+          </div>
         </div>
-
-      </div>
+      )}
 
       <BottomControls
         camera={camera}
@@ -153,6 +156,8 @@ export default function InfinitePage() {
           setWanderPaused(false);
         }}
         onResetWander={resetProgress}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
       <MediaDetailDialog
         item={selectedItem}

@@ -8,6 +8,7 @@ import { FileJson2, FileText } from 'lucide-react';
 import { useReaderSettings } from '@/context/reader-settings-provider';
 
 export type WebFallbackResult = {
+  id?: string;
   title: string;
   link: string;
   type: 'pdf' | 'txt';
@@ -54,7 +55,7 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
               const isTxt = result.type === 'txt';
               const Wrapper = isTxt ? Link : 'a';
               const href = isTxt
-                ? `/read?source=web&url=${encodeURIComponent(result.link)}&title=${encodeURIComponent(result.title)}`
+                ? `/read?source=web&id=${encodeURIComponent(result.id || result.link)}&url=${encodeURIComponent(result.link)}&title=${encodeURIComponent(result.title)}&authors=${encodeURIComponent(result.sourceName || 'Open archive')}`
                 : result.link;
               const linkProps = isTxt ? {} : { target: '_blank', rel: 'noopener noreferrer' };
 

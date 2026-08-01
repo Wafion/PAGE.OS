@@ -217,8 +217,10 @@ export default function useBookLoader(searchParams: URLSearchParams) {
       const source = searchParams.get('source');
       const id = searchParams.get('id');
       const title = searchParams.get('title');
+      const webUrl = searchParams.get('url');
+      const resolvedId = id || (source === 'web' ? webUrl : null);
 
-      if (!source || !id || !title) {
+      if (!source || !resolvedId || !title) {
         setError('Essential book information is missing from the request.');
         setIsLoading(false);
         return;
@@ -229,13 +231,16 @@ export default function useBookLoader(searchParams: URLSearchParams) {
         let parsedBook: SearchResult;
 
         if (source === 'web') {
-          const url = searchParams.get('url')!;
+          const url = webUrl;
+          if (!url) {
+            throw new Error('This archive record does not contain a readable file URL.');
+          }
           parsedBook = {
-            id: url,
-            title: searchParams.get('title')!,
-            source: 'web' as 'gutendex',
-            authors: 'Web Source',
-            formats: {},
+            id: resolvedId,
+            title,
+            source: 'web',
+            authors: searchParams.get('authors') || 'Open archive',
+            formats: { web: url },
           };
           loadedContent = await fetchWebBookContent(url);
           if (!loadedContent) {
@@ -243,7 +248,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
           }
         } else {
           parsedBook = {
-            id,
+            id: resolvedId,
             title,
             source: source as 'gutendex',
             authors: searchParams.get('authors') || 'Unknown',

@@ -60,6 +60,24 @@ async function scrapeTextFromHtml(html: string): Promise<string> {
     return fullText.trim() || body.textContent?.trim() || '';
 }
 
+function cleanTextResponse(text: string): string {
+  const cleaned = text
+    .replace(/\uFEFF/g, '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim();
+
+  if (!cleaned || cleaned.length < 120) {
+    throw new Error('The archive file did not contain enough readable book text.');
+  }
+
+  if (/^\s*(<!doctype\s+html|<html\b|\{\s*["']?(error|message)|access denied)/i.test(cleaned)) {
+    throw new Error('The archive returned an error page instead of book text.');
+  }
+
+  return cleaned;
+}
+
 
 /**
  * Fetches content from a web URL, handling TXT, PDF, and HTML.
@@ -85,7 +103,7 @@ export async function fetchWebBookContent(url: string): Promise<string | null> {
     }
     
     if (lowerUrl.endsWith('.txt') || contentType.includes('text/plain')) {
-      return await res.text();
+      return cleanTextResponse(await res.text());
     }
     
     if (lowerUrl.endsWith('.html') || lowerUrl.endsWith('.htm') || contentType.includes('text/html')) {
@@ -96,7 +114,7 @@ export async function fetchWebBookContent(url: string): Promise<string | null> {
     }
 
     // If we can't determine the type, we make a last-ditch effort to read as text.
-    return await res.text();
+    return cleanTextResponse(await res.text());
 
   } catch (error) {
     console.error(`Error fetching or parsing content from ${url}:`, error);
