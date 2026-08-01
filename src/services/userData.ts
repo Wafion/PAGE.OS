@@ -1,7 +1,8 @@
 
 import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, updateDoc, runTransaction } from 'firebase/firestore';
 import type { SearchResult } from '@/adapters/sourceManager';
+import { addReadingTimeToCalendar, calculateReadingStreak, getTodayDateString } from '@/lib/statisticsUtils';
 
 // We need a consistent way to generate a unique ID for a book based on its source and ID.
 export const generateBookId = (book: Pick<SearchResult, 'source' | 'id'>) => `${book.source}_${book.id.replace(/[\.\/]/g, '_')}`;
@@ -94,38 +95,48 @@ export async function updateReadingSession(userId: string, bookId: string, sessi
   sessionTime?: number; // time spent in this session in seconds
 }): Promise<void> {
   const bookRef = doc(db, 'users', userId, 'library', bookId);
+  const statsRef = doc(db, 'users', userId, 'statistics', 'overview');
+  const sessionTime = Math.max(0, sessionData.sessionTime ?? 0);
 
-  // First get the current book data
-  const bookSnap = await getDoc(bookRef);
-  if (!bookSnap.exists()) {
-    console.warn("Book not found in library");
-    return;
-  }
+  await runTransaction(db, async (transaction) => {
+    const [bookSnap, statsSnap] = await Promise.all([
+      transaction.get(bookRef),
+      transaction.get(statsRef),
+    ]);
 
-  const bookData = bookSnap.data() as LibraryBook;
-  const now = new Date().toISOString();
+    if (!bookSnap.exists()) {
+      throw new Error('Cannot record a reading session for a book that is not in the library.');
+    }
 
-  // Prepare update data
-  const updateData: Partial<LibraryBook> = {
-    lastReadAt: now,
-  };
+    const bookData = bookSnap.data() as LibraryBook;
+    const existingStats = (statsSnap.exists() ? statsSnap.data() : {}) as Partial<UserStatistics>;
+    const now = new Date().toISOString();
+    const readingCalendar = sessionTime > 0
+      ? addReadingTimeToCalendar(existingStats.readingCalendar ?? {}, getTodayDateString(), sessionTime)
+      : (existingStats.readingCalendar ?? {});
+    const { currentStreak: readingStreak, longestStreak } = calculateReadingStreak(readingCalendar);
 
-  // If this is a new session, increment the session counter
-  if (sessionData.isNewSession) {
-    updateData.totalReadingSessions = (bookData.totalReadingSessions || 0) + 1;
-  }
+    transaction.update(bookRef, {
+      lastReadAt: now,
+      totalReadingSessions: (bookData.totalReadingSessions ?? 0) + (sessionData.isNewSession ? 1 : 0),
+      totalTimeSpent: (bookData.totalTimeSpent ?? 0) + sessionTime,
+      ...(!bookData.firstReadAt ? { firstReadAt: now } : {}),
+    });
 
-  // Add session time to total time spent
-  if (sessionData.sessionTime !== undefined) {
-    updateData.totalTimeSpent = (bookData.totalTimeSpent || 0) + sessionData.sessionTime;
-  }
-
-  // If this is the first time reading, set firstReadAt
-  if (!(bookData.firstReadAt)) {
-    updateData.firstReadAt = now;
-  }
-
-  await updateDoc(bookRef, updateData);
+    transaction.set(statsRef, {
+      uid: userId,
+      readingCalendar,
+      readingStreak,
+      longestStreak,
+      totalTimeSpentReading: (existingStats.totalTimeSpentReading ?? 0) + sessionTime,
+      averageSessionLength: sessionData.isNewSession
+        ? ((existingStats.totalTimeSpentReading ?? 0) + sessionTime) /
+          Math.max(1, (existingStats.totalReadingSessions ?? 0) + 1)
+        : (existingStats.averageSessionLength ?? 0),
+      totalReadingSessions: (existingStats.totalReadingSessions ?? 0) + (sessionData.isNewSession ? 1 : 0),
+      lastUpdated: now,
+    }, { merge: true });
+  });
 }
 
 
@@ -219,6 +230,7 @@ export async function calculateAndUpdateUserStatistics(userId: string): Promise<
       totalBooksInLibrary,
       totalTimeSpentReading,
       averageSessionLength,
+      totalReadingSessions: totalSessions,
       booksByGenre,
       // Preserve existing streak and calendar data - these would be updated separately
       readingStreak: existingStats.readingStreak,
@@ -229,6 +241,7 @@ export async function calculateAndUpdateUserStatistics(userId: string): Promise<
     await updateUserStatistics(userId, updatedStatistics);
   } catch (error) {
     console.error("Error calculating user statistics:", error);
+    throw error;
   }
 }
 
@@ -243,6 +256,7 @@ export type UserStatistics = {
   totalBooksInLibrary: number; // Total books saved to library
   totalTimeSpentReading: number; // Lifetime reading time (seconds)
   averageSessionLength: number; // Average time per reading session (seconds)
+  totalReadingSessions?: number; // Lifetime count of tracked sessions
   booksByGenre: Record<string, number>; // Distribution of books by subject/genre
   lastUpdated: string; // Timestamp of last statistics update
   readingCalendar: Record<string, number>; // Map of dates (YYYY-MM-DD) to reading time in seconds for that day

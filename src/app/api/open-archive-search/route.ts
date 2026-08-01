@@ -29,6 +29,34 @@ type ArchiveMetadataResponse = {
   files?: ArchiveMetadataFile[];
 };
 
+type WikisourceSearchResponse = {
+  query?: {
+    search?: Array<{ pageid: number; title: string; ns: number }>;
+  };
+};
+
+type GoogleBooksResponse = {
+  items?: Array<{
+    id: string;
+    volumeInfo?: { title?: string; authors?: string[] };
+    accessInfo?: {
+      publicDomain?: boolean;
+      pdf?: { isAvailable?: boolean; downloadLink?: string };
+      infoLink?: string;
+    };
+  }>;
+};
+
+type OpenTextResult = {
+  id: string;
+  title: string;
+  link: string;
+  type: 'txt' | 'pdf';
+  sourceName: string;
+  rightsLabel: string;
+  detailUrl: string;
+};
+
 const OPEN_RIGHTS_QUERY = [
   'collection:gutenberg',
   'collection:opensource',
@@ -64,9 +92,9 @@ function getDownloadUrl(identifier: string, fileName: string) {
   return `https://archive.org/download/${encodeURIComponent(identifier)}/${encodeURIComponent(fileName)}`;
 }
 
-function chooseReadableFile(files: ArchiveMetadataFile[] | undefined) {
+function getReadableFiles(files: ArchiveMetadataFile[] | undefined) {
   if (!files) {
-    return null;
+    return [] as Array<{ name: string; type: 'txt' | 'pdf' }>;
   }
 
   const readableFiles = files.filter((file) => {
@@ -76,36 +104,27 @@ function chooseReadableFile(files: ArchiveMetadataFile[] | undefined) {
       file.source !== 'metadata' &&
       !name.includes('scandata') &&
       !name.endsWith('_djvu.xml') &&
-      !name.endsWith('_text.pdf') &&
       !name.endsWith('.json') &&
       !name.endsWith('.xml'),
     );
   });
-  const textFiles = readableFiles.filter((file) => {
+  const supportedFiles = readableFiles.filter((file) => {
     const name = file.name?.toLowerCase() ?? '';
     const format = file.format?.toLowerCase() ?? '';
-    return name.endsWith('.txt') || format === 'text' || format === 'djvutxt';
+    return name.endsWith('.txt') || format === 'text' || format === 'djvutxt' || name.endsWith('.pdf') || format.includes('pdf');
   });
 
-  // Prefer a publisher/plain-text transcription over OCR output. OCR remains a
-  // fallback for archive items that do not contain another readable text file.
-  const txt = textFiles.find((file) => !file.name?.toLowerCase().includes('_djvu')) ?? textFiles[0];
-
-  if (txt?.name) {
-    return { name: txt.name, type: 'txt' as const };
-  }
-
-  const pdf = readableFiles.find((file) => {
-    const name = file.name?.toLowerCase() ?? '';
-    const format = file.format?.toLowerCase() ?? '';
-    return name.endsWith('.pdf') || format.includes('pdf');
-  });
-
-  if (pdf?.name) {
-    return { name: pdf.name, type: 'pdf' as const };
-  }
-
-  return null;
+  // Preserve the archive's own file order and surface every supported
+  // rendition; PAGE.OS does not rank TXT over PDF (or vice versa).
+  return supportedFiles
+    .filter((file): file is ArchiveMetadataFile & { name: string } => Boolean(file.name))
+    .map((file) => ({
+      name: file.name,
+      type: (file.name.toLowerCase().endsWith('.pdf') || file.format?.toLowerCase().includes('pdf'))
+        ? 'pdf' as const
+        : 'txt' as const,
+    }))
+    .filter((file, index, all) => all.findIndex((candidate) => candidate.name === file.name) === index);
 }
 
 async function fetchArchiveJson<T>(url: string): Promise<T> {
@@ -125,12 +144,145 @@ async function fetchArchiveJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function fetchWikisourceResults(query: string): Promise<OpenTextResult[]> {
+  const params = new URLSearchParams({
+    action: 'query',
+    list: 'search',
+    srsearch: query,
+    srnamespace: '0',
+    srlimit: '5',
+    format: 'json',
+    formatversion: '2',
+  });
+  const response = await fetch(`https://en.wikisource.org/w/api.php?${params.toString()}`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
+    signal: AbortSignal.timeout(8000),
+    next: { revalidate: 600 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Wikisource request failed: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as WikisourceSearchResponse;
+  return (payload.query?.search ?? [])
+    .filter((entry) => entry.ns === 0 && entry.title)
+    .map((entry) => {
+      const pagePath = entry.title.replace(/ /g, '_');
+      const link = `https://en.wikisource.org/wiki/${encodeURIComponent(pagePath)}`;
+      return {
+        id: `wikisource:${entry.pageid}`,
+        title: entry.title,
+        link,
+        type: 'txt' as const,
+        sourceName: 'Wikisource',
+        rightsLabel: 'Open source text',
+        detailUrl: link,
+      };
+    });
+}
+
+async function fetchGoogleBooksResults(query: string): Promise<OpenTextResult[]> {
+  const params = new URLSearchParams({
+    q: query,
+    filter: 'full',
+    maxResults: '10',
+    projection: 'full',
+  });
+  const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
+    signal: AbortSignal.timeout(8000),
+    next: { revalidate: 600 },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google Books request failed: ${response.status}`);
+  }
+
+  const payload = (await response.json()) as GoogleBooksResponse;
+  return (payload.items ?? [])
+    .filter((item) => item.accessInfo?.publicDomain && item.accessInfo.pdf?.isAvailable && item.accessInfo.pdf.downloadLink)
+    .map((item) => ({
+      id: `google-books:${item.id}`,
+      title: `${item.volumeInfo?.title || 'Untitled'} (PDF)`,
+      link: item.accessInfo!.pdf!.downloadLink!,
+      type: 'pdf' as const,
+      sourceName: 'Google Books public domain',
+      rightsLabel: 'Public domain',
+      detailUrl: item.accessInfo?.infoLink || `https://books.google.com/books?id=${encodeURIComponent(item.id)}`,
+    }));
+}
+
+function mergeSourceResults(groups: OpenTextResult[][], limit = 15) {
+  const merged: OpenTextResult[] = [];
+  for (let index = 0; merged.length < limit; index += 1) {
+    let added = false;
+    for (const group of groups) {
+      if (group[index]) {
+        merged.push(group[index]);
+        added = true;
+        if (merged.length === limit) break;
+      }
+    }
+    if (!added) break;
+  }
+  return merged;
+}
+
+function decodeXmlText(value: string) {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .trim();
+}
+
+async function fetchGutenbergOpdsResults(query: string): Promise<OpenTextResult[]> {
+  const response = await fetch(
+    `https://www.gutenberg.org/ebooks/search.opds/?query=${encodeURIComponent(query)}`,
+    {
+      headers: { Accept: 'application/atom+xml;profile=opds-catalog', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
+      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 600 },
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Project Gutenberg OPDS request failed: ${response.status}`);
+  }
+
+  const xml = await response.text();
+  const entries = Array.from(xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g));
+  return entries.flatMap((match) => {
+    const entry = match[1];
+    const id = entry.match(/<id>https:\/\/www\.gutenberg\.org\/ebooks\/(\d+)\.opds<\/id>/)?.[1];
+    const title = entry.match(/<title>([\s\S]*?)<\/title>/)?.[1];
+    if (!id || !title) return [];
+    const author = entry.match(/<content[^>]*>([\s\S]*?)<\/content>/)?.[1];
+    return [{
+      id: `gutenberg-opds:${id}`,
+      title: decodeXmlText(title),
+      link: `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
+      type: 'txt' as const,
+      sourceName: 'Project Gutenberg',
+      rightsLabel: decodeXmlText(author || 'Public domain'),
+      detailUrl: `https://www.gutenberg.org/ebooks/${id}`,
+    }];
+  });
+}
+
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('q')?.trim();
 
   if (!query) {
     return NextResponse.json({ error: 'Query missing' }, { status: 400 });
   }
+
+  const wikisourcePromise = fetchWikisourceResults(query);
+  const googleBooksPromise = fetchGoogleBooksResults(query);
+  const gutenbergOpdsPromise = fetchGutenbergOpdsResults(query);
 
   try {
     const params = new URLSearchParams({
@@ -158,27 +310,61 @@ export async function GET(req: NextRequest) {
         const metadata = await fetchArchiveJson<ArchiveMetadataResponse>(
           `https://archive.org/metadata/${encodeURIComponent(identifier)}`,
         );
-        const readableFile = chooseReadableFile(metadata.files);
+        const readableFiles = getReadableFiles(metadata.files);
 
-        if (!readableFile) {
+        if (readableFiles.length === 0) {
           return null;
         }
 
-        return {
+        return readableFiles.map((readableFile) => ({
           id: `${identifier}/${readableFile.name}`,
-          title: normalizeText(doc.title) || identifier,
+          title: `${normalizeText(doc.title) || identifier} (${readableFile.type.toUpperCase()})`,
           link: getDownloadUrl(identifier, readableFile.name),
           type: readableFile.type,
           sourceName: 'Internet Archive',
           rightsLabel: normalizeText(doc.rights) || normalizeText(doc.licenseurl) || 'Open access',
           detailUrl: `https://archive.org/details/${encodeURIComponent(identifier)}`,
-        };
+        }));
       }),
     );
 
-    return NextResponse.json(hydrated.filter(Boolean).slice(0, 5));
+    const wikisourceResults = await wikisourcePromise.catch((error) => {
+      console.warn('[Wikisource Search] An error occurred:', error);
+      return [] as OpenTextResult[];
+    });
+    const googleBooksResults = await googleBooksPromise.catch((error) => {
+      console.warn('[Google Books Search] An error occurred:', error);
+      return [] as OpenTextResult[];
+    });
+    const gutenbergOpdsResults = await gutenbergOpdsPromise.catch((error) => {
+      console.warn('[Project Gutenberg OPDS] An error occurred:', error);
+      return [] as OpenTextResult[];
+    });
+
+    return NextResponse.json(mergeSourceResults([
+      hydrated.flatMap((result) => result ?? []),
+      googleBooksResults,
+      gutenbergOpdsResults,
+      wikisourceResults,
+    ]));
   } catch (error) {
     console.error('[Open Archive Search] An error occurred:', error);
+    const wikisourceResults = await wikisourcePromise.catch((wikisourceError) => {
+      console.warn('[Wikisource Search] An error occurred:', wikisourceError);
+      return [] as OpenTextResult[];
+    });
+    const googleBooksResults = await googleBooksPromise.catch((googleBooksError) => {
+      console.warn('[Google Books Search] An error occurred:', googleBooksError);
+      return [] as OpenTextResult[];
+    });
+    const gutenbergOpdsResults = await gutenbergOpdsPromise.catch((gutenbergError) => {
+      console.warn('[Project Gutenberg OPDS] An error occurred:', gutenbergError);
+      return [] as OpenTextResult[];
+    });
+    const fallbackResults = mergeSourceResults([googleBooksResults, gutenbergOpdsResults, wikisourceResults]);
+    if (fallbackResults.length > 0) {
+      return NextResponse.json(fallbackResults);
+    }
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred';
 

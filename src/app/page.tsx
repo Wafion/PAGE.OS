@@ -187,6 +187,8 @@ export default function HomePage() {
   const { uiMode } = useReaderSettings();
   const [primaryResults, setPrimaryResults] = useState<SearchResult[]>([]);
   const [webResults, setWebResults] = useState<WebFallbackResult[]>([]);
+  const [webArchiveError, setWebArchiveError] = useState<string | null>(null);
+  const [lastSearchQuery, setLastSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [featuredBooks, setFeaturedBooks] = useState<SearchResult[]>([]);
@@ -346,12 +348,15 @@ export default function HomePage() {
     if (!query) {
       setPrimaryResults([]);
       setWebResults([]);
+      setWebArchiveError(null);
       setHasSearched(false);
       return;
     }
 
     setIsLoading(true);
     setHasSearched(true);
+    setWebArchiveError(null);
+    setLastSearchQuery(query);
 
     try {
       const openArchiveSearchPromise = fetch(
@@ -370,13 +375,16 @@ export default function HomePage() {
           Array.isArray(openArchiveData.value)) {
         setWebResults(openArchiveData.value);
       } else {
+        const archiveError = openArchiveData.status === "rejected"
+          ? "The open archive search could not be reached."
+          : (openArchiveData.value && openArchiveData.value.error) || "The open archive search returned an invalid response.";
         console.error(
           "Open archive search failed:",
           openArchiveData.status === "rejected" ? openArchiveData.reason :
-          (openArchiveData.value && openArchiveData.value.error) ||
-          "Invalid response format (expected array)",
+          archiveError,
         );
         setWebResults([]);
+        setWebArchiveError(archiveError);
       }
 
       if (gutenbergData.status === "fulfilled") {
@@ -390,15 +398,16 @@ export default function HomePage() {
         console.error("Gutenberg search failed:", gutenbergData.reason);
         setPrimaryResults([]);
         setPrimaryStatusMessage(
-          "Primary archive is currently unavailable. Open archive discovery is still online.",
+          "Primary archive is currently unavailable.",
         );
       }
     } catch (error) {
       console.error("An error occurred during search:", error);
       setPrimaryResults([]);
       setWebResults([]);
+      setWebArchiveError("The open archive search could not be reached.");
       setPrimaryStatusMessage(
-        "Primary archive is currently unavailable. Open archive discovery is still online.",
+        "Primary archive is currently unavailable.",
       );
     } finally {
       setIsLoading(false);
@@ -410,6 +419,7 @@ export default function HomePage() {
     setHasSearched(false);
     setPrimaryResults([]);
     setWebResults([]);
+    setWebArchiveError(null);
     setPrimaryStatusMessage("");
   };
 
@@ -429,8 +439,8 @@ export default function HomePage() {
             <p className="text-muted-foreground mt-2 max-w-md mx-auto">
               {primaryStatusMessage ||
                 (uiMode === "lounge"
-                  ? "No Gutenberg books matched that search. Open archive PDF/TXT results may still appear below."
-                  : "No data streams in the primary network match the provided signature. Open archive results may still appear below.")}
+                  ? (webArchiveError ? "No Gutenberg books matched that search, and Open Archive is temporarily unavailable." : "No Gutenberg books matched that search. Open archive PDF/TXT results may still appear below.")
+                  : (webArchiveError ? "No data streams in the primary network match the provided signature. Open Archive is temporarily unavailable." : "No data streams in the primary network match the provided signature. Open archive results may still appear below."))}
             </p>
           </CardContent>
         </Card>
@@ -467,7 +477,7 @@ export default function HomePage() {
               {renderPrimaryResults()}
             </div>
           </section>
-          <WebFallbackResults results={webResults} />
+          <WebFallbackResults results={webResults} error={webArchiveError} onRetry={() => handleSearch(lastSearchQuery)} />
         </>
       );
     }
@@ -623,7 +633,7 @@ export default function HomePage() {
                     </CardContent>
                   </Card>
                 )}
-                <WebFallbackResults results={webResults} />
+                <WebFallbackResults results={webResults} error={webArchiveError} onRetry={() => handleSearch(lastSearchQuery)} />
               </section>
             ) : (
               <>

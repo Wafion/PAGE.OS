@@ -24,6 +24,8 @@ export type ReaderSector = {
   startParagraphIndex: number;
 };
 
+export type ReaderMediaType = 'text' | 'pdf';
+
 type ChapterBlock = {
   title: string;
   paragraphs: string[];
@@ -204,6 +206,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
   const { user } = useAuth();
   const [book, setBook] = useState<SearchResult | null>(null);
   const [content, setContent] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<ReaderMediaType>('text');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSector, setActiveSector] = useState(0);
@@ -218,6 +221,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
       const id = searchParams.get('id');
       const title = searchParams.get('title');
       const webUrl = searchParams.get('url');
+      const requestedFormat = searchParams.get('format');
       const resolvedId = id || (source === 'web' ? webUrl : null);
 
       if (!source || !resolvedId || !title) {
@@ -242,9 +246,13 @@ export default function useBookLoader(searchParams: URLSearchParams) {
             authors: searchParams.get('authors') || 'Open archive',
             formats: { web: url },
           };
-          loadedContent = await fetchWebBookContent(url);
-          if (!loadedContent) {
-            throw new Error('Could not extract readable text from the web page.');
+          const isPdf = requestedFormat === 'pdf' || /\.pdf(?:$|[?#])/i.test(url);
+          setMediaType(isPdf ? 'pdf' : 'text');
+          if (!isPdf) {
+            loadedContent = await fetchWebBookContent(url);
+            if (!loadedContent) {
+              throw new Error('Could not extract readable text from the web page.');
+            }
           }
         } else {
           parsedBook = {
@@ -255,6 +263,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
             formats: JSON.parse(searchParams.get('formats') || '{}'),
           };
           loadedContent = await fetchBookContent(parsedBook);
+          setMediaType('text');
         }
 
         setBook(parsedBook);
@@ -310,6 +319,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
     sectors,
     currentSector,
     currentChapter,
+    mediaType,
     activeSector: safeActiveSector,
     setActiveSector,
     direction,

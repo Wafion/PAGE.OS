@@ -22,13 +22,12 @@ export default function useBookmark(
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const { toast } = useToast();
 
-  // ✅ Correct logic: Only block bookmarking if source is "web"
-  const isWebBook = book?.source === 'web';
+  // Every in-app reader source, including open archives, can be saved.
   const bookId = book ? generateBookId(book) : null;
 
   // ✅ Load bookmark state on mount
   useEffect(() => {
-    if (!user || !bookId || isWebBook) {
+    if (!user || !bookId) {
       setIsBookmarked(false);
       return;
     }
@@ -40,7 +39,7 @@ export default function useBookmark(
       })
       .catch(console.error)
       .finally(() => setIsBookmarkLoading(false));
-  }, [user, bookId, isWebBook]);
+  }, [user, bookId]);
 
   // ✅ Auto-sync reading progress if book is bookmarked
   useEffect(() => {
@@ -59,7 +58,7 @@ export default function useBookmark(
 
   // ✅ Handles adding/removing bookmark with toast feedback
   const toggleBookmark = useCallback(async () => {
-    if (!user || !book || !bookId || isWebBook) {
+    if (!user || !book || !bookId) {
       toast({
         title: "Authentication Required",
         description: "Please log in to save books to your library.",
@@ -89,7 +88,7 @@ export default function useBookmark(
     } finally {
       setIsBookmarkLoading(false);
     }
-  }, [isBookmarked, user, book, bookId, isWebBook, toast]);
+  }, [isBookmarked, user, book, bookId, toast]);
 
-  return { isBookmarked, isBookmarkLoading, isWebBook, toggleBookmark };
+  return { isBookmarked, isBookmarkLoading, toggleBookmark };
 }

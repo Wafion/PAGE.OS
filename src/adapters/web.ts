@@ -84,14 +84,13 @@ function cleanTextResponse(text: string): string {
  * @param url The direct URL to the content.
  * @returns A promise that resolves to the string content, or null on failure.
  */
-export async function fetchWebBookContent(url: string): Promise<string | null> {
+export async function fetchWebBookContent(url: string): Promise<string> {
   const proxiedUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
   
   try {
     const res = await fetch(proxiedUrl, { signal: AbortSignal.timeout(15000) }); // 15-second timeout
     if (!res.ok) {
-        console.error(`Fetch failed for ${url} with status ${res.status}`);
-        return null;
+      throw new Error(`The source server returned HTTP ${res.status}.`);
     }
 
     const contentType = res.headers.get('Content-Type') || '';

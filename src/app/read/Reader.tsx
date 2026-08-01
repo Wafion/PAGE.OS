@@ -25,6 +25,7 @@ import { useReaderSettings } from '@/context/reader-settings-provider';
 import { useAudio } from '@/context/audio-provider';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AudioControls } from '@/components/audio/audio-controls';
+import PdfReader from './PdfReader';
 
 export default function Reader() {
   const searchParams = useSearchParams();
@@ -40,13 +41,14 @@ export default function Reader() {
     sectors,
     currentSector,
     currentChapter,
+    mediaType,
     activeSector,
     setActiveSector,
     direction,
     setDirection,
   } = useBookLoader(searchParams);
 
-  const { isTracking, sessionStartTime, isBookmarked, isBookmarkLoading, isWebBook, toggleBookmark } = useReadingTracker(
+  const { isTracking, sessionStartTime, isBookmarked, isBookmarkLoading, toggleBookmark } = useReadingTracker(
     book,
     activeSector,
     sectors.length
@@ -154,6 +156,23 @@ export default function Reader() {
     );
   }
 
+  if (mediaType === 'pdf' && book?.formats?.web) {
+    return (
+      <PdfReader
+        book={book}
+        url={book.formats.web}
+        activePage={activeSector}
+        onPageChange={setActiveSector}
+        onBack={() => router.back()}
+        isBookmarked={isBookmarked}
+        isBookmarkLoading={isBookmarkLoading}
+        onToggleBookmark={toggleBookmark}
+        hasUser={Boolean(user)}
+        userId={user?.uid}
+      />
+    );
+  }
+
   if (uiMode === 'lounge') {
     return (
       <div className="library-reader-shell">
@@ -187,7 +206,7 @@ export default function Reader() {
               variant="outline"
               size="icon"
               onClick={toggleBookmark}
-              disabled={isBookmarkLoading || !user || isWebBook}
+              disabled={isBookmarkLoading || !user}
               aria-label="Bookmark this page"
             >
               {isBookmarkLoading ? (
@@ -422,7 +441,7 @@ export default function Reader() {
             variant="ghost"
             size="icon"
             onClick={toggleBookmark}
-            disabled={isBookmarkLoading || !user || isWebBook}
+            disabled={isBookmarkLoading || !user}
           >
             {isBookmarkLoading ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />

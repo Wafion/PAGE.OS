@@ -22,7 +22,7 @@ export default function useReadingTracker(
   const { toast } = useToast();
 
   // Always get bookmark state (independent of statistics collection)
-  const { isBookmarked, isBookmarkLoading, isWebBook, toggleBookmark } = useBookmark(user, book, activeSector, sectorsCount);
+  const { isBookmarked, isBookmarkLoading, toggleBookmark } = useBookmark(user, book, activeSector, sectorsCount);
 
   const [isTracking, setIsTracking] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
@@ -112,19 +112,23 @@ export default function useReadingTracker(
   useEffect(() => {
     if (!collectStatistics) return;
 
-    const handleFocusChange = () => {
-      focusRef.current = !document.hidden; // Simplified - in reality would use focus/blur events
+    const handleFocus = () => {
+      focusRef.current = true;
+      handleActivityChange();
+    };
+    const handleBlur = () => {
+      focusRef.current = false;
       handleActivityChange();
     };
 
-    window.addEventListener('focus', handleFocusChange);
-    window.addEventListener('blur', handleFocusChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
     // Initialize current state
-    focusRef.current = !document.hidden;
+    focusRef.current = document.hasFocus();
 
     return () => {
-      window.removeEventListener('focus', handleFocusChange);
-      window.removeEventListener('blur', handleFocusChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
     };
   }, [collectStatistics, handleActivityChange]);
 
@@ -184,7 +188,6 @@ export default function useReadingTracker(
     sessionStartTime: collectStatistics ? sessionStartTime : null,
     isBookmarked,
     isBookmarkLoading,
-    isWebBook,
     toggleBookmark
   };
 }

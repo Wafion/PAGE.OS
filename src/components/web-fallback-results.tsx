@@ -4,8 +4,9 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileJson2, FileText } from 'lucide-react';
+import { FileJson2, FileText, RotateCw, WifiOff } from 'lucide-react';
 import { useReaderSettings } from '@/context/reader-settings-provider';
+import { Button } from '@/components/ui/button';
 
 export type WebFallbackResult = {
   id?: string;
@@ -26,42 +27,56 @@ const FiletypeIcon = ({ type }: { type: 'pdf' | 'txt' }) => {
   }
 };
 
-export function WebFallbackResults({ results }: { results: WebFallbackResult[] }) {
+export function WebFallbackResults({
+  results,
+  error,
+  onRetry,
+}: {
+  results: WebFallbackResult[];
+  error?: string | null;
+  onRetry?: () => void;
+}) {
   const { uiMode } = useReaderSettings();
 
-  if (results.length === 0) {
+  if (results.length === 0 && !error) {
     return null;
   }
 
   return (
     <section className={uiMode === 'lounge' ? 'library-web-results' : 'col-span-full'}>
       <h2 className="font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2">
-        {uiMode === 'lounge' ? 'Open archive texts' : '// OPEN_ARCHIVE_RESULTS'}
+        {uiMode === 'lounge' ? 'Open-source texts' : '// OPEN_SOURCE_RESULTS'}
       </h2>
       <Card className="border-border/50 bg-card">
         <CardHeader>
           <CardTitle className="font-headline text-accent/80">
-            {uiMode === 'lounge' ? 'More public knowledge to discover' : 'Open Knowledge Links Found'}
+            {error
+              ? (uiMode === 'lounge' ? 'Open-source search is temporarily unavailable' : 'OPEN_SOURCE_OFFLINE')
+              : (uiMode === 'lounge' ? 'More public knowledge to discover' : 'Open Knowledge Links Found')}
           </CardTitle>
           <CardDescription>
-            {uiMode === 'lounge'
-              ? 'These results come from open archives. TXT files open in the reader. PDFs open in a new tab.'
-              : 'Direct files from open archives. TXT files open in the reader. PDF files open in a new tab.'}
+            {error || (uiMode === 'lounge'
+              ? 'These public-domain files open directly in the PAGE.OS reader, including scanned PDFs.'
+              : 'Direct files from public knowledge sources, rendered natively in PAGE.OS.')}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error ? (
+            <div className="flex flex-col items-start gap-4 rounded-md border border-border/40 bg-input/20 p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <WifiOff className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
+                <p>Internet Archive did not respond before the request timed out. Your Gutenberg results are unaffected.</p>
+              </div>
+              {onRetry && <Button variant="outline" size="sm" onClick={onRetry}><RotateCw className="mr-2 h-4 w-4" />Retry archive</Button>}
+            </div>
+          ) : (
           <ul className="space-y-4">
             {results.map((result, index) => {
-              const isTxt = result.type === 'txt';
-              const Wrapper = isTxt ? Link : 'a';
-              const href = isTxt
-                ? `/read?source=web&id=${encodeURIComponent(result.id || result.link)}&url=${encodeURIComponent(result.link)}&title=${encodeURIComponent(result.title)}&authors=${encodeURIComponent(result.sourceName || 'Open archive')}`
-                : result.link;
-              const linkProps = isTxt ? {} : { target: '_blank', rel: 'noopener noreferrer' };
+              const href = `/read?source=web&id=${encodeURIComponent(result.id || result.link)}&url=${encodeURIComponent(result.link)}&title=${encodeURIComponent(result.title)}&authors=${encodeURIComponent(result.sourceName || 'Open archive')}&format=${result.type}`;
 
               return (
                 <li key={index} className="rounded-md border border-border/30 p-4 transition-colors hover:bg-input/50">
-                  <Wrapper href={href} {...linkProps} className="group block">
+                  <Link href={href} className="group block">
                     <div className="flex items-start gap-4">
                       <FiletypeIcon type={result.type} />
                       <div className="flex-1">
@@ -78,7 +93,7 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
                         </p>
                       </div>
                     </div>
-                  </Wrapper>
+                  </Link>
                   {(result.sourceName || result.rightsLabel || result.detailUrl) && (
                     <p className="mt-3 pl-9 text-xs text-muted-foreground">
                       {[result.sourceName, result.rightsLabel].filter(Boolean).join(' / ')}
@@ -101,6 +116,7 @@ export function WebFallbackResults({ results }: { results: WebFallbackResult[] }
               );
             })}
           </ul>
+          )}
         </CardContent>
       </Card>
     </section>
