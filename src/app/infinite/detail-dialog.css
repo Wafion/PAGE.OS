@@ -1,0 +1,6 @@
+.pageos-detail-tabs {
+  /* Remove horizontal scroll: allow wrapping instead */
+  overflow-x: visible !important;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
