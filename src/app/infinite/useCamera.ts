@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, type RefObject } from 'react';
 import type { CameraState } from './types';
 
-export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
+export function useCamera(containerRef: RefObject<HTMLDivElement | null>, enabled = true) {
   const [camera, setCamera] = useState<CameraState>({ x: 0, y: 0, zoom: 1 });
   const [lastInteractionAt, setLastInteractionAt] = useState(0);
   const isDragging = useRef(false);
@@ -67,6 +67,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
   // ── keyboard listeners ──
   useEffect(() => {
+    if (!enabled) return;
     const onKeyDown = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) {
@@ -83,7 +84,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, []);
+  }, [enabled]);
 
   // ── pointer handlers ──
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -209,7 +210,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
   // ── native wheel (passive:false) ──
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el || !enabled) return;
 
     const handler = (e: WheelEvent) => {
       e.preventDefault();
@@ -238,7 +239,7 @@ export function useCamera(containerRef: RefObject<HTMLDivElement | null>) {
 
     el.addEventListener('wheel', handler, { passive: false });
     return () => el.removeEventListener('wheel', handler);
-  }, [containerRef]);
+  }, [containerRef, enabled]);
 
   const resetCamera = useCallback(() => {
     setCamera({ x: 0, y: 0, zoom: 1 });

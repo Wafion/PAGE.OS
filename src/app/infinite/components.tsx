@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { Compass, Infinity, Grid3x3, Pause, Play, Sparkles, Search, Plus, Zap, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Compass, Infinity, Grid3x3, Pause, Play, Sparkles } from 'lucide-react';
 import type { CameraState, ChunkCoord, MediaItem, WanderStats } from './types';
 import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from './useChunks';
 
@@ -135,53 +136,95 @@ function GalleryFeedCard({
 }
 
 /** A conventional, scrollable alternative to the spatial explorer. */
+function GalleryFeedViewportOverlay({ onReturnToInfinite }: { onReturnToInfinite: () => void }) {
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <>
+      <div className="art-feed-viewport-glass art-feed-viewport-glass-top" aria-hidden="true" />
+      <div className="art-feed-viewport-glass art-feed-viewport-glass-bottom" aria-hidden="true" />
+      <button type="button" className="art-feed-return" onClick={onReturnToInfinite}>
+        <Infinity className="h-3.5 w-3.5" aria-hidden="true" />
+        <span>Infinite discover</span>
+      </button>
+    </>,
+    document.body,
+  );
+}
+
 export function GalleryFeed({
   items,
   loading,
+  error,
+  hasMore,
+  prefetchNext,
+  loadNextPage,
   onSelect,
+  onReturnToInfinite,
 }: {
-  items: MediaItem[];
+  items: Array<{ item: MediaItem; key: string }>;
   loading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  prefetchNext: () => Promise<unknown>;
+  loadNextPage: () => void;
   onSelect?: (item: MediaItem) => void;
+  onReturnToInfinite: () => void;
 }) {
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+  const isInitialLoading = loading && items.length === 0;
+
+  React.useEffect(() => {
+    document.documentElement.classList.add('gallery-feed-scroll');
+    return () => document.documentElement.classList.remove('gallery-feed-scroll');
+  }, []);
+
+  React.useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadNextPage(); },
+      { rootMargin: '1200px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadNextPage]);
+
+  React.useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) void prefetchNext(); },
+      { rootMargin: '2400px 0px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [prefetchNext]);
+
   return (
     <section className="art-feed" aria-label="Artwork feed">
-      <header className="art-feed-toolbar">
-        <div className="art-feed-brand">
-          <span className="art-feed-mark" aria-hidden="true"><i /><i /><i /><i /></span>
-          <span>PAGE.OS</span>
-        </div>
-        <nav className="art-feed-tabs" aria-label="Artwork sections">
-          <button type="button" className="active">For you</button>
-          <button type="button">Following</button>
-          <button type="button">Explore</button>
-        </nav>
-        <label className="art-feed-search">
-          <Search className="h-4 w-4" />
-          <input aria-label="Search artwork" placeholder="Try ‘nocturnal landscapes’" />
-          <span className="art-feed-search-spark"><Sparkles className="h-4 w-4" /></span>
-        </label>
-        <div className="art-feed-actions">
-          <button type="button" className="art-feed-create"><Plus className="h-4 w-4" /> Create</button>
-          <button type="button" className="art-feed-icon" aria-label="Activity"><Zap className="h-4 w-4" /></button>
-          <button type="button" className="art-feed-avatar" aria-label="Account"><ChevronDown className="h-4 w-4" /></button>
-        </div>
-      </header>
-
       <div className="art-feed-grid">
-        {loading
+        {isInitialLoading
           ? Array.from({ length: 15 }).map((_, index) => (
               <div key={index} className="art-feed-skeleton" style={{ aspectRatio: `${[1.2, 0.7, 1.45, 0.9, 1.1][index % 5]}` }} />
             ))
-          : items.map((item, index) => (
+          : items.map(({ item, key }, index) => (
               <GalleryFeedCard
-                key={`${item.id ?? item.url}-${index}`}
+                key={key}
                 item={item}
                 index={index}
                 onSelect={onSelect}
               />
             ))}
       </div>
+      {!loading && items.length === 0 && !error && (
+        <p className="art-feed-status">No artwork is available right now.</p>
+      )}
+      <div ref={sentinelRef} className="art-feed-sentinel" aria-live="polite">
+        {loading && items.length > 0 && <span className="art-feed-loading">Gathering the next works…</span>}
+        {error && <button type="button" className="art-feed-retry" onClick={loadNextPage}>Try again</button>}
+      </div>
+      <GalleryFeedViewportOverlay onReturnToInfinite={onReturnToInfinite} />
     </section>
   );
 }

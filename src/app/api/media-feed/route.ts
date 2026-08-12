@@ -4,6 +4,7 @@ import { hydratePool } from './resolvers';
 import type { MediaItem } from './types';
 
 const CACHE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000;
+const WIKIMEDIA_THUMBNAIL_WIDTHS = [20, 40, 60, 120, 250, 330, 500, 960, 1280, 1920, 3840];
 
 const CURATED_MEDIA: MediaItem[] = [
   {
@@ -191,7 +192,7 @@ function getFallbackArtworks(): MediaItem[] {
 }
 
 function getCombinedPool(pool: MediaItem[]) {
-  return dedupeItems([...pool, ...CURATED_MEDIA]);
+  return dedupeItems([...pool, ...CURATED_MEDIA].map(normalizeWikimediaThumbnail));
 }
 
 function getRegionBucket(item: MediaItem): string {
@@ -265,6 +266,28 @@ function buildDiverseSelection(seed: number, pool: MediaItem[], limit: number): 
   return selection.slice(0, limit);
 }
 
+function normalizeWikimediaThumbnail(item: MediaItem): MediaItem {
+  try {
+    const parsed = new URL(item.url);
+    if (parsed.hostname !== 'upload.wikimedia.org' || !parsed.pathname.includes('/thumb/')) return item;
+    const match = parsed.pathname.match(/\/(\d+)px-([^/]+)$/);
+    if (!match) return item;
+    const requestedWidth = Number.parseInt(match[1], 10);
+    if (WIKIMEDIA_THUMBNAIL_WIDTHS.includes(requestedWidth)) return item;
+    const width = WIKIMEDIA_THUMBNAIL_WIDTHS.find((size) => size >= requestedWidth) ?? 3840;
+    parsed.pathname = parsed.pathname.replace(/\/\d+px-([^/]+)$/, `/${width}px-$1`);
+    return { ...item, url: parsed.toString(), width, height: Math.round(item.height * width / requestedWidth) };
+  } catch {
+    return item;
+  }
+}
+
+function buildFeedPage(seed: number, page: number, pool: MediaItem[], limit: number): { items: MediaItem[]; hasMore: boolean } {
+  const ordered = seededShuffle(dedupeItems(pool), lcg(seed));
+  const start = page * limit;
+  return { items: ordered.slice(start, start + limit), hasMore: start + limit < ordered.length };
+}
+
 async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
   const objectId = Number(itemId.replace(/^met-/, ''));
   if (!Number.isFinite(objectId)) return null;
@@ -322,6 +345,7 @@ export async function GET(request: Request) {
   const cx = searchParams.get('cx');
   const cy = searchParams.get('cy');
   const itemId = searchParams.get('itemId');
+  const feed = searchParams.get('feed');
 
   if (itemId?.startsWith('met-')) {
     const item = await fetchMetItemById(itemId);
@@ -340,6 +364,17 @@ export async function GET(request: Request) {
   }
 
   pool = getCombinedPool(pool.length === 0 ? getFallbackArtworks() : pool);
+
+  if (feed === '1') {
+    const seed = Number.parseInt(searchParams.get('seed') ?? '', 10);
+    const page = Number.parseInt(searchParams.get('page') ?? '0', 10);
+    const limit = Math.min(Math.max(Number.parseInt(searchParams.get('limit') ?? '20', 10) || 20, 1), 40);
+    if (!Number.isFinite(seed) || !Number.isInteger(page) || page < 0) {
+      return NextResponse.json({ error: 'Invalid feed pagination parameters.' }, { status: 400 });
+    }
+    const result = buildFeedPage(seed, page, pool, limit);
+    return NextResponse.json({ ...result, page, seed });
+  }
 
   if (cx !== null && cy !== null) {
     const seed = parseInt(cx, 10) * 31337 + parseInt(cy, 10) * 7919;

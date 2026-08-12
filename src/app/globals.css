@@ -2338,19 +2338,22 @@
 
 .pageos-detail-tabs {
   display: flex;
+  justify-content: flex-start;
   gap: 1.4rem;
   margin: 1.4rem 1.25rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 0.8rem;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .pageos-detail-tab {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   padding: 0;
   color: rgba(255, 255, 255, 0.62);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .pageos-detail-tab.active {
@@ -2453,9 +2456,16 @@
   color: #f2f1ef;
 }
 
+html.gallery-feed-scroll {
+  scrollbar-width: none;
+}
+html.gallery-feed-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .art-feed {
   min-height: 100%;
-  padding: 0 2rem 6.6rem;
+  padding: 1.35rem 2rem 6.6rem;
   background: #111;
 }
 
@@ -2595,6 +2605,38 @@
   background: #1b1b1b;
   text-align: left;
 }
+
+.art-feed-sentinel {
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.78rem;
+}
+.art-feed-loading, .art-feed-status { text-align: center; }
+.art-feed-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.art-feed-loading::before {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #b7abff;
+  box-shadow: 0 0 0 0.28rem rgba(183, 171, 255, 0.12);
+  animation: art-feed-breathe 1.25s ease-in-out infinite;
+  content: '';
+}
+.art-feed-retry {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
 .art-feed-card { cursor: pointer; }
 .art-feed-card img {
   display: block;
@@ -2603,6 +2645,69 @@
   min-height: 130px;
   object-fit: cover;
   transition: transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 240ms ease;
+}
+
+/* Keep the masonry layout intact while allowing off-screen cards to skip paint work. */
+@supports (content-visibility: auto) {
+  .art-feed-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+  }
+}
+
+.art-feed-viewport-glass {
+  position: fixed;
+  right: 0;
+  left: 0;
+  z-index: 16;
+  height: clamp(7rem, 21vh, 13rem);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 16% 0%, rgba(179, 163, 255, 0.1), transparent 42%),
+    radial-gradient(ellipse at 82% 12%, rgba(111, 210, 211, 0.07), transparent 40%),
+    repeating-radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.045) 0 0.55px, transparent 0.7px 3px),
+    linear-gradient(to bottom, rgba(17, 17, 17, 0.52), rgba(17, 17, 17, 0.15) 42%, transparent 100%);
+  background-size: auto, auto, 5px 5px, auto;
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.82) 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.82) 30%, transparent 100%);
+  backdrop-filter: blur(13px) saturate(0.84);
+  -webkit-backdrop-filter: blur(13px) saturate(0.84);
+}
+.art-feed-viewport-glass::after {
+  display: none;
+}
+.art-feed-viewport-glass-top {
+  top: 0;
+}
+.art-feed-viewport-glass-bottom {
+  bottom: 0;
+  transform: rotate(180deg);
+}
+.art-feed-return {
+  position: fixed;
+  right: clamp(0.85rem, 2vw, 1.5rem);
+  bottom: 1rem;
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(220, 214, 255, 0.26);
+  border-radius: 999px;
+  padding: 0.58rem 0.78rem;
+  background: rgba(22, 21, 31, 0.72);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+.art-feed-return:hover,
+.art-feed-return:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(220, 214, 255, 0.48);
+  background: rgba(45, 41, 66, 0.82);
 }
 .art-feed-missing-image {
   display: grid;
@@ -2646,6 +2751,7 @@
 }
 
 @keyframes art-feed-shimmer { to { background-position: -200% 0; } }
+@keyframes art-feed-breathe { 50% { transform: scale(0.72); opacity: 0.48; } }
 
 @media (max-width: 1200px) {
   .art-feed-grid { column-count: 4; }
@@ -2664,6 +2770,12 @@
   .art-feed-actions { gap: 0.35rem; }
   .art-feed-grid { column-count: 2; column-gap: 0.6rem; }
   .art-feed-card, .art-feed-skeleton { margin-bottom: 0.6rem; }
+  .art-feed-viewport-glass-top { top: 0; }
+  .art-feed-return { bottom: 0.8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art-feed-loading::before { animation: none; }
 }
 
 @media (max-width: 860px) {

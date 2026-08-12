@@ -7,6 +7,7 @@ import { useChunkVisibility, useGetChunkItems } from './useChunks';
 import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk, GalleryFeed } from './components';
 import { MediaDetailDialog } from './detail-dialog';
 import { useWander } from './useWander';
+import { useGalleryFeed } from './useGalleryFeed';
 
 function useMediaFeed() {
   const [items, setItems] = React.useState<MediaItem[]>([]);
@@ -39,10 +40,18 @@ export default function InfinitePage() {
   const [viewMode, setViewMode] = React.useState<'infinite' | 'feed'>('infinite');
   const centered = React.useRef(false);
 
-  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef);
+  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef, viewMode === 'infinite');
   const { items, loading } = useMediaFeed();
+  const galleryFeed = useGalleryFeed(viewMode === 'feed');
   const visibleChunks = useChunkVisibility(camera, viewportSize.w, viewportSize.h);
   const getChunkItems = useGetChunkItems(items);
+
+  const returnToInfinite = React.useCallback(() => {
+    // Feed mode uses document scrolling; return the spatial canvas to the same viewport origin as a direct visit.
+    window.scrollTo(0, 0);
+    setViewMode('infinite');
+    window.requestAnimationFrame(() => window.scrollTo(0, 0));
+  }, []);
 
   React.useEffect(() => {
     if (!wanderEnabled) {
@@ -77,6 +86,7 @@ export default function InfinitePage() {
   });
 
   React.useEffect(() => {
+    if (viewMode !== 'infinite') return;
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
@@ -92,12 +102,12 @@ export default function InfinitePage() {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [setPosition]);
+  }, [setPosition, viewMode]);
 
   return (
-    <div className={`flex-1 flex flex-col min-h-0${viewMode === 'feed' ? ' art-feed-page' : ''}`} style={{ background: viewMode === 'feed' ? '#111111' : 'hsl(var(--background))' }}>
+    <div className={`flex-1 flex flex-col min-h-0${viewMode === 'feed' ? ' art-feed-page' : ' min-h-[calc(100dvh-3.5rem)]'}`} style={{ background: viewMode === 'feed' ? '#111111' : 'hsl(var(--background))' }}>
       {viewMode === 'feed' ? (
-        <GalleryFeed items={items} loading={loading} onSelect={setSelectedItem} />
+        <GalleryFeed {...galleryFeed} onSelect={setSelectedItem} onReturnToInfinite={returnToInfinite} />
       ) : (
         <div
           ref={containerRef}
@@ -148,7 +158,7 @@ export default function InfinitePage() {
         </div>
       )}
 
-      <BottomControls
+      {viewMode === 'infinite' && <BottomControls
         camera={camera}
         wander={wanderStats}
         onToggleWander={() => {
@@ -158,7 +168,7 @@ export default function InfinitePage() {
         onResetWander={resetProgress}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-      />
+      />}
       <MediaDetailDialog
         item={selectedItem}
         open={selectedItem !== null}
