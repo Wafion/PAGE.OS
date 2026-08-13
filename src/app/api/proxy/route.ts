@@ -1,6 +1,32 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+const ALLOWED_PROXY_HOSTS = new Set([
+  'archive.org',
+  'books.google.com',
+  'collectionapi.metmuseum.org',
+  'commons.wikimedia.org',
+  'en.wikisource.org',
+  'gutendex.com',
+  'gutenberg.org',
+  'www.googleapis.com',
+  'www.gutenberg.org',
+]);
+
+const ALLOWED_PROXY_HOST_SUFFIXES = ['.archive.org', '.wikimedia.org', '.gutenberg.org'];
+
+function isAllowedProxyTarget(url: URL) {
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    return false;
+  }
+
+  if (ALLOWED_PROXY_HOSTS.has(url.hostname)) {
+    return true;
+  }
+
+  return ALLOWED_PROXY_HOST_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const targetUrlString = searchParams.get('url');
@@ -11,6 +37,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const targetUrl = new URL(targetUrlString);
+    if (!isAllowedProxyTarget(targetUrl)) {
+      return NextResponse.json({ error: 'URL host is not allowed' }, { status: 400 });
+    }
 
     const headers = new Headers();
 

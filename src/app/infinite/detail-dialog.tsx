@@ -113,11 +113,19 @@ function deriveFullResolutionUrl(url: string) {
   }
 }
 
+function isWikimediaUploadUrl(url: string) {
+  try {
+    return new URL(url).hostname === "upload.wikimedia.org";
+  } catch {
+    return false;
+  }
+}
+
 function deriveSourceUrl(item: MediaItem) {
   if (item.sourceUrl) return item.sourceUrl;
 
   const filename = getFilenameFromUrl(item.url);
-  if (filename && item.url.includes("upload.wikimedia.org")) {
+  if (filename && isWikimediaUploadUrl(item.url)) {
     return `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(filename)}`;
   }
 
@@ -127,7 +135,7 @@ function deriveSourceUrl(item: MediaItem) {
 function deriveSourceName(item: MediaItem) {
   if (item.sourceName) return item.sourceName;
 
-  if (item.url.includes("upload.wikimedia.org")) {
+  if (isWikimediaUploadUrl(item.url)) {
     return "Wikimedia Commons";
   }
 

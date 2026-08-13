@@ -232,11 +232,11 @@ function mergeSourceResults(groups: OpenTextResult[][], limit = 15) {
 function decodeXmlText(value: string) {
   return value
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
     .trim();
 }
 
