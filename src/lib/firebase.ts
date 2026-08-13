@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase/firestore';
 const firebaseConfig = {
   // Fallback to hardcoded values for local development
   // In a deployed environment, these are pulled from environment variables
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDcetZGa7-_c28lbdZ-ZqvAbXaIQ_mEpwQ",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   // Never fall back to window.location.hostname here. Firebase Auth expects a
   // real authorized auth domain, and using "localhost" breaks the popup/handler
   // flow by redirecting to http://localhost/__/auth/handler on port 80.
