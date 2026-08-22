@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "./types";
+import { WorldAroundThis } from "@/components/cultural-world-panel";
 
 type MediaDetailDialogProps = {
   item: MediaItem | null;
@@ -32,18 +33,16 @@ type MediaDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-type DetailTabKey = "about" | "details" | "related";
+type DetailTabKey = "about" | "related";
 
 const TABS_BY_TYPE: Record<MediaItem["type"], Array<{ key: DetailTabKey; label: string }>> = {
   artwork: [
     { key: "about", label: "About" },
-    { key: "details", label: "Details" },
     { key: "related", label: "Related Works" },
   ],
   book: [
     { key: "about", label: "About" },
-    { key: "details", label: "Details" },
-    { key: "related", label: "Contents" },
+    { key: "related", label: "Related Works" },
   ],
 };
 
@@ -494,27 +493,43 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
             ))}
           </div>
 
-          <div className="pageos-detail-lower">
-            <div className="pageos-detail-section">
-              <p className="pageos-detail-section-kicker">
-                {displayItem.type === "book" ? "Summary" : "Description"}
-              </p>
-              <p className="pageos-detail-description">{description}</p>
-            </div>
-
-            {tags.length > 0 && (
+          {activeTab === "about" && (
+            <div className="pageos-detail-lower">
               <div className="pageos-detail-section">
-                <p className="pageos-detail-section-kicker">Tags</p>
-                <div className="pageos-detail-tag-cloud">
-                  {tags.map((tag) => (
-                    <span key={tag} className="pageos-detail-chip">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                <p className="pageos-detail-section-kicker">
+                  {displayItem.type === "book" ? "Summary" : "Description"}
+                </p>
+                <p className="pageos-detail-description">{description}</p>
               </div>
-            )}
-          </div>
+
+              {tags.length > 0 && (
+                <div className="pageos-detail-section">
+                  <p className="pageos-detail-section-kicker">Tags</p>
+                  <div className="pageos-detail-tag-cloud">
+                    {tags.map((tag) => (
+                      <span key={tag} className="pageos-detail-chip">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "related" && (
+            <div className="pageos-detail-lower" style={{ gridTemplateColumns: "1fr" }}>
+              <WorldAroundThis
+                itemId={displayItem.id ?? displayItem.url}
+                itemType={displayItem.type}
+                itemTitle={displayItem.title}
+                author={displayItem.creator}
+                source={displayItem.source}
+                sourceUrl={displayItem.sourceUrl}
+                subjects={tags}
+              />
+            </div>
+          )}
 
           <div className="pageos-detail-credits">
             <div className="pageos-detail-credits-header">

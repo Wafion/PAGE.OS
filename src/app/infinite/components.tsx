@@ -203,6 +203,9 @@ export function GalleryFeed({
 
   return (
     <section className="art-feed" aria-label="Artwork feed">
+      {/* Spacer pushes initial cards below the viewport so images finish
+          loading / rendering before the user scrolls them into view. */}
+      <div className="art-feed-preload-spacer" aria-hidden="true" />
       <div className="art-feed-grid">
         {isInitialLoading
           ? Array.from({ length: 15 }).map((_, index) => (

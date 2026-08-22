@@ -234,7 +234,7 @@ async function fetchGutendexShelf(query?: string, page = 1) {
       Accept: "application/json",
       "User-Agent": "PAGE.OS/1.0 (reader recommendations)",
     },
-    signal: AbortSignal.timeout(4000),
+    signal: AbortSignal.timeout(6000),
     next: { revalidate: 21600 },
   });
 

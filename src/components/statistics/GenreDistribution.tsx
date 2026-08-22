@@ -19,42 +19,42 @@ export default function GenreDistribution({
 
   if (genreArray.length === 0) {
     return (
-      <div className="text-center py-8">
-        <BookOpen className="h-6 w-6 text-accent/50 mx-auto mb-2" />
-        <p className="text-xs text-muted-foreground">
-          No genre data available yet. Start reading to see your preferences!
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <BookOpen className="h-8 w-8 text-muted-foreground/30 mb-3" />
+        <p className="text-sm text-muted-foreground/60">
+          No genre data yet.
+        </p>
+        <p className="text-xs text-muted-foreground/40 mt-1">
+          Start reading to see your preferences!
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center space-x-3 mb-2">
-        <BookOpen className="h-4 w-4 text-accent" />
-        <h3 className="font-headline text-xs text-accent/80">Top Genres</h3>
-      </div>
-
-      <div className="space-y-2">
-        {genreArray.map(({ genre, count }, index) => (
-          <div key={index} className="flex items-center space-x-2">
-            <div className="flex-1 text-xs font-medium">
-              {genre.charAt(0).toUpperCase() + genre.slice(1)}
+    <div className="space-y-3">
+      {genreArray.map(({ genre, count }, index) => {
+        const percentage = Math.round((count / Math.max(...genreArray.map(g => g.count))) * 100);
+        const displayName = genre.length > 28 ? `${genre.slice(0, 28)}...` : genre;
+        return (
+          <div key={index} className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-foreground/80 truncate max-w-[70%]">
+                {displayName.charAt(0).toUpperCase() + displayName.slice(1)}
+              </span>
+              <span className="text-xs font-bold tabular-nums text-accent">
+                {count}
+              </span>
             </div>
-            <div className="w-16 text-right text-xs">
-              {count}
-            </div>
-            <div className="flex-1">
-              <div className="w-full bg-border/50 rounded h-1.5">
-                <div
-                  className={`h-full bg-accent rounded`}
-                  style={{ width: `${Math.min((count / Math.max(...genreArray.map(g => g.count)) * 100), 100)}%` }}
-                ></div>
-              </div>
+            <div className="w-full bg-border/30 rounded-full h-1.5 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-accent/60 to-accent rounded-full transition-all duration-500"
+                style={{ width: `${percentage}%` }}
+              />
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

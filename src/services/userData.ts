@@ -130,8 +130,8 @@ export async function updateReadingSession(userId: string, bookId: string, sessi
       longestStreak,
       totalTimeSpentReading: (existingStats.totalTimeSpentReading ?? 0) + sessionTime,
       averageSessionLength: sessionData.isNewSession
-        ? ((existingStats.totalTimeSpentReading ?? 0) + sessionTime) /
-          Math.max(1, (existingStats.totalReadingSessions ?? 0) + 1)
+        ? Math.round((((existingStats.totalTimeSpentReading ?? 0) + sessionTime) /
+          Math.max(1, (existingStats.totalReadingSessions ?? 0) + 1)) * 100) / 100
         : (existingStats.averageSessionLength ?? 0),
       totalReadingSessions: (existingStats.totalReadingSessions ?? 0) + (sessionData.isNewSession ? 1 : 0),
       lastUpdated: now,
@@ -207,7 +207,7 @@ export async function calculateAndUpdateUserStatistics(userId: string): Promise<
 
     // Calculate average session length
     const totalSessions = books.reduce((sum, book) => sum + (book.totalReadingSessions || 0), 0);
-    const averageSessionLength = totalSessions > 0 ? totalTimeSpentReading / totalSessions : 0;
+    const averageSessionLength = totalSessions > 0 ? Math.round((totalTimeSpentReading / totalSessions) * 100) / 100 : 0;
 
     // Calculate books by genre
     const booksByGenre: Record<string, number> = {};

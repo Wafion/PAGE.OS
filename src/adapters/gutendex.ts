@@ -250,34 +250,125 @@ export async function fetchGutenbergBooks(query?: string, page = 1): Promise<Map
  * @param formats A record of available formats for the book (e.g., 'text/plain', 'application/epub+zip').
  * @returns A promise that resolves to the book's content as a single string.
  */
+function extractGutenbergId(formats: Record<string, string>): string | null {
+  // Try to extract the Gutenberg ID from any format URL.
+  // URLs look like:
+  //   https://www.gutenberg.org/ebooks/6133.txt.utf-8
+  //   https://www.gutenberg.org/cache/epub/6133/pg6133.txt
+  for (const url of Object.values(formats)) {
+    const cacheMatch = url.match(/gutenberg\.org\/cache\/epub\/(\d+)/);
+    if (cacheMatch) return cacheMatch[1];
+    const ebookMatch = url.match(/gutenberg\.org\/ebooks\/(\d+)/);
+    if (ebookMatch) return ebookMatch[1];
+  }
+  return null;
+}
+
+function buildGutenbergCandidateUrls(formats: Record<string, string>): string[] {
+  const urls: string[] = [];
+  const id = extractGutenbergId(formats);
+
+  // 1. The reliable cache URL (Gutenberg's CDN) — try first
+  if (id) {
+    urls.push(`https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`);
+  }
+
+  // 2. The original URL from the format record (often /ebooks/ID.txt.utf-8)
+  const plainTextEntry = Object.entries(formats).find(([key, url]) =>
+    key.startsWith('text/plain') && !url.endsWith('.zip')
+  );
+  if (plainTextEntry) {
+    const originalUrl = plainTextEntry[1];
+    if (!urls.includes(originalUrl)) {
+      urls.push(originalUrl);
+    }
+  }
+
+  // 3. If we found an ID but no cache URL was already added, also try
+  //    the plaintext path directly on gutenberg.org
+  if (id && !urls.some((u) => u.includes('/cache/'))) {
+    urls.push(`https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`);
+  }
+
+  return urls;
+}
+
+async function fetchWithRetry(url: string, retries = 2, timeoutMs = 20000): Promise<string> {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`,
+        { signal: AbortSignal.timeout(timeoutMs) }
+      );
+
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 100) {
+          return text;
+        }
+        // Very short response likely means an error page, not real content
+        throw new Error('Response too short — likely an error page');
+      }
+
+      // 503/429 = server overloaded, retry. 404 = not found, don't retry.
+      if (res.status === 404) {
+        throw new Error(`Not found: ${url}`);
+      }
+
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    // Brief pause before retry (exponential backoff)
+    if (attempt < retries) {
+      await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Fetch failed after retries');
+}
+
+/**
+ * Fetches the actual text content of a single book from Gutendex.
+ * Tries the reliable Gutenberg cache URL first, then falls back to the
+ * original Gutendex-provided URL. Retries on transient 503/connection errors.
+ *
+ * @param formats A record of available formats for the book.
+ * @returns A promise that resolves to the book's content as a single string.
+ */
 export async function fetchGutenbergBookContent(formats: Record<string, string>): Promise<string | Blob> {
   const formatEntries = Object.entries(formats);
 
-  // STEP 1: Find a suitable plain text format.
-  // We prioritize plain text because it's the easiest to parse and display.
-  // We specifically exclude .zip files, as they would require an extra decompression step.
-  const plainTextEntry = formatEntries.find(([key, url]) => 
+  // Check if any plain text format is available at all
+  const hasPlainText = formatEntries.some(([key, url]) =>
     key.startsWith('text/plain') && !url.endsWith('.zip')
   );
 
-  if (plainTextEntry) {
-    // STEP 2: If a plain text URL is found, fetch its content.
-    const plainTextUrl = plainTextEntry[1];
-    // Again, we use our API proxy for the fetch.
-    const res = await fetch(`/api/proxy?url=${encodeURIComponent(plainTextUrl)}`);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch book content from ${plainTextUrl}`);
+  if (!hasPlainText) {
+    const epubUrl = formats['application/epub+zip'];
+    if (epubUrl) {
+      throw new Error('EPUB format is not supported by the PageOS reader at this time.');
     }
-    // STEP 3: Return the content as a raw text string.
-    return await res.text();
+    throw new Error('No compatible book format found for this Gutendex book (epub or txt).');
   }
 
-  // If we find an EPUB, throw a specific error because the reader doesn't support it.
-  const epubUrl = formats['application/epub+zip'];
-  if (epubUrl) {
-    throw new Error('EPUB format is not supported by the PageOS reader at this time.');
+  // Build ordered list of candidate URLs (cache URL first)
+  const candidates = buildGutenbergCandidateUrls(formats);
+
+  let lastError: unknown = null;
+  for (const url of candidates) {
+    try {
+      const text = await fetchWithRetry(url);
+      return text;
+    } catch (error) {
+      lastError = error;
+      console.warn(`Failed to fetch from ${url}:`, error instanceof Error ? error.message : error);
+    }
   }
 
-  // If no compatible format is found, throw a general error.
-  throw new Error('No compatible book format found for this Gutendex book (epub or txt).');
+  throw lastError instanceof Error
+    ? new Error(`Could not load book content. ${lastError.message}`)
+    : new Error('Could not load book content from any available source.');
 }

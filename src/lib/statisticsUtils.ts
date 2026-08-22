@@ -131,12 +131,14 @@ export function calculateBooksByGenre(books: any[]): Record<string, number> {
  * @returns Formatted string (e.g., "2h 15m", "45m", "90s")
  */
 export function formatTime(seconds: number): string {
-  if (seconds < 60) {
-    return `${seconds}s`;
+  const s = Math.round(seconds * 100) / 100;
+
+  if (s < 60) {
+    return `${Math.round(s)}s`;
   }
 
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
+  const minutes = Math.floor(s / 60);
+  const remainingSeconds = Math.round(s % 60);
 
   if (minutes < 60) {
     return remainingSeconds > 0

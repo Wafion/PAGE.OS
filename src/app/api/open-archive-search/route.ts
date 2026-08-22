@@ -134,7 +134,8 @@ async function fetchArchiveJson<T>(url: string): Promise<T> {
       'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
     },
     signal: AbortSignal.timeout(12000),
-    next: { revalidate: 600 },
+    // Don't cache — some metadata responses exceed Next.js 2MB cache limit
+    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -182,35 +183,54 @@ async function fetchWikisourceResults(query: string): Promise<OpenTextResult[]> 
     });
 }
 
-async function fetchGoogleBooksResults(query: string): Promise<OpenTextResult[]> {
+async function fetchGoogleBooksResults(query: string, retries = 1): Promise<OpenTextResult[]> {
   const params = new URLSearchParams({
     q: query,
     filter: 'full',
     maxResults: '10',
     projection: 'full',
   });
-  const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, {
-    headers: { Accept: 'application/json', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
-    signal: AbortSignal.timeout(8000),
-    next: { revalidate: 600 },
-  });
 
-  if (!response.ok) {
-    throw new Error(`Google Books request failed: ${response.status}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, {
+        headers: { Accept: 'application/json', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
+        signal: AbortSignal.timeout(8000),
+        next: { revalidate: 600 },
+      });
+
+      // 429 = rate limited — retry once after a brief pause
+      if (response.status === 429 && attempt < retries) {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Google Books request failed: ${response.status}`);
+      }
+
+      const payload = (await response.json()) as GoogleBooksResponse;
+      return (payload.items ?? [])
+        .filter((item) => item.accessInfo?.publicDomain && item.accessInfo.pdf?.isAvailable && item.accessInfo.pdf.downloadLink)
+        .map((item) => ({
+          id: `google-books:${item.id}`,
+          title: `${item.volumeInfo?.title || 'Untitled'} (PDF)`,
+          link: item.accessInfo!.pdf!.downloadLink!,
+          type: 'pdf' as const,
+          sourceName: 'Google Books public domain',
+          rightsLabel: 'Public domain',
+          detailUrl: item.accessInfo?.infoLink || `https://books.google.com/books?id=${encodeURIComponent(item.id)}`,
+        }));
+    } catch (error) {
+      // On last attempt or non-retryable error, return empty
+      if (attempt >= retries) {
+        console.warn('[Google Books] Giving up after retries:', error instanceof Error ? error.message : error);
+        return [];
+      }
+    }
   }
 
-  const payload = (await response.json()) as GoogleBooksResponse;
-  return (payload.items ?? [])
-    .filter((item) => item.accessInfo?.publicDomain && item.accessInfo.pdf?.isAvailable && item.accessInfo.pdf.downloadLink)
-    .map((item) => ({
-      id: `google-books:${item.id}`,
-      title: `${item.volumeInfo?.title || 'Untitled'} (PDF)`,
-      link: item.accessInfo!.pdf!.downloadLink!,
-      type: 'pdf' as const,
-      sourceName: 'Google Books public domain',
-      rightsLabel: 'Public domain',
-      detailUrl: item.accessInfo?.infoLink || `https://books.google.com/books?id=${encodeURIComponent(item.id)}`,
-    }));
+  return [];
 }
 
 function mergeSourceResults(groups: OpenTextResult[][], limit = 15) {

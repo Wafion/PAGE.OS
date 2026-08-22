@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastUpdated": 1786530599839,
-    "hydrationLevel": 225
+    "lastUpdated": 1787377191698,
+    "hydrationLevel": 228
   },
   "seen_urls": [
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-14286-001.jpg",
@@ -228,7 +228,10 @@
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-26882-001.jpg",
     "https://openaccess-cdn.clevelandart.org/1930.730/1930.730_web.jpg",
     "https://openaccess-cdn.clevelandart.org/1952.455/1952.455_web.jpg",
-    "https://images.metmuseum.org/CRDImages/md/web-large/DP330356.jpg"
+    "https://images.metmuseum.org/CRDImages/md/web-large/DP330356.jpg",
+    "https://openaccess-cdn.clevelandart.org/1964.266/1964.266_web.jpg",
+    "https://openaccess-cdn.clevelandart.org/1948.308.a/1948.308.a_web.jpg",
+    "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg"
   ],
   "items": [
     {
@@ -5511,6 +5514,93 @@
       "culture": "South German",
       "attribution": "The Three Magi, from an Adoration Group. ca. 1515–20. Hans Thoman. The Metropolitan Museum of Art",
       "rightsLabel": "Public Domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-140301",
+      "sourceRecordId": "cma:140301",
+      "url": "https://openaccess-cdn.clevelandart.org/1964.266/1964.266_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/1964.266/1964.266_print.jpg",
+      "width": "783",
+      "height": "893",
+      "title": "Large Jar with Peonies, Orchids, and Chrysanthemums",
+      "creator": "Unknown Artist",
+      "year": "late 1600s",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/1964.266",
+      "description": "Spring peonies, summer orchids, and autumn chrysanthemums bloom at the same time amid garden rocks. These underglaze blue motifs were inspired by similar designs on Chinese ceramics made for export to Europe. In the early 1600s, Korean potters in Japan discovered kaolin, the clay essential for porcelain production. At the same time, political turmoil in China following the collapse of the Ming dynasty (1368–1644) disrupted Chinese exports. Together, these circumstances created an opportunity for Japan to supply ceramics to the European market. Careful study of Chinese prototypes shaped the work of Japanese ceramists for both domestic and overseas audiences.",
+      "tags": [
+        "Ceramic",
+        "Japan, Edo period (1615–1868)"
+      ],
+      "medium": "Porcelain with underglaze blue decoration (Imari ware)",
+      "collection": "Japanese Art",
+      "accessionNumber": "1964.266",
+      "creditLine": "Severance and Greta Millikin Collection",
+      "region": "East Asia",
+      "culture": "Japan, Edo period (1615–1868)",
+      "attribution": "Large Jar with Peonies, Orchids, and Chrysanthemums. late 1600s. Cleveland Museum of Art",
+      "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-126089",
+      "sourceRecordId": "cma:126089",
+      "url": "https://openaccess-cdn.clevelandart.org/1948.308.a/1948.308.a_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/1948.308.a/1948.308.a_print.jpg",
+      "width": "900",
+      "height": "713",
+      "title": "Feline Incense Burner",
+      "creator": "Unknown Artist",
+      "year": "1150–1200",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/1948.308.a",
+      "description": "In Iran during the 1000s and 1100s, vessels in the shape of animals gained popularity, especially as incense burners. Felines were favored in Persian art and this piece may represent a caracal, a type of lynx. The head of the creature was cast separately and is removable to fill its body with hot coals and incense. Qur’anic verses on the neck and spine remind worshippers to set work aside, attend prayer, and then disperse to seek God’s bounty. The diffusion of perfumed smoke through the burner’s pierced palmette design may have served as a sensorial reminder of this teaching.",
+      "tags": [
+        "Metalwork",
+        "Iran, Khurasan, Seljuq period of Iran (1037–1194)"
+      ],
+      "medium": "Copper alloy, cast, engraved, chased, and pierced",
+      "collection": "Islamic Art",
+      "accessionNumber": "1948.308.a",
+      "creditLine": "John L. Severance Fund",
+      "region": "Middle East",
+      "culture": "Iran, Khurasan, Seljuq period of Iran (1037–1194)",
+      "attribution": "Feline Incense Burner. 1150–1200. Cleveland Museum of Art",
+      "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-167456",
+      "sourceRecordId": "cma:167456",
+      "url": "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_print.jpg",
+      "width": "1043",
+      "height": "893",
+      "title": "Rock at Sea",
+      "creator": "Raymond Jonson (American, 1891–1982)",
+      "year": "1920–1922",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/2009.269",
+      "description": "The radically stylized tendencies in Rock at Sea were motivated by Jonson’s earlier work as an avant-garde scenic and lighting designer for the esteemed Chicago Little Theatre. Inspired by the jagged coast of Ogunquit, Maine, the painting’s visionary rendering of nature embodies the artist’s long-standing interest in communicating mystical concepts. Later, Jonson would move to Albuquerque, New Mexico, and co-found the Transcendental Painting Group, an association of artists dedicated to expressing the imaginative and spiritual realms through abstract art.",
+      "tags": [
+        "Painting",
+        "America"
+      ],
+      "medium": "oil on canvas",
+      "collection": "American - Painting",
+      "accessionNumber": "2009.269",
+      "creditLine": "Severance and Greta Millikin Purchase Fund",
+      "region": "Latin America",
+      "culture": "America",
+      "attribution": "Rock at Sea. 1920–1922. Raymond Jonson (American, 1891–1982). Cleveland Museum of Art",
+      "rightsLabel": "CC0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
     }
   ]

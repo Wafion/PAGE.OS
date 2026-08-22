@@ -69,10 +69,9 @@ export async function GET(request: NextRequest) {
       fetch(targetUrl, {
         headers: {
           Accept: 'application/json',
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
         },
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(10000),
         next: { revalidate: 600 },
       }),
       fetchProjectGutenbergOpdsBooks(query || undefined, Number(page) || 1),

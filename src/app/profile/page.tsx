@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, Clock, Download, Layout, Library, LogIn, LogOut, RotateCw, User as UserIcon } from "lucide-react";
+import { BookOpen, Clock, Download, Layout, Library, LogIn, LogOut, RotateCw, User as UserIcon } from 'lucide-react';
 import { useAuth } from "@/context/auth-provider";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, signOut, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import ReadingStatsNetwork from "@/components/statistics/ReadingStatsNetwork";
+import ReadingOverview from "@/components/statistics/ReadingOverview";
 import StatCard from "@/components/statistics/StatCard";
 import StreakVisualizer from "@/components/statistics/StreakVisualizer";
 import ReadingCalendar from "@/components/statistics/ReadingCalendar";
@@ -141,68 +141,90 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
-        <ReadingStatsNetwork
-          statistics={statistics}
-          loading={statsLoading}
-          refreshing={statsRefreshing}
-          onRefresh={user ? handleRefreshStatistics : undefined}
-          variant={uiMode}
-        />
+      {/* Stats Overview */}
+      <ReadingOverview
+        statistics={statistics}
+        loading={statsLoading}
+        variant={uiMode}
+      />
 
-        <Card className="border-border/50 bg-card">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle className="font-headline text-lg text-accent/80">
-                  {uiMode === "lounge" ? "Reading Memory" : "READING_METRICS"}
-                </CardTitle>
-                <CardDescription>
-                  {user
-                    ? "A compact readout of your saved library activity."
-                    : "Sign in to build a synced reading map."}
-                </CardDescription>
-              </div>
-              {user && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleRefreshStatistics}
-                  disabled={statsRefreshing}
-                  aria-label="Refresh reading statistics"
-                >
-                  <RotateCw className={`h-4 w-4 text-accent ${statsRefreshing ? "animate-spin" : ""}`} />
-                </Button>
-              )}
+      {/* Detailed Metrics */}
+      <Card className="border-border/40 bg-card/60">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-headline text-lg text-accent/80">
+                {uiMode === "lounge" ? "Reading Memory" : "READING_METRICS"}
+              </CardTitle>
+              <CardDescription>
+                {user
+                  ? "A compact readout of your saved library activity."
+                  : "Sign in to build a synced reading map."}
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent>
-            {statsLoading ? (
-              <div className="flex min-h-32 items-center justify-center gap-3 text-sm text-muted-foreground">
-                <RotateCw className="h-4 w-4 animate-spin text-accent" />
-                Loading reading memory...
-              </div>
-            ) : statistics ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <StatCard title="Books Completed" value={statistics.booksCompleted} label="Finished reads" icon={BookOpen} />
-                <StatCard title="Time Read" value={formatTime(statistics.totalTimeSpentReading)} label="Total engagement" icon={Clock} />
-                <StatCard title="Average Session" value={formatTime(statistics.averageSessionLength)} label="Per visit" icon={Layout} />
-                <StatCard title="Library Size" value={statistics.totalBooksInLibrary} label="Saved books" icon={Library} />
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border/50 bg-background/50 p-5 text-sm text-muted-foreground">
-                No reading statistics yet. Saved books and tracked sessions will appear here.
-              </div>
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefreshStatistics}
+                disabled={statsRefreshing}
+                aria-label="Refresh reading statistics"
+              >
+                <RotateCw className={`h-4 w-4 text-accent ${statsRefreshing ? "animate-spin" : ""}`} />
+              </Button>
             )}
-          </CardContent>
-        </Card>
-      </section>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {statsLoading ? (
+            <div className="flex min-h-24 items-center justify-center gap-3 text-sm text-muted-foreground">
+              <RotateCw className="h-4 w-4 animate-spin text-accent" />
+              Loading reading memory...
+            </div>
+          ) : statistics ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Books Done"
+                value={statistics.booksCompleted}
+                label="Finished reads"
+                icon={BookOpen}
+                accent={statistics.booksCompleted > 0}
+              />
+              <StatCard
+                title="Time Read"
+                value={formatTime(statistics.totalTimeSpentReading)}
+                label="Total engagement"
+                icon={Clock}
+                accent={statistics.totalTimeSpentReading > 0}
+              />
+              <StatCard
+                title="Avg Session"
+                value={formatTime(statistics.averageSessionLength)}
+                label="Per visit"
+                icon={Layout}
+                accent={statistics.averageSessionLength > 0}
+              />
+              <StatCard
+                title="Library"
+                value={statistics.totalBooksInLibrary}
+                label="Saved books"
+                icon={Library}
+                accent={statistics.totalBooksInLibrary > 0}
+              />
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border/30 bg-muted/20 p-6 text-center text-sm text-muted-foreground/60">
+              No reading statistics yet. Saved books and tracked sessions will appear here.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {statistics && (
         <section className="grid gap-4 lg:grid-cols-3">
-          <Card className="border-border/50 bg-card">
-            <CardHeader>
-              <CardTitle className="font-headline text-lg text-accent/80">Reading Streak</CardTitle>
+          <Card className="border-border/40 bg-card/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-headline text-sm text-accent/80">Reading Streak</CardTitle>
             </CardHeader>
             <CardContent>
               <StreakVisualizer
@@ -217,18 +239,18 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card">
-            <CardHeader>
-              <CardTitle className="font-headline text-lg text-accent/80">Reading Calendar</CardTitle>
+          <Card className="border-border/40 bg-card/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-headline text-sm text-accent/80">Reading Calendar</CardTitle>
             </CardHeader>
             <CardContent>
               <ReadingCalendar readingCalendar={statistics.readingCalendar || {}} variant={uiMode} />
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card">
-            <CardHeader>
-              <CardTitle className="font-headline text-lg text-accent/80">Genre Clusters</CardTitle>
+          <Card className="border-border/40 bg-card/60">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-headline text-sm text-accent/80">Genre Clusters</CardTitle>
             </CardHeader>
             <CardContent>
               <GenreDistribution booksByGenre={statistics.booksByGenre || {}} variant={uiMode} />
@@ -237,20 +259,22 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <Card className="border-border/50 bg-card">
-        <CardHeader>
-          <CardTitle className="font-headline text-lg text-accent/80">Export Data</CardTitle>
-           <CardDescription>
+      <Card className="border-border/40 bg-card/60">
+        <CardHeader className="pb-2">
+          <CardTitle className="font-headline text-sm text-accent/80">Export Data</CardTitle>
+          <CardDescription className="text-xs">
             This feature is currently under development.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
-          <Button variant="outline" className="border-border/50" disabled>
-            <Download className="mr-2 h-4 w-4" /> EXPORT_PINS
-          </Button>
-          <Button variant="outline" className="border-border/50" disabled>
-            <Download className="mr-2 h-4 w-4" /> EXPORT_COMPLETED_LOGS
-          </Button>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" className="border-border/40 text-xs" disabled>
+              <Download className="mr-2 h-3.5 w-3.5" /> Export Pins
+            </Button>
+            <Button variant="outline" className="border-border/40 text-xs" disabled>
+              <Download className="mr-2 h-3.5 w-3.5" /> Export Reading Logs
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

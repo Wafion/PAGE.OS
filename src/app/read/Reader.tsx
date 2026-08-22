@@ -25,6 +25,7 @@ import { useReaderSettings } from '@/context/reader-settings-provider';
 import { useAudio } from '@/context/audio-provider';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AudioControls } from '@/components/audio/audio-controls';
+import { WorldAroundThis } from '@/components/cultural-world-panel';
 import PdfReader from './PdfReader';
 
 export default function Reader() {
@@ -64,6 +65,7 @@ export default function Reader() {
   }, [suspendMusic, resumeMusic]);
 
   const [showTOC, setShowTOC] = useState(false);
+  const [showWorld, setShowWorld] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);
   const classicViewportRef = useRef<HTMLDivElement>(null);
 
@@ -143,14 +145,51 @@ export default function Reader() {
   }
 
   if (error) {
+    const isSourceUnavailable = error.includes('503') || error.includes('504') || error.includes('temporarily unavailable') || error.includes('Could not load');
     return (
       <div className="flex h-[100dvh] items-center justify-center bg-background text-destructive">
-        <div className="flex max-w-md flex-col items-center gap-3 text-center">
+        <div className="flex max-w-md flex-col items-center gap-4 text-center px-4">
           <AlertTriangle className="h-8 w-8" />
           <p className="font-headline text-lg">
             {uiMode === 'lounge' ? 'We could not open this book' : 'TRANSMISSION_ERROR'}
           </p>
-          <p className="text-xs text-muted-foreground">{error}</p>
+          {isSourceUnavailable ? (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                The source archive (Project Gutenberg) is temporarily unavailable.
+                This usually resolves within a few minutes.
+              </p>
+              <p className="text-xs text-muted-foreground/70">{error}</p>
+              <div className="flex gap-3 mt-2">
+                <Button
+                  variant="outline"
+                  className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
+                  onClick={() => window.location.reload()}
+                >
+                  <LoaderCircle className="mr-2 h-4 w-4" />
+                  Try again
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => router.back()}
+                >
+                  Go back
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">{error}</p>
+              <Button
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => router.back()}
+              >
+                Go back
+              </Button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -250,6 +289,34 @@ export default function Reader() {
                   : 'When you are ready, move on to the next chapter or revisit the guide.'}
               </p>
             </div>
+
+            {book && (
+              <div className="library-reader-summary-card">
+                <button
+                  type="button"
+                  onClick={() => setShowWorld((prev) => !prev)}
+                  className="flex w-full items-center justify-between text-left"
+                >
+                  <div>
+                    <p className="library-kicker">Open the world around this</p>
+                    <h3>{showWorld ? 'Hide cultural connections' : 'Explore related art, books & periods'}</h3>
+                  </div>
+                  <span className="text-xs text-accent">{showWorld ? '−' : '+'}</span>
+                </button>
+                {showWorld && (
+                  <div className="mt-3">
+                    <WorldAroundThis
+                      itemId={book.id}
+                      itemType="book"
+                      itemTitle={book.title}
+                      author={book.authors}
+                      source={book.source}
+                      subjects={'subjects' in book ? book.subjects : undefined}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="library-reader-chapters">
               {toc.map((entry, index) => {
@@ -393,6 +460,34 @@ export default function Reader() {
                     : 'When you are ready, move on to the next chapter or revisit the guide.'}
                 </p>
               </div>
+
+              {book && (
+                <div className="library-reader-summary-card">
+                  <button
+                    type="button"
+                    onClick={() => setShowWorld((prev) => !prev)}
+                    className="flex w-full items-center justify-between text-left"
+                  >
+                    <div>
+                      <p className="library-kicker">Open the world around this</p>
+                      <h3>{showWorld ? 'Hide connections' : 'Explore related art, books & periods'}</h3>
+                    </div>
+                    <span className="text-xs text-accent">{showWorld ? '−' : '+'}</span>
+                  </button>
+                  {showWorld && (
+                    <div className="mt-3">
+                      <WorldAroundThis
+                        itemId={book.id}
+                        itemType="book"
+                        itemTitle={book.title}
+                        author={book.authors}
+                        source={book.source}
+                        subjects={'subjects' in book ? book.subjects : undefined}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         </main>
@@ -481,14 +576,73 @@ export default function Reader() {
                   />
                 </div>
               </div>
+              {book && (
+                <button
+                  type="button"
+                  onClick={() => setShowWorld((prev) => !prev)}
+                  className="w-full border border-accent/15 bg-background/60 px-3 py-3 text-left transition hover:border-accent/30 hover:bg-accent/5"
+                >
+                  <div className="text-[10px] uppercase tracking-[0.24em] text-accent">
+                    {showWorld ? 'Hide connections' : 'World around this'}
+                  </div>
+                  <div className="mt-1 text-sm text-foreground">
+                    {showWorld ? 'Collapse cultural context' : 'Explore related art, books & periods'}
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-            <div className="mb-2 flex items-center gap-2 px-1 text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+          {book && showWorld && (
+            <div className="border-b border-border/40 px-4 py-4">
+              <WorldAroundThis
+                itemId={book.id}
+                itemType="book"
+                itemTitle={book.title}
+                author={book.authors}
+                source={book.source}
+                subjects={'subjects' in book ? book.subjects : undefined}
+              />
+            </div>
+          )}
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">              <div className="mb-2 flex items-center gap-2 px-1 text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
               <BookOpen className="h-3.5 w-3.5" />
               Chapter index
             </div>
+
+            {book && (
+              <div className="mb-3 border border-accent/15 bg-background/60">
+                <button
+                  type="button"
+                  onClick={() => setShowWorld((prev) => !prev)}
+                  className="flex w-full items-center justify-between px-3 py-3 text-left transition hover:bg-accent/5"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-[0.24em] text-accent">
+                      World around this
+                    </div>
+                    <div className="mt-1 text-sm text-foreground">
+                      {showWorld ? 'Hide connections' : 'Explore related culture'}
+                    </div>
+                  </div>
+                  <span className="ml-2 text-xs text-accent">{showWorld ? '−' : '+'}</span>
+                </button>
+                {showWorld && (
+                  <div className="border-t border-accent/10 px-3 py-3">
+                    <WorldAroundThis
+                      itemId={book.id}
+                      itemType="book"
+                      itemTitle={book.title}
+                      author={book.authors}
+                      source={book.source}
+                      subjects={'subjects' in book ? book.subjects : undefined}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               {toc.map((entry, index) => {
                 const nextEntry = toc[index + 1];

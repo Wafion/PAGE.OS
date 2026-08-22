@@ -27,6 +27,28 @@ function isAllowedProxyTarget(url: URL) {
   return ALLOWED_PROXY_HOST_SUFFIXES.some((suffix) => url.hostname.endsWith(suffix));
 }
 
+const MAX_RETRIES = 2;
+const BASE_TIMEOUT_MS = 15000;
+
+async function proxyFetch(url: string, attempt: number): Promise<Response> {
+  const headers = new Headers();
+  headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+  headers.set(
+    'Accept',
+    'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+  );
+  headers.set('Accept-Language', 'en-US,en;q=0.5');
+
+  const timeout = BASE_TIMEOUT_MS + attempt * 5000;
+  const res = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(timeout),
+    redirect: 'follow',
+  });
+
+  return res;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const targetUrlString = searchParams.get('url');
@@ -41,37 +63,53 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'URL host is not allowed' }, { status: 400 });
     }
 
-    const headers = new Headers();
+    let lastError: unknown = null;
 
-    // Use a generic user agent to improve compatibility
-    headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
-    headers.set(
-      'Accept',
-      'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    );
-    headers.set('Accept-Language', 'en-US,en;q=0.5');
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const res = await proxyFetch(targetUrl.toString(), attempt);
 
-    const res = await fetch(targetUrl.toString(), { 
-        headers,
-        signal: AbortSignal.timeout(30000)
-    });
+        if (res.ok) {
+          const contentType = res.headers.get('Content-Type') || 'application/octet-stream';
+          const body = await res.blob();
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`Failed to fetch from proxied URL: ${res.status} ${res.statusText}`, errorText);
-      return NextResponse.json({ error: `Failed to fetch from proxied URL: ${res.statusText}` }, { status: res.status });
+          return new NextResponse(body, {
+            status: 200,
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=600',
+            },
+          });
+        }
+
+        // 404 = permanent failure, don't retry
+        if (res.status === 404) {
+          return NextResponse.json(
+            { error: `Resource not found: ${targetUrl.pathname}` },
+            { status: 404 },
+          );
+        }
+
+        lastError = new Error(`HTTP ${res.status}`);
+        console.warn(`Proxy attempt ${attempt + 1} failed for ${targetUrlString}: ${res.status}`);
+      } catch (error) {
+        lastError = error;
+        console.warn(`Proxy attempt ${attempt + 1} error for ${targetUrlString}:`, error instanceof Error ? error.message : error);
+      }
+
+      // Brief pause before retry
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+      }
     }
 
-    const contentType = res.headers.get('Content-Type') || 'application/octet-stream';
-    const body = await res.blob();
-    
-    return new NextResponse(body, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=600', // Cache for 10 minutes
-      },
-    });
+    // All retries exhausted
+    const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+    console.error(`Proxy failed after ${MAX_RETRIES + 1} attempts for ${targetUrlString}: ${errorMessage}`);
+    return NextResponse.json(
+      { error: `Source temporarily unavailable after retries: ${errorMessage}` },
+      { status: 503 },
+    );
 
   } catch (error) {
     console.error('Proxy error:', error);
