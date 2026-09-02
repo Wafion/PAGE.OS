@@ -27,6 +27,7 @@ import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AudioControls } from '@/components/audio/audio-controls';
 import { WorldAroundThis } from '@/components/cultural-world-panel';
 import PdfReader from './PdfReader';
+import EpubReader from './EpubReader';
 
 export default function Reader() {
   const searchParams = useSearchParams();
@@ -43,6 +44,7 @@ export default function Reader() {
     currentSector,
     currentChapter,
     mediaType,
+    epubUrl,
     activeSector,
     setActiveSector,
     direction,
@@ -121,11 +123,11 @@ export default function Reader() {
     ? `Leaf ${currentSector.pageNumberInChapter} of ${currentSector.pageCountInChapter} in this chapter`
     : 'Leaf 0 of 0';
 
-  const remainingLeavesInChapter = currentSector
-    ? Math.max(currentSector.pageCountInChapter - currentSector.pageNumberInChapter, 0)
-    : 0;
-
-  const sourceLabel = book?.source === 'gutendex' ? 'Project Gutenberg' : 'Open archive text';
+  const sourceLabel = book?.source === 'gutendex'
+    ? 'Project Gutenberg'
+    : book?.source === 'standardebooks'
+      ? 'Standard Ebooks'
+      : 'Open archive text';
 
   const variants = {
     enter: (dir: number) => ({ x: dir > 0 ? '8%' : '-8%', opacity: 0 }),
@@ -192,6 +194,23 @@ export default function Reader() {
           )}
         </div>
       </div>
+    );
+  }
+
+  if (mediaType === 'epub' && epubUrl && book) {
+    return (
+      <EpubReader
+        book={book}
+        url={epubUrl}
+        activeSector={activeSector}
+        onSectorChange={setActiveSector}
+        onBack={() => router.back()}
+        isBookmarked={isBookmarked}
+        isBookmarkLoading={isBookmarkLoading}
+        onToggleBookmark={toggleBookmark}
+        hasUser={Boolean(user)}
+        userId={user?.uid}
+      />
     );
   }
 
@@ -280,43 +299,7 @@ export default function Reader() {
               </div>
             </div>
 
-            <div className="library-reader-note-card">
-              <p className="library-kicker">Reading note</p>
-              <h3>{remainingLeavesInChapter > 0 ? 'You still have room to linger.' : 'You are at the end of this chapter.'}</h3>
-              <p>
-                {remainingLeavesInChapter > 0
-                  ? `${remainingLeavesInChapter} more leaves remain before the next chapter begins.`
-                  : 'When you are ready, move on to the next chapter or revisit the guide.'}
-              </p>
-            </div>
-
-            {book && (
-              <div className="library-reader-summary-card">
-                <button
-                  type="button"
-                  onClick={() => setShowWorld((prev) => !prev)}
-                  className="flex w-full items-center justify-between text-left"
-                >
-                  <div>
-                    <p className="library-kicker">Open the world around this</p>
-                    <h3>{showWorld ? 'Hide cultural connections' : 'Explore related art, books & periods'}</h3>
-                  </div>
-                  <span className="text-xs text-accent">{showWorld ? '−' : '+'}</span>
-                </button>
-                {showWorld && (
-                  <div className="mt-3">
-                    <WorldAroundThis
-                      itemId={book.id}
-                      itemType="book"
-                      itemTitle={book.title}
-                      author={book.authors}
-                      source={book.source}
-                      subjects={'subjects' in book ? book.subjects : undefined}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+            
 
             <div className="library-reader-chapters">
               {toc.map((entry, index) => {
@@ -447,20 +430,6 @@ export default function Reader() {
                 </div>
               </div>
 
-              <div className="library-reader-note-card">
-                <p className="library-kicker">Reading note</p>
-                <h3>
-                  {remainingLeavesInChapter > 0
-                    ? 'You still have room to linger.'
-                    : 'You are at the end of this chapter.'}
-                </h3>
-                <p>
-                  {remainingLeavesInChapter > 0
-                    ? `${remainingLeavesInChapter} more leaves remain before the next chapter begins.`
-                    : 'When you are ready, move on to the next chapter or revisit the guide.'}
-                </p>
-              </div>
-
               {book && (
                 <div className="library-reader-summary-card">
                   <button
@@ -550,7 +519,7 @@ export default function Reader() {
       </header>
 
       <main className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="hidden min-h-0 border-r border-border/40 bg-card/40 lg:flex lg:min-h-0 lg:flex-col">
+        <aside className="hidden min-h-0 overflow-hidden border-r border-border/40 bg-card/40 lg:flex lg:min-h-0 lg:flex-col">
           <div className="border-b border-border/40 px-4 py-4">
             <p className="font-headline text-xs tracking-[0.28em] text-accent">
               READER MAP
@@ -592,19 +561,6 @@ export default function Reader() {
               )}
             </div>
           </div>
-
-          {book && showWorld && (
-            <div className="border-b border-border/40 px-4 py-4">
-              <WorldAroundThis
-                itemId={book.id}
-                itemType="book"
-                itemTitle={book.title}
-                author={book.authors}
-                source={book.source}
-                subjects={'subjects' in book ? book.subjects : undefined}
-              />
-            </div>
-          )}
 
           <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">              <div className="mb-2 flex items-center gap-2 px-1 text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
               <BookOpen className="h-3.5 w-3.5" />
