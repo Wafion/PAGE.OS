@@ -220,6 +220,14 @@ export function getFallbackGutenbergBooks(query?: string): MappedGutenbergBook[]
  */
 
 export async function fetchGutenbergBooks(query?: string, page = 1): Promise<MappedGutenbergBook[]> {
+  const { isGutenbergCircuitOpen } = await import('@/lib/gutenberg-client');
+
+  // If the circuit is open, skip the network call entirely — return fallbacks instantly
+  if (isGutenbergCircuitOpen()) {
+    console.info('[Gutenberg] Circuit open — using fallback books immediately');
+    return getFallbackGutenbergBooks(query);
+  }
+
   const intent = parseGutenbergSearchIntent(query);
   const variants = buildQueryVariants(intent);
   let lastError: unknown = null;
@@ -349,7 +357,21 @@ export async function fetchGutenbergBookContent(formats: Record<string, string>)
   if (!hasPlainText) {
     const epubUrl = formats['application/epub+zip'];
     if (epubUrl) {
-      throw new Error('EPUB format is not supported by the PageOS reader at this time.');
+      // EPUB is available — the caller should use EpubReader instead of this text path.
+      throw new Error('EPUB_AVAILABLE');
+    }
+    // Even without an explicit text/plain entry, Gutenberg always hosts a .txt
+    // at the cache URL. Try that before giving up.
+    const id = extractGutenbergId(formats);
+    if (id) {
+      try {
+        const text = await fetchWithRetry(
+          `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`
+        );
+        return text;
+      } catch (error) {
+        console.warn(`Cache URL fallback failed for id ${id}:`, error instanceof Error ? error.message : error);
+      }
     }
     throw new Error('No compatible book format found for this Gutendex book (epub or txt).');
   }

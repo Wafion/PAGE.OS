@@ -47,7 +47,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <SidebarPopup />
       <AppHeader />
       <main
-        className={`flex-1 animate-fade-in${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
+        className={`flex-1 animate-fade-in${isInfinitePage ? " flex min-h-0 flex-col pt-14" : ""}`}
       >
         {children}
       </main>

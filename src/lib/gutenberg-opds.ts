@@ -46,6 +46,36 @@ export function mapProjectGutenbergOpds(xml: string): MappedGutenbergBook[] {
   return books;
 }
 
+const OPDS_MAX_RETRIES = 2;
+const OPDS_BASE_TIMEOUT_MS = 5000;
+
+async function fetchOpdsWithRetry(url: string, attempt = 0): Promise<Response> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/atom+xml, application/xml;q=0.9, text/xml;q=0.8",
+        "User-Agent": "PAGE.OS/1.0 (Project Gutenberg OPDS recommendations)",
+      },
+      signal: AbortSignal.timeout(OPDS_BASE_TIMEOUT_MS + attempt * 3000),
+      next: { revalidate: 21600 },
+    });
+
+    if (!response.ok && response.status !== 404 && attempt < OPDS_MAX_RETRIES) {
+      // Transient server error — retry after backoff
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      return fetchOpdsWithRetry(url, attempt + 1);
+    }
+
+    return response;
+  } catch (error) {
+    if (attempt < OPDS_MAX_RETRIES) {
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      return fetchOpdsWithRetry(url, attempt + 1);
+    }
+    throw error;
+  }
+}
+
 export async function fetchProjectGutenbergOpdsBooks(query?: string, page = 1) {
   const params = new URLSearchParams();
   const trimmedQuery = query?.trim();
@@ -60,14 +90,8 @@ export async function fetchProjectGutenbergOpdsBooks(query?: string, page = 1) {
     params.set("start_index", String((page - 1) * 25 + 1));
   }
 
-  const response = await fetch(`${PROJECT_GUTENBERG_OPDS_ENDPOINT}?${params.toString()}`, {
-    headers: {
-      Accept: "application/atom+xml, application/xml;q=0.9, text/xml;q=0.8",
-      "User-Agent": "PAGE.OS/1.0 (Project Gutenberg OPDS recommendations)",
-    },
-    signal: AbortSignal.timeout(5000),
-    next: { revalidate: 21600 },
-  });
+  const url = `${PROJECT_GUTENBERG_OPDS_ENDPOINT}?${params.toString()}`;
+  const response = await fetchOpdsWithRetry(url);
 
   if (!response.ok) {
     throw new Error(`Project Gutenberg OPDS fetch failed: ${response.status}`);

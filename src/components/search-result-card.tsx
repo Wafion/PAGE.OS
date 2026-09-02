@@ -12,12 +12,10 @@ function createBookQuery(book: SearchResult): string {
   params.set("title", book.title);
   params.set("authors", book.authors);
 
-  if (book.source === "gutendex") {
+  if (book.source === "gutendex" || book.source === "standardebooks") {
     params.set("formats", JSON.stringify(book.formats));
   }
 
-  // You can add support for other sources here later, if needed.
-  
   return params.toString();
 }
 
@@ -25,12 +23,28 @@ function getBookCover(book: SearchResult) {
   if (book.source === "gutendex") {
     return `https://www.gutenberg.org/cache/epub/${book.id}/pg${book.id}.cover.medium.jpg`;
   }
-
+  if (book.source === "standardebooks" && book.formats && "cover" in book.formats) {
+    return (book.formats as { cover?: string }).cover || "";
+  }
   return "";
 }
 
 function getSourceLabel(book: SearchResult) {
-  return book.source === "gutendex" ? "Project Gutenberg" : "Open archive";
+  if (book.source === "gutendex") return "Project Gutenberg";
+  if (book.source === "standardebooks") return "Standard Ebooks";
+  return "Open archive";
+}
+
+function getFormatBadge(book: SearchResult) {
+  if (book.source === "standardebooks") return "EPUB";
+  if (book.source === "gutendex" && book.formats && typeof book.formats === "object") {
+    const hasEpub = "application/epub+zip" in book.formats;
+    const hasText = Object.keys(book.formats).some((k) => k.startsWith("text/plain"));
+    if (hasEpub && hasText) return "TXT + EPUB";
+    if (hasEpub) return "EPUB";
+    if (hasText) return "TXT";
+  }
+  return "";
 }
 
 export function SearchResultCard({
@@ -58,6 +72,11 @@ export function SearchResultCard({
         <div className="library-result-copy">
           <p className="library-result-source">
             {getSourceLabel(book)}
+            {getFormatBadge(book) && (
+              <span className="ml-2 inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                {getFormatBadge(book)}
+              </span>
+            )}
           </p>
           <h3>{book.title}</h3>
           <p className="library-result-author">by {book.authors || "Unknown author"}</p>
@@ -97,6 +116,11 @@ export function SearchResultCard({
         <CardFooter className="flex-col items-start p-4 pt-0">
           <p className="text-xs text-muted-foreground/80 w-full">
             <span className="text-accent">{uiMode === "lounge" ? "Source:" : "src:"}</span> {getSourceLabel(book)}
+            {getFormatBadge(book) && (
+              <span className="ml-2 inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                {getFormatBadge(book)}
+              </span>
+            )}
           </p>
           {book.progress !== undefined && book.progress > 0 && (
             <div className="w-full mt-2">

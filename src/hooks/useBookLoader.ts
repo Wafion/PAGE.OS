@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { SearchResult } from '@/adapters/sourceManager';
-import { fetchBookContent } from '@/adapters/sourceManager';
+import { fetchBookContent, getEpubUrl } from '@/adapters/sourceManager';
 import { fetchWebBookContent } from '@/adapters/web';
 import { getLibraryBook, generateBookId } from '@/services/userData';
 import { useAuth } from '@/context/auth-provider';
@@ -24,7 +24,7 @@ export type ReaderSector = {
   startParagraphIndex: number;
 };
 
-export type ReaderMediaType = 'text' | 'pdf';
+export type ReaderMediaType = 'text' | 'pdf' | 'epub';
 
 type ChapterBlock = {
   title: string;
@@ -207,6 +207,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
   const [book, setBook] = useState<SearchResult | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<ReaderMediaType>('text');
+  const [epubUrl, setEpubUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSector, setActiveSector] = useState(0);
@@ -254,27 +255,68 @@ export default function useBookLoader(searchParams: URLSearchParams) {
               throw new Error('Could not extract readable text from the web page.');
             }
           }
+        } else if (source === 'standardebooks') {
+          const formats = JSON.parse(searchParams.get('formats') || '{}');
+          parsedBook = {
+            id: resolvedId,
+            title,
+            source: 'standardebooks' as const,
+            authors: searchParams.get('authors') || 'Unknown',
+            formats,
+          };
+          // Standard Ebooks always uses EPUB rendering
+          const epub = getEpubUrl(parsedBook);
+          if (epub) {
+            setEpubUrl(epub);
+            setMediaType('epub');
+          } else {
+            // Fallback to text mode if no EPUB URL
+            loadedContent = await fetchBookContent(parsedBook);
+            setMediaType('text');
+          }
         } else {
           parsedBook = {
             id: resolvedId,
             title,
-            source: source as 'gutendex',
+            source: 'gutendex' as const,
             authors: searchParams.get('authors') || 'Unknown',
             formats: JSON.parse(searchParams.get('formats') || '{}'),
           };
-          loadedContent = await fetchBookContent(parsedBook);
-          setMediaType('text');
+          // For Gutenberg, prefer text reader when plain text is available.
+          // Gutenberg's EPUB download URLs aren't streamed in a way epub.js can handle,
+          // so only use EPUB when no text/plain format exists.
+          const formats = parsedBook.formats as Record<string, string> | undefined;
+          const hasPlainText = formats && Object.keys(formats).some(k => k.startsWith('text/plain'));
+          if (hasPlainText) {
+            loadedContent = await fetchBookContent(parsedBook);
+            setMediaType('text');
+          } else {
+            const epub = getEpubUrl(parsedBook);
+            if (epub) {
+              setEpubUrl(epub);
+              setMediaType('epub');
+            } else {
+              loadedContent = await fetchBookContent(parsedBook);
+              setMediaType('text');
+            }
+          }
         }
 
         setBook(parsedBook);
         setContent(typeof loadedContent === 'string' ? loadedContent : null);
 
+        // Restore reading position from library (best-effort — Firestore may be unavailable)
         if (user && parsedBook) {
-          const bookId = generateBookId(parsedBook);
-          const libraryBook = await getLibraryBook(user.uid, bookId);
-          if (libraryBook && typeof libraryBook.lastReadSector === 'number') {
-            setActiveSector(libraryBook.lastReadSector);
-          } else {
+          try {
+            const bookId = generateBookId(parsedBook);
+            const libraryBook = await getLibraryBook(user.uid, bookId);
+            if (libraryBook && typeof libraryBook.lastReadSector === 'number') {
+              setActiveSector(libraryBook.lastReadSector);
+            } else {
+              setActiveSector(0);
+            }
+          } catch (libraryError) {
+            console.warn('Could not restore reading position (Firestore unavailable):', libraryError);
             setActiveSector(0);
           }
         } else {
@@ -320,6 +362,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
     currentSector,
     currentChapter,
     mediaType,
+    epubUrl,
     activeSector: safeActiveSector,
     setActiveSector,
     direction,

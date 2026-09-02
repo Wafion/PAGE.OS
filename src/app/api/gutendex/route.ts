@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchProjectGutenbergOpdsBooks } from '@/lib/gutenberg-opds';
+import { isGutenbergCircuitOpen } from '@/lib/gutenberg-client';
 
 type GutenbergBook = {
   id: number;
@@ -65,28 +66,36 @@ export async function GET(request: NextRequest) {
   const targetUrl = `https://gutendex.com/books/?${params.toString()}`;
 
   try {
+    // If the circuit is open, skip Gutendex and go straight to OPDS
+    const gutendexPromise = isGutenbergCircuitOpen()
+      ? Promise.resolve(null).then(() => {
+          console.info('[Gutendex route] Circuit open — skipping Gutendex API');
+          return null;
+        })
+      : fetch(targetUrl, {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
+          },
+          signal: AbortSignal.timeout(10000),
+          next: { revalidate: 600 },
+        });
+
     const [gutendexResult, opdsResult] = await Promise.allSettled([
-      fetch(targetUrl, {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
-        },
-        signal: AbortSignal.timeout(10000),
-        next: { revalidate: 600 },
-      }),
+      gutendexPromise,
       fetchProjectGutenbergOpdsBooks(query || undefined, Number(page) || 1),
     ]);
 
     let gutendexData: GutenbergAPIResponse | null = null;
-    if (gutendexResult.status === 'fulfilled' && gutendexResult.value.ok) {
+    if (gutendexResult.status === 'fulfilled' && gutendexResult.value && gutendexResult.value.ok) {
       gutendexData = (await gutendexResult.value.json()) as GutenbergAPIResponse;
-    } else if (gutendexResult.status === 'fulfilled') {
+    } else if (gutendexResult.status === 'fulfilled' && gutendexResult.value) {
       const errorText = await gutendexResult.value.text();
       console.error(
         `Gutendex route failed: ${gutendexResult.value.status} ${gutendexResult.value.statusText}`,
         errorText,
       );
-    } else {
+    } else if (gutendexResult.status === 'rejected') {
       console.error('Gutendex route failed:', gutendexResult.reason);
     }
 

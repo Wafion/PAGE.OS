@@ -363,7 +363,6 @@ export default function HomePage() {
         `/api/open-archive-search?q=${encodeURIComponent(query)}`,
       ).then((res) => res.json());
       const gutenbergPromise = fetchGutenbergBooks(query);
-
       const [openArchiveData, gutenbergData] = await Promise.allSettled([
         openArchiveSearchPromise,
         gutenbergPromise,
@@ -401,6 +400,7 @@ export default function HomePage() {
           "Primary archive is currently unavailable.",
         );
       }
+
     } catch (error) {
       console.error("An error occurred during search:", error);
       setPrimaryResults([]);
@@ -477,6 +477,7 @@ export default function HomePage() {
               {renderPrimaryResults()}
             </div>
           </section>
+
           <WebFallbackResults results={webResults} error={webArchiveError} onRetry={() => handleSearch(lastSearchQuery)} />
         </>
       );
@@ -633,6 +634,7 @@ export default function HomePage() {
                     </CardContent>
                   </Card>
                 )}
+
                 <WebFallbackResults results={webResults} error={webArchiveError} onRetry={() => handleSearch(lastSearchQuery)} />
               </section>
             ) : (

@@ -73,7 +73,9 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
               src={item.url}
               alt={item.title}
               className="w-full block"
-              style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}
+              loading="eager"
+              decoding="async"
+              style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.4s ease' }}
             />
             {!loaded && (
               <div
@@ -123,7 +125,10 @@ function GalleryFeedCard({
         <img
           src={item.url}
           alt={item.title}
-          loading={index < 12 ? 'eager' : 'lazy'}
+          width={item.width}
+          height={item.height}
+          loading="eager"
+          decoding="async"
           onError={() => setImageError(true)}
         />
       )}
@@ -184,7 +189,7 @@ export function GalleryFeed({
     if (!sentinel || !hasMore) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) loadNextPage(); },
-      { rootMargin: '1200px 0px' },
+      { rootMargin: '2000px 0px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -195,7 +200,7 @@ export function GalleryFeed({
     if (!sentinel) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) void prefetchNext(); },
-      { rootMargin: '2400px 0px' },
+      { rootMargin: '4000px 0px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();

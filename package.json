@@ -40,6 +40,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.6.1",
+    "epubjs": "^0.3.93",
     "firebase": "^11.9.1",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.475.0",

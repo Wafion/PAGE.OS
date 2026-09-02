@@ -62,3 +62,6 @@ firestore-debug.log
 
 # Optional: keep an example template instead
 !.env.example
+
+#Ai modules 
+/.freebuff

@@ -17,7 +17,7 @@ export type LibraryBook = {
   totalTimeSpent?: number; // Cumulative time spent reading (in seconds)
   progress?: number; // Overall percentage
   lastReadSector?: number; // Index of last read "sector"
-  source: "gutendex" | "web";
+  source: "gutendex" | "web" | "standardebooks";
   title: string;
   authors: string;
   formats: Record<string, string>;

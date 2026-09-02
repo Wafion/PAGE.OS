@@ -47,11 +47,12 @@ export default function useReadingTracker(
       setSessionStartTime(Date.now());
 
       // If we're tracking a book for the first time in this session, ensure it's bookmarked
+      // This is best-effort — Firestore being unavailable should not block reading
       if (book && !isBookmarked && user) {
         try {
           await toggleBookmark();
         } catch (error) {
-          console.warn("Failed to auto-bookmark", error);
+          console.warn("Auto-bookmark skipped (Firestore may be unavailable):", error);
         }
       }
     }
@@ -77,12 +78,8 @@ export default function useReadingTracker(
           //   variant: 'default',
           // });
         } catch (error) {
-          console.error("Failed to update reading session:", error);
-          toast({
-            title: 'Tracking Error',
-            description: 'Failed to save reading session data',
-            variant: 'destructive',
-          });
+          console.warn("Reading session tracking skipped (Firestore may be unavailable):", error);
+          // Don't show toast for Firestore failures — the user is just trying to read
         }
       }
 

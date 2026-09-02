@@ -3,17 +3,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ALLOWED_PROXY_HOSTS = new Set([
   'archive.org',
-  'books.google.com',
   'collectionapi.metmuseum.org',
   'commons.wikimedia.org',
   'en.wikisource.org',
   'gutendex.com',
   'gutenberg.org',
-  'www.googleapis.com',
   'www.gutenberg.org',
+  'standardebooks.org',
 ]);
 
-const ALLOWED_PROXY_HOST_SUFFIXES = ['.archive.org', '.wikimedia.org', '.gutenberg.org'];
+const ALLOWED_PROXY_HOST_SUFFIXES = ['.archive.org', '.wikimedia.org', '.gutenberg.org', '.standardebooks.org'];
 
 function isAllowedProxyTarget(url: URL) {
   if (!['http:', 'https:'].includes(url.protocol)) {
@@ -33,9 +32,12 @@ const BASE_TIMEOUT_MS = 15000;
 async function proxyFetch(url: string, attempt: number): Promise<Response> {
   const headers = new Headers();
   headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+  const isEpub = url.endsWith('.epub');
   headers.set(
     'Accept',
-    'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    isEpub
+      ? 'application/epub+zip,application/octet-stream,*/*'
+      : 'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
   );
   headers.set('Accept-Language', 'en-US,en;q=0.5');
 

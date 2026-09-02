@@ -37,7 +37,10 @@ export default function useBookmark(
       .then(libraryBook => {
         setIsBookmarked(!!libraryBook);
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.warn('Firestore unavailable — library check skipped.', err);
+        // Reader continues in read-only mode
+      })
       .finally(() => setIsBookmarkLoading(false));
   }, [user, bookId]);
 
@@ -50,7 +53,9 @@ export default function useBookmark(
         percentage: ((activeSector + 1) / sectorsCount) * 100,
         lastReadSector: activeSector,
       };
-      updateBookProgress(user.uid, bookId, progress).catch(console.error);
+      updateBookProgress(user.uid, bookId, progress).catch((err) => {
+        console.warn('Firestore unavailable — progress sync skipped.', err);
+      });
     }, 1500);
 
     return () => clearTimeout(handler);
@@ -80,9 +85,13 @@ export default function useBookmark(
       }
     } catch (error) {
       console.error('Failed to toggle bookmark', error);
+      const msg = error instanceof Error ? error.message : '';
+      const isFirestoreDown = msg.includes('collection()') || msg.includes('Firestore') || msg.includes('network');
       toast({
-        title: 'Error',
-        description: 'Could not update your library. Please try again.',
+        title: isFirestoreDown ? 'Library Unavailable' : 'Error',
+        description: isFirestoreDown
+          ? 'Could not reach the library service. The book can still be read — try saving later.'
+          : 'Could not update your library. Please try again.',
         variant: 'destructive',
       });
     } finally {

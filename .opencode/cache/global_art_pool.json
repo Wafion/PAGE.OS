@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastUpdated": 1787377191698,
-    "hydrationLevel": 228
+    "lastUpdated": 1787848892180,
+    "hydrationLevel": 229
   },
   "seen_urls": [
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-14286-001.jpg",
@@ -231,7 +231,8 @@
     "https://images.metmuseum.org/CRDImages/md/web-large/DP330356.jpg",
     "https://openaccess-cdn.clevelandart.org/1964.266/1964.266_web.jpg",
     "https://openaccess-cdn.clevelandart.org/1948.308.a/1948.308.a_web.jpg",
-    "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg"
+    "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg",
+    "https://openaccess-cdn.clevelandart.org/1990.141/1990.141_web.jpg"
   ],
   "items": [
     {
@@ -5600,6 +5601,35 @@
       "region": "Latin America",
       "culture": "America",
       "attribution": "Rock at Sea. 1920–1922. Raymond Jonson (American, 1891–1982). Cleveland Museum of Art",
+      "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-155411",
+      "sourceRecordId": "cma:155411",
+      "url": "https://openaccess-cdn.clevelandart.org/1990.141/1990.141_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/1990.141/1990.141_print.jpg",
+      "width": "755",
+      "height": "893",
+      "title": "Two-headed Female Figurine",
+      "creator": "Unknown Artist",
+      "year": "1200–400 BCE",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/1990.141",
+      "description": "This ceramic figurine—in the style of Tlatilco, an early village site in central Mexico—depicts a female with two heads and stubby arms. Since many figurines from the period depict females, modern interpreters usually connect them to fertility concerns. Here, however, the physical abnormalities may indicate a relationship with the supernatural realm.",
+      "tags": [
+        "Sculpture",
+        "Mesoamerica, Central Mexico, Tlatilco"
+      ],
+      "medium": "Ceramic, pigment",
+      "collection": "AA - Mesoamerica",
+      "accessionNumber": "1990.141",
+      "creditLine": "Gift of Mr. and Mrs. James C. Gruener",
+      "region": "Latin America",
+      "culture": "Mesoamerica, Central Mexico, Tlatilco",
+      "attribution": "Two-headed Female Figurine. 1200–400 BCE. Cleveland Museum of Art",
       "rightsLabel": "CC0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
     }

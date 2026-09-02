@@ -247,27 +247,37 @@ async function fetchGutendexShelf(query?: string, page = 1) {
 }
 
 async function fetchLiveGutenbergShelf(query: string | undefined, genre: RecommendationGenreKey) {
+  const { isGutenbergCircuitOpen } = await import('@/lib/gutenberg-client');
+
   const dailyPage = (hashSeed(`${getDailyRecommendationKey()}:${genre}:page`) % 5) + 1;
   const pages = Array.from(new Set([1, dailyPage]));
-  const [gutendexResult, opdsResult] = await Promise.allSettled([
-    Promise.all(pages.map((page) => fetchGutendexShelf(query, page))).then((groups) =>
-      groups.flat(),
-    ),
-    Promise.all(pages.map((page) => fetchProjectGutenbergOpdsBooks(query, page))).then((groups) =>
-      groups.flat(),
-    ),
-  ]);
 
-  const gutendexBooks = gutendexResult.status === "fulfilled" ? gutendexResult.value : [];
-  const opdsBooks = opdsResult.status === "fulfilled" ? opdsResult.value : [];
-
-  if (gutendexResult.status === "rejected") {
-    console.error("Gutendex recommendation fetch failed:", gutendexResult.reason);
+  // If circuit is open, skip Gutendex entirely
+  if (isGutenbergCircuitOpen()) {
+    console.info('[Recommendations] Gutenberg circuit open — using OPDS only');
+    const opdsBooks = await Promise.all(
+      pages.map((page) => fetchProjectGutenbergOpdsBooks(query, page)),
+    ).then((groups) => groups.flat()).catch(() => []);
+    return dedupeBooks(opdsBooks);
   }
 
-  if (opdsResult.status === "rejected") {
-    console.error("Project Gutenberg OPDS recommendation fetch failed:", opdsResult.reason);
+  // Stagger Gutendex requests to avoid thundering herd
+  const gutendexBooks: MappedGutenbergBook[] = [];
+  for (const page of pages) {
+    try {
+      const books = await fetchGutendexShelf(query, page);
+      gutendexBooks.push(...books);
+    } catch {
+      // Already logged by fetchGutendexShelf
+    }
+    if (pages.indexOf(page) < pages.length - 1) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
   }
+
+  const opdsBooks = await Promise.all(
+    pages.map((page) => fetchProjectGutenbergOpdsBooks(query, page)),
+  ).then((groups) => groups.flat()).catch(() => []);
 
   return dedupeBooks([...gutendexBooks, ...opdsBooks]);
 }

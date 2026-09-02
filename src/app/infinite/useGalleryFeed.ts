@@ -29,8 +29,8 @@ function createCache(): GalleryFeedCache {
 
 function warmImages(items: MediaItem[]) {
   if (typeof Image === 'undefined') return;
-  // Keep the warm-up deliberately small: one upcoming row, not the full feed page.
-  items.slice(0, 8).forEach((item) => { const image = new Image(); image.src = item.url; });
+  // Warm up all images in the batch so they render instantly.
+  items.forEach((item) => { const image = new Image(); image.src = item.url; });
 }
 
 export function useGalleryFeed(enabled: boolean) {
@@ -119,8 +119,12 @@ export function useGalleryFeed(enabled: boolean) {
     const next = readGalleryFeedCache() ?? createCache();
     cacheRef.current = next;
     setCache(next);
-    // Fill the first visual page. Every later page is staged ahead of the viewport.
-    void revealNext();
+    // Fill the first 3 pages upfront so the gallery is populated immediately.
+    void (async () => {
+      await revealNext();
+      await revealNext();
+      await revealNext();
+    })();
   }, [enabled, revealNext]);
 
   const items = React.useMemo(() => (cache?.chunks ?? []).flatMap((chunk) => chunk.items.map((item) => ({

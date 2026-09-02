@@ -35,18 +35,6 @@ type WikisourceSearchResponse = {
   };
 };
 
-type GoogleBooksResponse = {
-  items?: Array<{
-    id: string;
-    volumeInfo?: { title?: string; authors?: string[] };
-    accessInfo?: {
-      publicDomain?: boolean;
-      pdf?: { isAvailable?: boolean; downloadLink?: string };
-      infoLink?: string;
-    };
-  }>;
-};
-
 type OpenTextResult = {
   id: string;
   title: string;
@@ -183,56 +171,6 @@ async function fetchWikisourceResults(query: string): Promise<OpenTextResult[]> 
     });
 }
 
-async function fetchGoogleBooksResults(query: string, retries = 1): Promise<OpenTextResult[]> {
-  const params = new URLSearchParams({
-    q: query,
-    filter: 'full',
-    maxResults: '10',
-    projection: 'full',
-  });
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, {
-        headers: { Accept: 'application/json', 'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)' },
-        signal: AbortSignal.timeout(8000),
-        next: { revalidate: 600 },
-      });
-
-      // 429 = rate limited — retry once after a brief pause
-      if (response.status === 429 && attempt < retries) {
-        await new Promise((r) => setTimeout(r, 1500));
-        continue;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Google Books request failed: ${response.status}`);
-      }
-
-      const payload = (await response.json()) as GoogleBooksResponse;
-      return (payload.items ?? [])
-        .filter((item) => item.accessInfo?.publicDomain && item.accessInfo.pdf?.isAvailable && item.accessInfo.pdf.downloadLink)
-        .map((item) => ({
-          id: `google-books:${item.id}`,
-          title: `${item.volumeInfo?.title || 'Untitled'} (PDF)`,
-          link: item.accessInfo!.pdf!.downloadLink!,
-          type: 'pdf' as const,
-          sourceName: 'Google Books public domain',
-          rightsLabel: 'Public domain',
-          detailUrl: item.accessInfo?.infoLink || `https://books.google.com/books?id=${encodeURIComponent(item.id)}`,
-        }));
-    } catch (error) {
-      // On last attempt or non-retryable error, return empty
-      if (attempt >= retries) {
-        console.warn('[Google Books] Giving up after retries:', error instanceof Error ? error.message : error);
-        return [];
-      }
-    }
-  }
-
-  return [];
-}
-
 function mergeSourceResults(groups: OpenTextResult[][], limit = 15) {
   const merged: OpenTextResult[] = [];
   for (let index = 0; merged.length < limit; index += 1) {
@@ -301,7 +239,6 @@ export async function GET(req: NextRequest) {
   }
 
   const wikisourcePromise = fetchWikisourceResults(query);
-  const googleBooksPromise = fetchGoogleBooksResults(query);
   const gutenbergOpdsPromise = fetchGutenbergOpdsResults(query);
 
   try {
@@ -352,10 +289,6 @@ export async function GET(req: NextRequest) {
       console.warn('[Wikisource Search] An error occurred:', error);
       return [] as OpenTextResult[];
     });
-    const googleBooksResults = await googleBooksPromise.catch((error) => {
-      console.warn('[Google Books Search] An error occurred:', error);
-      return [] as OpenTextResult[];
-    });
     const gutenbergOpdsResults = await gutenbergOpdsPromise.catch((error) => {
       console.warn('[Project Gutenberg OPDS] An error occurred:', error);
       return [] as OpenTextResult[];
@@ -363,7 +296,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(mergeSourceResults([
       hydrated.flatMap((result) => result ?? []),
-      googleBooksResults,
       gutenbergOpdsResults,
       wikisourceResults,
     ]));
@@ -373,15 +305,11 @@ export async function GET(req: NextRequest) {
       console.warn('[Wikisource Search] An error occurred:', wikisourceError);
       return [] as OpenTextResult[];
     });
-    const googleBooksResults = await googleBooksPromise.catch((googleBooksError) => {
-      console.warn('[Google Books Search] An error occurred:', googleBooksError);
-      return [] as OpenTextResult[];
-    });
     const gutenbergOpdsResults = await gutenbergOpdsPromise.catch((gutenbergError) => {
       console.warn('[Project Gutenberg OPDS] An error occurred:', gutenbergError);
       return [] as OpenTextResult[];
     });
-    const fallbackResults = mergeSourceResults([googleBooksResults, gutenbergOpdsResults, wikisourceResults]);
+    const fallbackResults = mergeSourceResults([gutenbergOpdsResults, wikisourceResults]);
     if (fallbackResults.length > 0) {
       return NextResponse.json(fallbackResults);
     }
