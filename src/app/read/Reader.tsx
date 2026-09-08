@@ -121,9 +121,7 @@ export default function Reader() {
 
   const sourceLabel = book?.source === 'gutendex'
     ? 'Project Gutenberg'
-    : book?.source === 'standardebooks'
-      ? 'Standard Ebooks'
-      : 'Open archive text';
+    : 'Open web';
 
   const variants = {
     enter: (dir: number) => ({ x: dir > 0 ? '8%' : '-8%', opacity: 0 }),
