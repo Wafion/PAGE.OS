@@ -129,6 +129,20 @@ export default function PdfReader({
     return () => window.clearTimeout(timeout);
   }, [activePage, book, isBookmarked, pageCount, userId]);
 
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        goToPage(activePage - 1);
+      }
+      if (event.key === 'ArrowRight') {
+        goToPage(activePage + 1);
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activePage, pageCount]);
+
   const goToPage = (nextPage: number) => {
     onPageChange(Math.min(Math.max(nextPage, 0), Math.max(pageCount - 1, 0)));
   };

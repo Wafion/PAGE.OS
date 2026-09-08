@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastUpdated": 1787377191698,
-    "hydrationLevel": 228
+    "lastUpdated": 1788886489172,
+    "hydrationLevel": 232
   },
   "seen_urls": [
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-14286-001.jpg",
@@ -231,7 +231,11 @@
     "https://images.metmuseum.org/CRDImages/md/web-large/DP330356.jpg",
     "https://openaccess-cdn.clevelandart.org/1964.266/1964.266_web.jpg",
     "https://openaccess-cdn.clevelandart.org/1948.308.a/1948.308.a_web.jpg",
-    "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg"
+    "https://openaccess-cdn.clevelandart.org/2009.269/2009.269_web.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP164870.jpg",
+    "https://images.metmuseum.org/CRDImages/rl/web-large/DP-29455-001.jpg",
+    "https://openaccess-cdn.clevelandart.org/2024.80/2024.80_web.jpg",
+    "https://openaccess-cdn.clevelandart.org/1948.19/1948.19_web.jpg"
   ],
   "items": [
     {
@@ -5600,6 +5604,129 @@
       "region": "Latin America",
       "culture": "America",
       "attribution": "Rock at Sea. 1920–1922. Raymond Jonson (American, 1891–1982). Cleveland Museum of Art",
+      "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "met-436516",
+      "sourceRecordId": "met:436516",
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP164870.jpg",
+      "detailUrl": "https://images.metmuseum.org/CRDImages/ep/original/DP164870.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "The Triumph of Fame; (reverse) Impresa of the Medici Family and Arms of the Medici and Tornabuoni Families",
+      "creator": "Giovanni di ser Giovanni Guidi (called Scheggia)",
+      "year": "ca. 1449",
+      "type": "artwork",
+      "source": "met",
+      "sourceName": "The Metropolitan Museum of Art",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/436516",
+      "description": "Purchase in memory of Sir John Pope-Hennessy: Rogers Fund, The Annenberg Foundation, Drue Heinz Foundation, Annette de la Renta, Mr. and Mrs. Frank E. Richardson, and The Vincent Astor Foundation Gifts, Wrightsman and Gwynne Andrews Funds, special funds, and Gift of the children of Mrs. Harry Payne Whitney, Gift of Mr. and Mrs. Joshua Logan, and other gifts and bequests, by exchange, 1995",
+      "tags": [
+        "Paintings",
+        "Animals",
+        "Armor",
+        "Men",
+        "Dogs",
+        "Horses"
+      ],
+      "medium": "Tempera, silver, and gold on wood",
+      "dimensions": "Overall, with engaged frame, diameter 36 1/2 in. (92.7 cm); recto, painted surface, diameter 24 5/8 in. (62.5 cm); verso, painted surface, diameter 29 5/8 in. (75.2 cm)",
+      "location": "Metropolitan Museum of Art, New York, NY",
+      "collection": "European Paintings",
+      "accessionNumber": "1995.7",
+      "creditLine": "Purchase in memory of Sir John Pope-Hennessy: Rogers Fund, The Annenberg Foundation, Drue Heinz Foundation, Annette de la Renta, Mr. and Mrs. Frank E. Richardson, and The Vincent Astor Foundation Gifts, Wrightsman and Gwynne Andrews Funds, special funds, and Gift of the children of Mrs. Harry Payne Whitney, Gift of Mr. and Mrs. Joshua Logan, and other gifts and bequests, by exchange, 1995",
+      "region": "Europe",
+      "attribution": "The Triumph of Fame; (reverse) Impresa of the Medici Family and Arms of the Medici and Tornabuoni Families. ca. 1449. Giovanni di ser Giovanni Guidi (called Scheggia). The Metropolitan Museum of Art",
+      "rightsLabel": "Public Domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "met-458953",
+      "sourceRecordId": "met:458953",
+      "url": "https://images.metmuseum.org/CRDImages/rl/web-large/DP-29455-001.jpg",
+      "detailUrl": "https://images.metmuseum.org/CRDImages/rl/original/DP-29455-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Saint Ansanus",
+      "creator": "Simone Martini",
+      "year": "ca. 1326",
+      "type": "artwork",
+      "source": "met",
+      "sourceName": "The Metropolitan Museum of Art",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/458953",
+      "description": "Robert Lehman Collection, 1975",
+      "tags": [
+        "Paintings",
+        "Men",
+        "Saints"
+      ],
+      "medium": "Tempera on wood, gold ground",
+      "dimensions": "22 5/8 in. × 15 in. (57.5 × 38.1 cm)\r\nFramed: 26 5/8 in. × 18 7/8 in. × 2 in. (67.6 × 47.9 × 5.1 cm)",
+      "location": "Metropolitan Museum of Art, New York, NY",
+      "collection": "Robert Lehman Collection",
+      "accessionNumber": "1975.1.13",
+      "creditLine": "Robert Lehman Collection, 1975",
+      "region": "Europe",
+      "attribution": "Saint Ansanus. ca. 1326. Simone Martini. The Metropolitan Museum of Art",
+      "rightsLabel": "Public Domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-680650",
+      "sourceRecordId": "cma:680650",
+      "url": "https://openaccess-cdn.clevelandart.org/2024.80/2024.80_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/2024.80/2024.80_print.jpg",
+      "width": "900",
+      "height": "687",
+      "title": "Maharaja Ranbir Singh of Jammu and Kashmir with Sons and Courtiers",
+      "creator": "Bourne & Shepherd (British, active India, 1868–2016)",
+      "year": "1870s",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/2024.80",
+      "description": "Ranbir Singh (1830–1885), a ruler of the military Dogra dynasty, sits enthroned, surrounded by members of his court. He was the son of Gulab Singh (reigned 1846–1856), depicted in the portrait at the left. The courtiers in the front row—including his son—sit in European-style chairs, and one of his soldiers wears a British-style uniform and helmet. The picture’s oval format was popular among the British. These visual elements communicate Dogra’s allegiance to British colonial rule. Ranbir Singh supported the British during the Uprising of 1857, after which India became part of the British Empire.",
+      "tags": [
+        "Photograph",
+        "Northern India, Pahari kingdoms"
+      ],
+      "medium": "albumen print",
+      "collection": "PH - British 19th Century",
+      "accessionNumber": "2024.80",
+      "creditLine": "Purchase from the J. H. Wade Fund",
+      "region": "South Asia",
+      "culture": "Northern India, Pahari kingdoms",
+      "attribution": "Maharaja Ranbir Singh of Jammu and Kashmir with Sons and Courtiers. 1870s. Bourne & Shepherd (British, active India, 1868–2016). Cleveland Museum of Art",
+      "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "cma-125958",
+      "sourceRecordId": "cma:125958",
+      "url": "https://openaccess-cdn.clevelandart.org/1948.19/1948.19_web.jpg",
+      "detailUrl": "https://openaccess-cdn.clevelandart.org/1948.19/1948.19_print.jpg",
+      "width": "900",
+      "height": "578",
+      "title": "Repoussé Gold Clasp",
+      "creator": "Unknown Artist",
+      "year": "1200s",
+      "type": "artwork",
+      "source": "cleveland",
+      "sourceName": "Cleveland Museum of Art",
+      "sourceUrl": "https://clevelandart.org/art/1948.19",
+      "description": "Repoussé Gold Clasp, 1200s. Europe. Repoussé gold; average: 7.7 cm (3 1/16 in.). The Cleveland Museum of Art, Grace Rainey Rogers Fund, 1948.19",
+      "tags": [
+        "Jewelry",
+        "Europe"
+      ],
+      "medium": "repoussé gold",
+      "collection": "MED - Gothic",
+      "accessionNumber": "1948.19",
+      "creditLine": "Grace Rainey Rogers Fund",
+      "region": "Europe",
+      "culture": "Europe",
+      "attribution": "Repoussé Gold Clasp. 1200s. Cleveland Museum of Art",
       "rightsLabel": "CC0",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
     }

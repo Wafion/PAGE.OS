@@ -26,9 +26,39 @@ const fontReader = Space_Grotesk({
   variable: "--font-reader",
 });
 
+const siteUrl = "https://pageos.vercel.app";
+
 export const metadata: Metadata = {
-  title: "PageOS",
-  description: "A terminal-themed e-reader application.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "PageOS",
+    template: "%s | PageOS",
+  },
+  description:
+    "PageOS is a terminal-aesthetic e-reader and public-domain culture discovery platform. Browse, search, and read timeless works from Project Gutenberg, Standard Ebooks, and the Open Archive.",
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "PageOS",
+    title: "PageOS",
+    description:
+      "Read public-domain books in a terminal-steeped reading room. PageOS is a minimal, keyboard-driven e-reader and public-domain culture discovery platform.",
+    images: [
+      {
+        url: `${siteUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "PageOS — read the public domain in a terminal",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PageOS",
+    description:
+      "Read public-domain books in a terminal-steeped reading room. PageOS is a minimal, keyboard-driven e-reader and public-domain culture discovery platform.",
+    images: [`${siteUrl}/og-image.png`],
+  },
 };
 
 export default function RootLayout({

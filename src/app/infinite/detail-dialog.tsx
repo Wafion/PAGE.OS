@@ -25,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "./types";
-import { WorldAroundThis } from "@/components/cultural-world-panel";
 
 type MediaDetailDialogProps = {
   item: MediaItem | null;
@@ -33,16 +32,14 @@ type MediaDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-type DetailTabKey = "about" | "related";
+type DetailTabKey = "about";
 
 const TABS_BY_TYPE: Record<MediaItem["type"], Array<{ key: DetailTabKey; label: string }>> = {
   artwork: [
     { key: "about", label: "About" },
-    { key: "related", label: "Related Works" },
   ],
   book: [
     { key: "about", label: "About" },
-    { key: "related", label: "Related Works" },
   ],
 };
 
@@ -514,20 +511,6 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {activeTab === "related" && (
-            <div className="pageos-detail-lower" style={{ gridTemplateColumns: "1fr" }}>
-              <WorldAroundThis
-                itemId={displayItem.id ?? displayItem.url}
-                itemType={displayItem.type}
-                itemTitle={displayItem.title}
-                author={displayItem.creator}
-                source={displayItem.source}
-                sourceUrl={displayItem.sourceUrl}
-                subjects={tags}
-              />
             </div>
           )}
 

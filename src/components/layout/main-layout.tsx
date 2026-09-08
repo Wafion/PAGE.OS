@@ -8,12 +8,16 @@ import { useReaderSettings } from "@/context/reader-settings-provider";
 import { SidebarPopup } from "@/components/ui/sidebar/popup";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const { showBootAnimation } = useReaderSettings();
+  const { showBootAnimation, uiMode } = useReaderSettings();
   const [isBooting, setIsBooting] = useState(true);
   const pathname = usePathname();
   const isInfinitePage = pathname.startsWith("/infinite");
 
   useEffect(() => {
+    if (uiMode === "lounge") {
+      setIsBooting(false);
+      return;
+    }
     try {
       const hasBooted = sessionStorage.getItem("pageos-booted");
       if (hasBooted === "true" || !showBootAnimation) {
@@ -23,7 +27,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       console.warn("Could not read sessionStorage for boot status, skipping animation.", error);
       setIsBooting(false);
     }
-  }, [showBootAnimation]);
+  }, [showBootAnimation, uiMode]);
 
   const handleBootComplete = () => {
     try {

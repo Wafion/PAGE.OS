@@ -306,7 +306,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
   }, [content]);
 
   const safeActiveSector =
-    sectors.length === 0 ? 0 : Math.min(activeSector, sectors.length - 1);
+    mediaType === 'pdf' ? activeSector : sectors.length === 0 ? 0 : Math.min(activeSector, sectors.length - 1);
   const currentSector = sectors[safeActiveSector];
   const currentChapter =
     currentSector ? toc[currentSector.chapterIndex] : undefined;

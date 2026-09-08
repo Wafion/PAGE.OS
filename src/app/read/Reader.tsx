@@ -25,9 +25,7 @@ import { useReaderSettings } from '@/context/reader-settings-provider';
 import { useAudio } from '@/context/audio-provider';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AudioControls } from '@/components/audio/audio-controls';
-import { WorldAroundThis } from '@/components/cultural-world-panel';
 import PdfReader from './PdfReader';
-import EpubReader from './EpubReader';
 
 export default function Reader() {
   const searchParams = useSearchParams();
@@ -44,7 +42,6 @@ export default function Reader() {
     currentSector,
     currentChapter,
     mediaType,
-    epubUrl,
     activeSector,
     setActiveSector,
     direction,
@@ -67,7 +64,6 @@ export default function Reader() {
   }, [suspendMusic, resumeMusic]);
 
   const [showTOC, setShowTOC] = useState(false);
-  const [showWorld, setShowWorld] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);
   const classicViewportRef = useRef<HTMLDivElement>(null);
 
@@ -194,23 +190,6 @@ export default function Reader() {
           )}
         </div>
       </div>
-    );
-  }
-
-  if (mediaType === 'epub' && epubUrl && book) {
-    return (
-      <EpubReader
-        book={book}
-        url={epubUrl}
-        activeSector={activeSector}
-        onSectorChange={setActiveSector}
-        onBack={() => router.back()}
-        isBookmarked={isBookmarked}
-        isBookmarkLoading={isBookmarkLoading}
-        onToggleBookmark={toggleBookmark}
-        hasUser={Boolean(user)}
-        userId={user?.uid}
-      />
     );
   }
 
@@ -430,33 +409,6 @@ export default function Reader() {
                 </div>
               </div>
 
-              {book && (
-                <div className="library-reader-summary-card">
-                  <button
-                    type="button"
-                    onClick={() => setShowWorld((prev) => !prev)}
-                    className="flex w-full items-center justify-between text-left"
-                  >
-                    <div>
-                      <p className="library-kicker">Open the world around this</p>
-                      <h3>{showWorld ? 'Hide connections' : 'Explore related art, books & periods'}</h3>
-                    </div>
-                    <span className="text-xs text-accent">{showWorld ? '−' : '+'}</span>
-                  </button>
-                  {showWorld && (
-                    <div className="mt-3">
-                      <WorldAroundThis
-                        itemId={book.id}
-                        itemType="book"
-                        itemTitle={book.title}
-                        author={book.authors}
-                        source={book.source}
-                        subjects={'subjects' in book ? book.subjects : undefined}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </section>
         </main>
@@ -545,20 +497,6 @@ export default function Reader() {
                   />
                 </div>
               </div>
-              {book && (
-                <button
-                  type="button"
-                  onClick={() => setShowWorld((prev) => !prev)}
-                  className="w-full border border-accent/15 bg-background/60 px-3 py-3 text-left transition hover:border-accent/30 hover:bg-accent/5"
-                >
-                  <div className="text-[10px] uppercase tracking-[0.24em] text-accent">
-                    {showWorld ? 'Hide connections' : 'World around this'}
-                  </div>
-                  <div className="mt-1 text-sm text-foreground">
-                    {showWorld ? 'Collapse cultural context' : 'Explore related art, books & periods'}
-                  </div>
-                </button>
-              )}
             </div>
           </div>
 
@@ -566,38 +504,6 @@ export default function Reader() {
               <BookOpen className="h-3.5 w-3.5" />
               Chapter index
             </div>
-
-            {book && (
-              <div className="mb-3 border border-accent/15 bg-background/60">
-                <button
-                  type="button"
-                  onClick={() => setShowWorld((prev) => !prev)}
-                  className="flex w-full items-center justify-between px-3 py-3 text-left transition hover:bg-accent/5"
-                >
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase tracking-[0.24em] text-accent">
-                      World around this
-                    </div>
-                    <div className="mt-1 text-sm text-foreground">
-                      {showWorld ? 'Hide connections' : 'Explore related culture'}
-                    </div>
-                  </div>
-                  <span className="ml-2 text-xs text-accent">{showWorld ? '−' : '+'}</span>
-                </button>
-                {showWorld && (
-                  <div className="border-t border-accent/10 px-3 py-3">
-                    <WorldAroundThis
-                      itemId={book.id}
-                      itemType="book"
-                      itemTitle={book.title}
-                      author={book.authors}
-                      source={book.source}
-                      subjects={'subjects' in book ? book.subjects : undefined}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
 
             <div className="space-y-2">
               {toc.map((entry, index) => {
