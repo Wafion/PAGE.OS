@@ -97,11 +97,10 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
       role="button"
       tabIndex={0}
     >
-      <div className="relative w-full bg-muted/30">
+      <div className="relative w-full bg-muted/30" style={{ aspectRatio: `${item.width} / ${item.height}` }}>
         {error ? (
           <div
-            className="w-full flex items-center justify-center bg-muted/20"
-            style={{ aspectRatio: `${item.width}/${item.height}` }}
+            className="w-full h-full flex items-center justify-center bg-muted/20"
           >
             <span className="text-2xl opacity-25">&#x1F3A8;</span>
           </div>
@@ -110,13 +109,12 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
             <img
               src={item.url}
               alt={item.title}
-              className="w-full block"
+              className="w-full h-full object-cover block"
               style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}
             />
             {!loaded && (
               <div
                 className="absolute inset-0 animate-pulse bg-muted/30 flex items-center justify-center"
-                style={{ aspectRatio: `${item.width}/${item.height}` }}
               />
             )}
           </>
@@ -197,14 +195,19 @@ function GalleryFeedCard({
           <span>Archive image</span>
         </span>
       ) : (
-        <img
-          src={item.url}
-          alt={item.title}
-          loading={index < 12 ? 'eager' : 'lazy'}
-          onLoad={handleLoad}
-          onError={handleError}
-          style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
-        />
+        <div
+          className="art-feed-card-image"
+          style={{ aspectRatio: `${item.width} / ${item.height}` }}
+        >
+          <img
+            src={item.url}
+            alt={item.title}
+            loading={index < 12 ? 'eager' : 'lazy'}
+            onLoad={handleLoad}
+            onError={handleError}
+            style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+          />
+        </div>
       )}
       <span className="art-feed-card-info">
         <strong>{item.title}</strong>
