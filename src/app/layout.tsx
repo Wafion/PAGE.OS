@@ -45,7 +45,7 @@ export const metadata: Metadata = {
       "Read public-domain books in a terminal-steeped reading room. PageOS is a minimal, keyboard-driven e-reader and public-domain culture discovery platform.",
     images: [
       {
-        url: `${siteUrl}/og-image.png`,
+        url: `${siteUrl}/Thumbnail.png`,
         width: 1200,
         height: 630,
         alt: "PageOS — read the public domain in a terminal",
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     title: "PageOS",
     description:
       "Read public-domain books in a terminal-steeped reading room. PageOS is a minimal, keyboard-driven e-reader and public-domain culture discovery platform.",
-    images: [`${siteUrl}/og-image.png`],
+    images: [`${siteUrl}/Thumbnail.png`],
   },
 };
 
