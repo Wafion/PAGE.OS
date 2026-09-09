@@ -29,8 +29,8 @@ function createCache(): GalleryFeedCache {
 
 function warmImages(items: MediaItem[]) {
   if (typeof Image === 'undefined') return;
-  // Keep the warm-up deliberately small: one upcoming row, not the full feed page.
-  items.slice(0, 8).forEach((item) => { const image = new Image(); image.src = item.url; });
+  // Pre-load the full page so images are ready before the user scrolls.
+  items.forEach((item) => { const image = new Image(); image.src = item.url; });
 }
 
 export function useGalleryFeed(enabled: boolean) {

@@ -2285,11 +2285,11 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   background: #111;
 }
 
-/* Pushes initial gallery cards below the viewport so images finish
-   loading / rendering before the user scrolls them into view. */
+/* Small buffer so the first row of images can render off-screen
+   before the user scrolls them into view. */
 .art-feed-preload-spacer {
   width: 100%;
-  height: 100vh;
+  height: 25vh;
   pointer-events: none;
 }
 

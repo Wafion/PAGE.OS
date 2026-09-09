@@ -6,12 +6,50 @@ import { Compass, Infinity, Grid3x3, Pause, Play, Sparkles } from 'lucide-react'
 import type { CameraState, ChunkCoord, MediaItem, WanderStats } from './types';
 import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from './useChunks';
 
-// ── global image cache ──
+// ── image cache with 6hr TTL ──
+const IMAGE_CACHE_TTL = 6 * 60 * 60 * 1000;
 const imageStateCache = new Map<string, { loaded: boolean; error: boolean }>();
+const imageViewportCache = new Map<string, { loaded: boolean; timestamp: number }>();
+
+function isImageCacheValid(url: string): boolean {
+  const entry = imageViewportCache.get(url);
+  if (!entry) return false;
+  return Date.now() - entry.timestamp < IMAGE_CACHE_TTL;
+}
+
+function getCachedImageState(url: string): { loaded: boolean; error: boolean } | null {
+  if (!isImageCacheValid(url)) {
+    imageViewportCache.delete(url);
+    return null;
+  }
+  const state = imageStateCache.get(url);
+  return state || null;
+}
+
+function setImageCacheState(url: string, loaded: boolean, error: boolean) {
+  imageStateCache.set(url, { loaded, error });
+  imageViewportCache.set(url, { loaded, timestamp: Date.now() });
+}
+
+function cleanExpiredCache() {
+  const now = Date.now();
+  for (const [url, entry] of imageViewportCache) {
+    if (now - entry.timestamp >= IMAGE_CACHE_TTL) {
+      imageViewportCache.delete(url);
+      imageStateCache.delete(url);
+    }
+  }
+}
+
+// Clean cache periodically
+if (typeof window !== 'undefined') {
+  setInterval(cleanExpiredCache, 60000);
+}
 
 export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (item: MediaItem) => void }) {
-  const [loaded, setLoaded] = React.useState(() => imageStateCache.get(item.url)?.loaded ?? false);
-  const [error, setError] = React.useState(() => imageStateCache.get(item.url)?.error ?? false);
+  const cachedState = getCachedImageState(item.url);
+  const [loaded, setLoaded] = React.useState(() => cachedState?.loaded ?? imageStateCache.get(item.url)?.loaded ?? false);
+  const [error, setError] = React.useState(() => cachedState?.error ?? imageStateCache.get(item.url)?.error ?? false);
   const mountedRef = React.useRef(true);
   const retryCount = React.useRef(0);
 
@@ -27,7 +65,7 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
       if (!mountedRef.current) return;
       setLoaded(true);
       setError(false);
-      imageStateCache.set(item.url, { loaded: true, error: false });
+      setImageCacheState(item.url, true, false);
     };
     img.onerror = () => {
       if (!mountedRef.current) return;
@@ -36,7 +74,7 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
         setTimeout(tryLoad, 1000 * retryCount.current);
       } else {
         setError(true);
-        imageStateCache.set(item.url, { loaded: false, error: true });
+        setImageCacheState(item.url, false, true);
       }
     };
     img.src = item.url;
@@ -112,9 +150,48 @@ function GalleryFeedCard({
   onSelect?: (item: MediaItem) => void;
 }) {
   const [imageError, setImageError] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(() => {
+    const cached = getCachedImageState(item.url);
+    return cached?.loaded ?? false;
+  });
+  const cardRef = React.useRef<HTMLButtonElement>(null);
+  const isInViewport = React.useRef(false);
+
+  React.useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isInViewport.current = entry.isIntersecting;
+        // When card leaves viewport, ensure state is cached
+        if (!entry.isIntersecting && imageLoaded) {
+          setImageCacheState(item.url, true, false);
+        }
+      },
+      { rootMargin: '100px 0px' }
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [item.url, imageLoaded]);
+
+  const handleError = React.useCallback(() => {
+    setImageError(true);
+    setImageCacheState(item.url, false, true);
+  }, [item.url]);
+
+  const handleLoad = React.useCallback(() => {
+    setImageLoaded(true);
+    setImageCacheState(item.url, true, false);
+  }, [item.url]);
 
   return (
-    <button type="button" className="art-feed-card" onClick={() => onSelect?.(item)}>
+    <button
+      ref={cardRef}
+      type="button"
+      className="art-feed-card"
+      onClick={() => onSelect?.(item)}
+    >
       {imageError ? (
         <span className="art-feed-missing-image" aria-label={`${item.title} image unavailable`}>
           <span>Archive image</span>
@@ -124,7 +201,9 @@ function GalleryFeedCard({
           src={item.url}
           alt={item.title}
           loading={index < 12 ? 'eager' : 'lazy'}
-          onError={() => setImageError(true)}
+          onLoad={handleLoad}
+          onError={handleError}
+          style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
         />
       )}
       <span className="art-feed-card-info">
@@ -184,7 +263,7 @@ export function GalleryFeed({
     if (!sentinel || !hasMore) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) loadNextPage(); },
-      { rootMargin: '1200px 0px' },
+      { rootMargin: '1800px 0px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -195,7 +274,7 @@ export function GalleryFeed({
     if (!sentinel) return;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) void prefetchNext(); },
-      { rootMargin: '2400px 0px' },
+      { rootMargin: '3600px 0px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
