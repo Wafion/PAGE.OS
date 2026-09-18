@@ -10,6 +10,7 @@ import { AuthProvider } from "@/context/auth-provider";
 import { AudioProvider } from "@/context/audio-provider";
 import { NowPlayingBar } from "@/components/audio/now-playing-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent";
+import { Analytics } from "@vercel/analytics/next";
 
 const fontHeadline = Orbitron({
   subsets: ["latin"],
@@ -88,6 +89,7 @@ export default function RootLayout({
             </ReaderSettingsProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
