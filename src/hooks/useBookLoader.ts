@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import type { SearchResult } from '@/adapters/sourceManager';
 import { fetchBookContent } from '@/adapters/sourceManager';
 import { fetchWebBookContent } from '@/adapters/web';
@@ -202,19 +202,19 @@ function paginateChapters(chapters: ChapterBlock[]) {
   return { sectors, toc };
 }
 
-export default function useBookLoader(searchParams: URLSearchParams) {
+export default function useBookLoader(searchParams: URLSearchParams, enabled = true) {
   const { user } = useAuth();
   const [book, setBook] = useState<SearchResult | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<ReaderMediaType>('text');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSector, setActiveSector] = useState(0);
   const [direction, setDirection] = useState(0);
+  const lastFetchedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const loadBookData = async () => {
-      setIsLoading(true);
       setError(null);
 
       const source = searchParams.get('source');
@@ -231,14 +231,18 @@ export default function useBookLoader(searchParams: URLSearchParams) {
       }
 
       try {
-        let loadedContent: string | Blob | null = null;
         let parsedBook: SearchResult;
+        let resolvedMedia: ReaderMediaType = 'text';
 
         if (source === 'web') {
           const url = webUrl;
           if (!url) {
             throw new Error('This archive record does not contain a readable file URL.');
           }
+          const isPdf = requestedFormat === 'pdf' || /\.pdf(?:$|[?#])/i.test(url);
+          const media: ReaderMediaType = isPdf ? 'pdf' : 'text';
+          setMediaType(media);
+          resolvedMedia = media;
           parsedBook = {
             id: resolvedId,
             title,
@@ -246,28 +250,57 @@ export default function useBookLoader(searchParams: URLSearchParams) {
             authors: searchParams.get('authors') || 'Open archive',
             formats: { web: url },
           };
-          const isPdf = requestedFormat === 'pdf' || /\.pdf(?:$|[?#])/i.test(url);
-          setMediaType(isPdf ? 'pdf' : 'text');
-          if (!isPdf) {
-            loadedContent = await fetchWebBookContent(url);
-            if (!loadedContent) {
-              throw new Error('Could not extract readable text from the web page.');
-            }
-          }
         } else {
           parsedBook = {
             id: resolvedId,
             title,
             source: source as 'gutendex',
-            authors: searchParams.get('authors') || 'Unknown',
-            formats: JSON.parse(searchParams.get('formats') || '{}'),
+            authors: searchParams.get('authors') || 'Unknown',            formats: JSON.parse(searchParams.get('formats') || '{}'),
           };
-          loadedContent = await fetchBookContent(parsedBook);
           setMediaType('text');
         }
 
         setBook(parsedBook);
+
+        // Briefing stage: book metadata is ready, but defer the content
+        // fetch until the user chooses to start reading.
+        if (!enabled) {
+          // Re-opening the briefing for the same book keeps its content.
+          if (lastFetchedIdRef.current !== parsedBook.id) {
+            setContent(null);
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Content already fetched for this book — nothing to do.
+        if (lastFetchedIdRef.current === parsedBook.id) {
+          setIsLoading(false);
+          return;
+        }
+
+        setIsLoading(true);
+
+        let loadedContent: string | Blob | null = null;
+        if (parsedBook.source === 'web') {
+          if (resolvedMedia === 'pdf') {
+            loadedContent = null;
+          } else {
+            const webUrl2 = parsedBook.formats?.web;
+            if (!webUrl2) {
+              throw new Error('This archive record does not contain a readable file URL.');
+            }
+            loadedContent = await fetchWebBookContent(webUrl2);
+            if (!loadedContent) {
+              throw new Error('Could not extract readable text from the web page.');
+            }
+          }
+        } else {
+          loadedContent = await fetchBookContent(parsedBook);
+        }
+
         setContent(typeof loadedContent === 'string' ? loadedContent : null);
+        lastFetchedIdRef.current = parsedBook.id;
 
         if (user && parsedBook) {
           const bookId = generateBookId(parsedBook);
@@ -293,7 +326,7 @@ export default function useBookLoader(searchParams: URLSearchParams) {
     };
 
     loadBookData();
-  }, [searchParams, user]);
+  }, [searchParams, user, enabled]);
 
   const { sectors, toc } = useMemo(() => {
     if (!content) {

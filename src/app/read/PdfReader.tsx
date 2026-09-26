@@ -5,6 +5,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { ArrowLeft, Bookmark, ChevronLeft, ChevronRight, ExternalLink, LoaderCircle, ZoomIn, ZoomOut } from 'lucide-react';
 import type { SearchResult } from '@/adapters/sourceManager';
 import { Button } from '@/components/ui/button';
+import { AmbiencePopover } from '@/components/audio/ambience-popover';
 import { generateBookId, updateBookProgress } from '@/services/userData';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
@@ -161,6 +162,7 @@ export default function PdfReader({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
+          <AmbiencePopover />
           <Button variant="ghost" size="icon" onClick={() => setZoom((value) => Math.max(0.75, value - 0.15))} aria-label="Zoom out">
             <ZoomOut className="h-4 w-4" />
           </Button>

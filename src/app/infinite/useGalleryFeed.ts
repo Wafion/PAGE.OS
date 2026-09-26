@@ -29,8 +29,22 @@ function createCache(): GalleryFeedCache {
 
 function warmImages(items: MediaItem[]) {
   if (typeof Image === 'undefined') return;
-  // Pre-load the full page so images are ready before the user scrolls.
+  // Pre-load every image in the batch — they'll sit in browser disk cache.
   items.forEach((item) => { const image = new Image(); image.src = item.url; });
+}
+
+function warmAllCachedChunks(cache: GalleryFeedCache) {
+  if (typeof Image === 'undefined') return;
+  // Kick off downloads for all images across all cached chunks so they're
+  // in browser disk cache before any card mounts.
+  for (const chunk of cache.chunks) {
+    for (const item of chunk.items) {
+      if (item?.url) {
+        const image = new Image();
+        image.src = item.url;
+      }
+    }
+  }
 }
 
 export function useGalleryFeed(enabled: boolean) {
@@ -119,6 +133,8 @@ export function useGalleryFeed(enabled: boolean) {
     const next = readGalleryFeedCache() ?? createCache();
     cacheRef.current = next;
     setCache(next);
+    // Pre-load all cached images into browser disk cache
+    warmAllCachedChunks(next);
     // Fill the first visual page. Every later page is staged ahead of the viewport.
     void revealNext();
   }, [enabled, revealNext]);

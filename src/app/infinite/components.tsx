@@ -10,6 +10,7 @@ import { CHUNK_W, GRID_W, GRID_H, HERO_OFFSET, HERO_WIDTH, HERO_HEIGHT } from '.
 const IMAGE_CACHE_TTL = 6 * 60 * 60 * 1000;
 const imageStateCache = new Map<string, { loaded: boolean; error: boolean }>();
 const imageViewportCache = new Map<string, { loaded: boolean; timestamp: number }>();
+const preloadPool = new Map<string, HTMLImageElement>();
 
 function isImageCacheValid(url: string): boolean {
   const entry = imageViewportCache.get(url);
@@ -31,25 +32,68 @@ function setImageCacheState(url: string, loaded: boolean, error: boolean) {
   imageViewportCache.set(url, { loaded, timestamp: Date.now() });
 }
 
+function preloadImage(url: string): HTMLImageElement | null {
+  if (typeof Image === 'undefined') return null;
+  if (preloadPool.has(url)) return preloadPool.get(url)!;
+  const img = new Image();
+  img.src = url;
+  preloadPool.set(url, img);
+  return img;
+}
+
+function isImageReady(url: string): boolean {
+  const cached = getCachedImageState(url);
+  if (cached?.loaded) return true;
+  const pooled = preloadPool.get(url);
+  if (pooled) {
+    if (pooled.complete && pooled.naturalWidth > 0) {
+      setImageCacheState(url, true, false);
+      return true;
+    }
+    if (pooled.complete && pooled.naturalWidth === 0) {
+      setImageCacheState(url, false, true);
+      return false;
+    }
+  }
+  return false;
+}
+
 function cleanExpiredCache() {
   const now = Date.now();
   for (const [url, entry] of imageViewportCache) {
     if (now - entry.timestamp >= IMAGE_CACHE_TTL) {
       imageViewportCache.delete(url);
       imageStateCache.delete(url);
+      preloadPool.delete(url);
     }
   }
 }
 
-// Clean cache periodically
+// Clean cache periodically and preload on init
 if (typeof window !== 'undefined') {
   setInterval(cleanExpiredCache, 60000);
+  try {
+    const raw = window.localStorage.getItem('pageos-gallery-feed:v4');
+    if (raw) {
+      const cache = JSON.parse(raw);
+      if (Array.isArray(cache?.chunks)) {
+        const urls: string[] = [];
+        for (const chunk of cache.chunks) {
+          if (Array.isArray(chunk.items)) {
+            for (const item of chunk.items) {
+              if (item?.url) urls.push(item.url);
+            }
+          }
+        }
+        urls.slice(0, 40).forEach(preloadImage);
+      }
+    }
+  } catch { /* storage unavailable */ }
 }
 
 export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (item: MediaItem) => void }) {
-  const cachedState = getCachedImageState(item.url);
-  const [loaded, setLoaded] = React.useState(() => cachedState?.loaded ?? imageStateCache.get(item.url)?.loaded ?? false);
-  const [error, setError] = React.useState(() => cachedState?.error ?? imageStateCache.get(item.url)?.error ?? false);
+  const [loaded, setLoaded] = React.useState(() => isImageReady(item.url));
+  const [error, setError] = React.useState(() => getCachedImageState(item.url)?.error ?? false);
   const mountedRef = React.useRef(true);
   const retryCount = React.useRef(0);
 
@@ -60,24 +104,76 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
 
   const tryLoad = React.useCallback(() => {
     if (typeof Image === 'undefined') return;
-    const img = new Image();
-    img.onload = () => {
+    // Check preload pool first — if the image is already downloading or done, use it
+    const pooled = preloadPool.get(item.url);
+    if (pooled) {
+      if (pooled.complete && pooled.naturalWidth > 0) {
+        if (!mountedRef.current) return;
+        setLoaded(true);
+        setError(false);
+        setImageCacheState(item.url, true, false);
+        return;
+      }
+      if (pooled.complete && pooled.naturalWidth === 0) {
+        retryCount.current += 1;
+        if (retryCount.current <= 3) {
+          setTimeout(tryLoad, 1000 * retryCount.current);
+        } else {
+          if (!mountedRef.current) return;
+          setError(true);
+          setImageCacheState(item.url, false, true);
+        }
+        return;
+      }
+      // Still loading — poll
+      const check = () => {
+        if (!mountedRef.current) return;
+        if (pooled.complete) {
+          if (pooled.naturalWidth > 0) {
+            setLoaded(true);
+            setError(false);
+            setImageCacheState(item.url, true, false);
+          } else {
+            retryCount.current += 1;
+            if (retryCount.current <= 3) {
+              setTimeout(tryLoad, 1000 * retryCount.current);
+            } else {
+              setError(true);
+              setImageCacheState(item.url, false, true);
+            }
+          }
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      setTimeout(check, 50);
+      return;
+    }
+    // No pooled image — start a fresh preload
+    preloadImage(item.url);
+    const img = preloadPool.get(item.url)!;
+    const onReady = () => {
       if (!mountedRef.current) return;
-      setLoaded(true);
-      setError(false);
-      setImageCacheState(item.url, true, false);
-    };
-    img.onerror = () => {
-      if (!mountedRef.current) return;
-      retryCount.current += 1;
-      if (retryCount.current <= 3) {
-        setTimeout(tryLoad, 1000 * retryCount.current);
+      if (img.naturalWidth > 0) {
+        setLoaded(true);
+        setError(false);
+        setImageCacheState(item.url, true, false);
       } else {
-        setError(true);
-        setImageCacheState(item.url, false, true);
+        retryCount.current += 1;
+        if (retryCount.current <= 3) {
+          setTimeout(tryLoad, 1000 * retryCount.current);
+        } else {
+          setError(true);
+          setImageCacheState(item.url, false, true);
+        }
       }
     };
-    img.src = item.url;
+    if (img.complete) {
+      onReady();
+    } else {
+      img.addEventListener('load', onReady, { once: true });
+      img.addEventListener('error', onReady, { once: true });
+    }
   }, [item.url]);
 
   React.useEffect(() => {
@@ -150,30 +246,14 @@ function GalleryFeedCard({
   onSelect?: (item: MediaItem) => void;
 }) {
   const [imageError, setImageError] = React.useState(false);
-  const [imageLoaded, setImageLoaded] = React.useState(() => {
-    const cached = getCachedImageState(item.url);
-    return cached?.loaded ?? false;
-  });
+  const [imageLoaded, setImageLoaded] = React.useState(() => isImageReady(item.url));
   const cardRef = React.useRef<HTMLButtonElement>(null);
-  const isInViewport = React.useRef(false);
 
+  // Preload image on mount so it's in browser cache before user scrolls to it
   React.useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        isInViewport.current = entry.isIntersecting;
-        // When card leaves viewport, ensure state is cached
-        if (!entry.isIntersecting && imageLoaded) {
-          setImageCacheState(item.url, true, false);
-        }
-      },
-      { rootMargin: '100px 0px' }
-    );
-    observer.observe(card);
-    return () => observer.disconnect();
-  }, [item.url, imageLoaded]);
+    if (imageLoaded || imageError) return;
+    preloadImage(item.url);
+  }, [item.url, imageLoaded, imageError]);
 
   const handleError = React.useCallback(() => {
     setImageError(true);
@@ -200,7 +280,7 @@ function GalleryFeedCard({
         <img
           src={item.url}
           alt={item.title}
-          loading={index < 12 ? 'eager' : 'lazy'}
+          loading={index < 30 ? 'eager' : 'lazy'}
           onLoad={handleLoad}
           onError={handleError}
           style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}

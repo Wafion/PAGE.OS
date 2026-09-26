@@ -9,6 +9,7 @@ import {
   useRef,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 import type { Playlist, AudioState, TrackMetadata } from "@/lib/audio/types";
 import { DEFAULT_PLAYLIST } from "@/lib/audio/playlists";
 import { pickRandom, clamp } from "@/lib/audio/utils";
@@ -20,6 +21,7 @@ import { useReaderSettings } from "@/context/reader-settings-provider";
 const FADE_MS = 800;
 const FADE_INITIAL_MS = 3000;
 const FADE_SUSPEND = 2000;
+const FADE_RESUME = 2000;
 
 type AudioProviderState = AudioState & {
   setPlaylist: (playlist: Playlist | null) => void;
@@ -69,10 +71,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const transitioningRef = useRef(false);
   const pendingVolumeRef = useRef<number | null>(null);
   const suspendTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const suspendSeqRef = useRef(0);
+  const suspendedRef = useRef(false);
+  const pathname = usePathname();
+  const prevPathnameRef = useRef<string | null>(null);
 
   const playWithInteractionGate = useCallback(
     async (engine: PlaybackEngine): Promise<void> => {
-      if (!musicEnabledRef.current) {
+      if (!musicEnabledRef.current || suspendedRef.current) {
         return;
       }
 
@@ -237,6 +243,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       pendingVolumeRef.current = musicVolume;
       return;
     }
+    // Respect an active reader suspend: don't jump the volume back up mid-fade.
+    if (suspendedRef.current) return;
     const engine = engineRef.current;
     if (!engine) return;
     engine.setVolume(clamp(musicVolume, 0, 1));
@@ -336,6 +344,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [nextTrack]);
 
   const suspendMusic = useCallback(async () => {
+    suspendSeqRef.current += 1;
+    const seq = suspendSeqRef.current;
+    suspendedRef.current = true;
     const engine = engineRef.current;
     if (engine) {
       engine.cancelFade();
@@ -344,24 +355,29 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         suspendTimerRef.current = null;
       }
       const startVol = engine.getVolume();
-      if (startVol > 0) {
+      if (startVol > 0.001) {
         const steps = 60;
         const intervalMs = FADE_SUSPEND / steps;
         const decrement = startVol / steps;
         await new Promise<void>((resolve) => {
           let i = 0;
           suspendTimerRef.current = setInterval(() => {
-            if (engineRef.current !== engine) {
-              clearInterval(suspendTimerRef.current!);
-              suspendTimerRef.current = null;
+            // Abort if the engine was replaced or a resume superseded us.
+            if (engineRef.current !== engine || seq !== suspendSeqRef.current) {
+              if (suspendTimerRef.current !== null) {
+                clearInterval(suspendTimerRef.current);
+                suspendTimerRef.current = null;
+              }
               resolve();
               return;
             }
             i++;
             engine.setVolume(Math.max(0, startVol - i * decrement));
             if (i >= steps) {
-              clearInterval(suspendTimerRef.current!);
-              suspendTimerRef.current = null;
+              if (suspendTimerRef.current !== null) {
+                clearInterval(suspendTimerRef.current);
+                suspendTimerRef.current = null;
+              }
               engine.pause();
               resolve();
             }
@@ -375,16 +391,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resumeMusic = useCallback(async () => {
+    suspendSeqRef.current += 1; // invalidate any in-flight suspend fade
     if (suspendTimerRef.current !== null) {
       clearInterval(suspendTimerRef.current);
       suspendTimerRef.current = null;
     }
+    suspendedRef.current = false;
     const engine = engineRef.current;
     if (engine && stateRef.current.currentTrack && musicEnabled) {
       engine.cancelFade();
       engine.setVolume(0);
       await engine.play().catch(() => {});
-      engine.fadeIn(FADE_MS, musicVolume);
+      engine.fadeIn(FADE_RESUME, musicVolume);
       setState((prev) => ({ ...prev, playing: true }));
     }
   }, [musicEnabled, musicVolume]);
@@ -400,6 +418,23 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     suspendMusic,
     resumeMusic,
   };
+
+  // Suspend music with a smooth fade while reading; fade it back in on return.
+  // Handled here (route level) so it fires exactly once per navigation.
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+    if (prev === pathname) return;
+
+    const enteringReader = pathname.startsWith("/read");
+    const leavingReader = prev !== null && prev.startsWith("/read");
+
+    if (enteringReader && !leavingReader) {
+      void suspendMusic();
+    } else if (!enteringReader && leavingReader) {
+      void resumeMusic();
+    }
+  }, [pathname, suspendMusic, resumeMusic]);
 
   return <AudioContext.Provider value={value}>{children}</AudioContext.Provider>;
 }

@@ -15,16 +15,18 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
 import ReaderControls from '@/components/ReaderControls';
 import TOCModal from './TOCModal';
+import BookBriefing from './BookBriefing';
+import useBookDetails from '@/hooks/useBookDetails';
 import useBookLoader from '@/hooks/useBookLoader';
 import useBookmark from '@/hooks/useBookmark';
 import useReadingTracker from '@/hooks/useReadingTracker';
 import { useAuth } from '@/context/auth-provider';
 import { useReaderSettings } from '@/context/reader-settings-provider';
-import { useAudio } from '@/context/audio-provider';
 import { ThemeToggleButton } from '@/components/theme-toggle-button';
-import { AudioControls } from '@/components/audio/audio-controls';
+import { AmbiencePopover } from '@/components/audio/ambience-popover';
 import PdfReader from './PdfReader';
 
 export default function Reader() {
@@ -33,6 +35,8 @@ export default function Reader() {
   const { user } = useAuth();
   const { uiMode } = useReaderSettings();
 
+  // Briefing first: the user reviews the book before the reader opens.
+  const [stage, setStage] = useState<'briefing' | 'reading'>('briefing');
   const {
     book,
     isLoading,
@@ -46,7 +50,7 @@ export default function Reader() {
     setActiveSector,
     direction,
     setDirection,
-  } = useBookLoader(searchParams);
+  } = useBookLoader(searchParams, stage === 'reading');
 
   const { isTracking, sessionStartTime, isBookmarked, isBookmarkLoading, toggleBookmark } = useReadingTracker(
     book,
@@ -54,18 +58,19 @@ export default function Reader() {
     sectors.length
   );
 
-  const { suspendMusic, resumeMusic } = useAudio();
-
-  useEffect(() => {
-    suspendMusic();
-    return () => {
-      resumeMusic();
-    };
-  }, [suspendMusic, resumeMusic]);
-
   const [showTOC, setShowTOC] = useState(false);
   const loungeViewportRef = useRef<HTMLDivElement>(null);
   const classicViewportRef = useRef<HTMLDivElement>(null);
+
+  // Rich book details (synopsis, author, genre) for the briefing page.
+  const { details: bookDetails, isLoading: detailsLoading } = useBookDetails(book);
+
+  // Every newly opened book starts at the briefing stage.
+  useEffect(() => {
+    if (book) {
+      setStage('briefing');
+    }
+  }, [book?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const paginate = useCallback(
     (delta: number) => {
@@ -128,6 +133,19 @@ export default function Reader() {
     center: { x: 0, opacity: 1 },
     exit: (dir: number) => ({ x: dir < 0 ? '8%' : '-8%', opacity: 0 }),
   };
+
+  // Stage 1: the briefing page — the user decides whether to open the reader.
+  if (stage === 'briefing') {
+    return (
+      <BookBriefing
+        book={book}
+        details={bookDetails}
+        isLoading={detailsLoading}
+        onStart={() => setStage('reading')}
+        onBack={() => router.back()}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -226,7 +244,16 @@ export default function Reader() {
           </div>
 
           <div className="library-reader-actions">
-            <AudioControls />
+            <AmbiencePopover />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setStage('briefing')}
+              aria-label="About this book"
+              className="library-reader-guide-button rounded-full"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
             <ThemeToggleButton compact className="border-accent/30 hover:bg-accent/10 hover:text-accent" />
             <Button
               variant="outline"
@@ -444,7 +471,15 @@ export default function Reader() {
         </div>
 
         <div className="flex items-center gap-1">
-          <AudioControls />
+          <AmbiencePopover />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setStage('briefing')}
+            aria-label="About this book"
+          >
+            <Info className="h-4 w-4" />
+          </Button>
           <ThemeToggleButton compact className="border-border/50 text-muted-foreground hover:text-accent" />
           {toc.length > 0 && (
             <Button variant="ghost" size="icon" onClick={() => setShowTOC(true)}>

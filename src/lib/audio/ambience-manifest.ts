@@ -1,0 +1,248 @@
+export type AmbienceCategory = "nature" | "cozy" | "spaces" | "focus";
+
+export interface AmbienceSound {
+  id: string;
+  name: string;
+  category: AmbienceCategory;
+  src: string;
+  loop: boolean;
+  defaultVolume: number;
+  description: string;
+  iconName: string;
+  source: string;
+  creator: string;
+  license: string;
+  licenseUrl: string;
+  attributionRequired: boolean;
+}
+
+export const AMBIENCE_CATEGORIES: { id: AmbienceCategory; label: string; icon: string }[] = [
+  { id: "nature", label: "Nature", icon: "Trees" },
+  { id: "cozy", label: "Cozy", icon: "Flame" },
+  { id: "spaces", label: "Spaces", icon: "Compass" },
+  { id: "focus", label: "Focus", icon: "Activity" },
+];
+
+export const AMBIENCE_SOUNDS: AmbienceSound[] = [
+  // Nature
+  {
+    id: "gentle-rain",
+    name: "Gentle Rain",
+    category: "nature",
+    src: "/SFX/nature/gentle-rain.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Soft, steady rainfall on leaves and earth",
+    iconName: "CloudRain",
+    source: "Wikimedia Commons — Sound of light rainfall.ogg",
+    creator: "Mijesty",
+    license: "Creative Commons BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    attributionRequired: true,
+  },
+  {
+    id: "rain-window",
+    name: "Rain on Window",
+    category: "nature",
+    src: "/SFX/nature/rain-window.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Gentle droplets tapping against glass panes",
+    iconName: "CloudDrizzle",
+    source: "Wikimedia Commons — Rain against the window.ogg",
+    creator: "cori",
+    license: "Public domain",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "thunderstorm",
+    name: "Thunderstorm",
+    category: "nature",
+    src: "/SFX/nature/thunderstorm.mp3",
+    loop: true,
+    defaultVolume: 0.22,
+    description: "Heavy rain with deep, distant rolling thunder",
+    iconName: "CloudLightning",
+    source: "Wikimedia Commons — Good thunderstorm Sept 8 2022.ogg",
+    creator: "Jud McCranie",
+    license: "Creative Commons BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+    attributionRequired: true,
+  },
+  {
+    id: "forest-birds",
+    name: "Forest Birds",
+    category: "nature",
+    src: "/SFX/nature/forest-birds.mp3",
+    loop: true,
+    defaultVolume: 0.22,
+    description: "Calm woodland breeze with subtle melodic bird calls",
+    iconName: "Trees",
+    source: "Wikimedia Commons — Gentle breeze and birds singing.ogg",
+    creator: "ezwa",
+    license: "Public domain",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "forest-night",
+    name: "Forest at Night",
+    category: "nature",
+    src: "/SFX/nature/forest-night.mp3",
+    loop: true,
+    defaultVolume: 0.20,
+    description: "Dusk chorus over a quiet forest as night settles in",
+    iconName: "Moon",
+    source: "Wikimedia Commons — Waidachswald Oberschefflenz Abend.ogg",
+    creator: "Evillan",
+    license: "Creative Commons 0 (CC0 1.0)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "ocean-waves",
+    name: "Ocean Waves",
+    category: "nature",
+    src: "/SFX/nature/ocean-waves.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Slow, rhythmic tidal swell and coastline wash",
+    iconName: "Waves",
+    source: "Wikimedia Commons — Ocean Waves on a Tropical Beach.ogg",
+    creator: "Jarrod stanley",
+    license: "Creative Commons 0 (CC0 1.0)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "flowing-river",
+    name: "Flowing River",
+    category: "nature",
+    src: "/SFX/nature/flowing-river.mp3",
+    loop: true,
+    defaultVolume: 0.24,
+    description: "Continuous bubbling mountain stream and gentle current",
+    iconName: "Droplets",
+    source: "Wikimedia Commons — stream-river-water-up-close.wav",
+    creator: "jackthemurray",
+    license: "Creative Commons 0 (CC0 1.0)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attributionRequired: false,
+  },
+
+  // Cozy
+  {
+    id: "fireplace",
+    name: "Fireplace",
+    category: "cozy",
+    src: "/SFX/cozy/fireplace.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Warm glowing hearth with gentle crackles and ember pops",
+    iconName: "Flame",
+    source: "Wikimedia Commons — Campfire sound ambience.ogg",
+    creator: "Glaneur de sons",
+    license: "Creative Commons BY 3.0",
+    licenseUrl: "https://creativecommons.org/licenses/by/3.0/",
+    attributionRequired: true,
+  },
+  {
+    id: "fireplace-rain",
+    name: "Fireplace + Rain",
+    category: "cozy",
+    src: "/SFX/cozy/fireplace-rain.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Indoor hearth fire blended with gentle rainfall outside",
+    iconName: "Sparkles",
+    source: "Composite — Campfire (Glaneur de sons) + Rainfall (Mijesty)",
+    creator: "Glaneur de sons & Mijesty",
+    license: "CC BY 3.0 + CC BY-SA 4.0 composite",
+    licenseUrl: "https://commons.wikimedia.org/wiki/File:Campfire_sound_ambience.ogg",
+    attributionRequired: true,
+  },
+
+  // Spaces
+  {
+    id: "cafe",
+    name: "Quiet Café",
+    category: "spaces",
+    src: "/SFX/spaces/cafe.mp3",
+    loop: true,
+    defaultVolume: 0.22,
+    description: "Soft room murmur and distant ceramic cup clinks",
+    iconName: "Coffee",
+    source: "Wikimedia Commons — Restaurant ambience.ogg",
+    creator: "stephan",
+    license: "Public domain",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "library",
+    name: "Library",
+    category: "spaces",
+    src: "/SFX/spaces/library.mp3",
+    loop: true,
+    defaultVolume: 0.20,
+    description: "Serene study hall acoustic tone with subtle paper whisper",
+    iconName: "BookOpen",
+    source: "Wikimedia Commons — TU Delft Library, quiet study room",
+    creator: "el_mar",
+    license: "Creative Commons BY 3.0",
+    licenseUrl: "https://creativecommons.org/licenses/by/3.0/",
+    attributionRequired: true,
+  },
+  {
+    id: "train",
+    name: "Train Ride",
+    category: "spaces",
+    src: "/SFX/spaces/train.mp3",
+    loop: true,
+    defaultVolume: 0.22,
+    description: "Steady carriage hum and rhythmic rail click-clack",
+    iconName: "TrainTrack",
+    source: "Wikimedia Commons — Complete train ride 4 minutes.ogg",
+    creator: "stephan",
+    license: "Public domain",
+    licenseUrl: "https://creativecommons.org/publicdomain/mark/1.0/",
+    attributionRequired: false,
+  },
+
+  // Focus
+  {
+    id: "brown-noise",
+    name: "Brown Noise",
+    category: "focus",
+    src: "/SFX/focus/brown-noise.mp3",
+    loop: true,
+    defaultVolume: 0.25,
+    description: "Deep, smooth, low-frequency acoustic mask for immersive focus",
+    iconName: "Disc",
+    source: "Generated via ffmpeg (anoisesrc)",
+    creator: "PAGE.OS Audio",
+    license: "Creative Commons 0 (CC0 1.0)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attributionRequired: false,
+  },
+  {
+    id: "pink-noise",
+    name: "Pink Noise",
+    category: "focus",
+    src: "/SFX/focus/pink-noise.mp3",
+    loop: true,
+    defaultVolume: 0.22,
+    description: "Balanced 1/f spectrum noise for masking ambient distractions",
+    iconName: "Radio",
+    source: "Generated via ffmpeg (anoisesrc)",
+    creator: "PAGE.OS Audio",
+    license: "Creative Commons 0 (CC0 1.0)",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    attributionRequired: false,
+  },
+];
+
+export const AMBIENCE_MAP = new Map<string, AmbienceSound>(
+  AMBIENCE_SOUNDS.map((sound) => [sound.id, sound])
+);
