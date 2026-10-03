@@ -28,9 +28,25 @@ export function MotionRouteMenu() {
     };
   }, [open]);
 
+  const isDarkSection = pathname === "/infinite" || pathname.startsWith("/read");
+  const navColor = isDarkSection ? "#f4efe7" : "#0b0b0c";
+  const navShadow = isDarkSection ? "0 1px 4px rgba(0,0,0,0.8)" : "0 1px 2px rgba(255,255,255,0.7)";
+
   return (
     <>
-      <nav className="motion-vinyl-nav" aria-label="Primary" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60, color: 'var(--foreground)' }}>
+      <nav
+        className="motion-vinyl-nav"
+        aria-label="Primary"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 60,
+          color: navColor,
+          textShadow: navShadow,
+        }}
+      >
         <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home">P/OS</Link>
         <div className="motion-vinyl-links">
           {navigationItems.slice(0, 3).map(item => (

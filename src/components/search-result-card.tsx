@@ -43,7 +43,7 @@ export function SearchResultCard({
 }) {
   const { uiMode } = useReaderSettings();
   const { showBriefing } = useBookBriefing();
-  const resolvedVariant = variant ?? (uiMode === "lounge" ? "simple" : "classic");
+  const resolvedVariant = variant ?? (uiMode === "classic" ? "classic" : "simple");
 
   if (resolvedVariant === "simple") {
     return (
@@ -74,13 +74,13 @@ export function SearchResultCard({
 
   return (
     <button type="button" onClick={() => showBriefing(book)} className="h-full text-left w-full block">
-      <Card className="group flex h-full flex-col justify-between border bg-card transition-all hover:border-accent hover:box-glow hover:bg-accent/10">
+      <Card className="group flex h-full flex-col justify-between border bg-card transition-all hover:border-[#6c55db] hover:bg-[#6c55db]/5">
         <CardContent className="p-4 space-y-3">
           <div>
             <p className="text-xs text-muted-foreground">
               {uiMode === "lounge" ? "Title" : "Title-"}
             </p>
-            <p className="font-medium text-foreground group-hover:text-accent leading-tight">
+            <p className="font-medium text-foreground group-hover:text-[#6c55db] leading-tight">
               {book.title}
             </p>
           </div>
@@ -93,7 +93,7 @@ export function SearchResultCard({
         </CardContent>
         <CardFooter className="flex-col items-start p-4 pt-0">
           <p className="text-xs text-muted-foreground/80 w-full">
-            <span className="text-accent">{uiMode === "lounge" ? "Source:" : "src:"}</span> {getSourceLabel(book)}
+            <span className="text-[#6c55db]">{uiMode === "lounge" ? "Source:" : "src:"}</span> {getSourceLabel(book)}
           </p>
           {book.progress !== undefined && book.progress > 0 && (
             <div className="w-full mt-2">
@@ -103,7 +103,7 @@ export function SearchResultCard({
               </div>
               <Progress
                 value={book.progress}
-                className="h-1 bg-input [&>div]:bg-accent"
+                className="h-1 bg-input [&>div]:bg-[#6c55db]"
               />
             </div>
           )}

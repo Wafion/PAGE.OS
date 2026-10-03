@@ -514,8 +514,8 @@ export default function HomePage() {
       return (
         <>
           <section className="col-span-full">
-            <h2 className="font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2">
-              {uiMode === "lounge" ? "Library Results" : "// PRIMARY_ARCHIVE_RESULTS"}
+            <h2 className={uiMode === "motion" ? "font-motion text-2xl font-semibold italic text-[#0b0b0c] mb-6 pb-2" : "font-headline text-lg text-accent/80 mb-4 border-b border-dashed border-border pb-2"}>
+              {uiMode === "lounge" ? "Library Results" : uiMode === "motion" ? "Archival Matches" : "// PRIMARY_ARCHIVE_RESULTS"}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {renderPrimaryResults()}

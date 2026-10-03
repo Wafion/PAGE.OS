@@ -165,8 +165,10 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
   return (
     <div className={uiMode === "lounge" ? "library-command-search" : "flex flex-col gap-3"}>
       <div className="relative grow">
-        <span className="absolute left-4 top-0 h-full font-body text-accent/80 flex items-center gap-2 pointer-events-none z-10 text-lg">
-          <span>{uiMode === "lounge" ? "" : ">"}</span>
+        <span className="absolute left-4 top-0 h-full font-body flex items-center gap-2 pointer-events-none z-10 text-lg">
+          <span className={uiMode === "motion" ? "text-[#6c55db] font-semibold" : "text-accent/80"}>
+            {uiMode === "lounge" ? "" : ">"}
+          </span>
           {uiMode === "classic" && !isSearching && <span className="animate-cursor-blink bg-accent w-2 h-5 inline-block" />}
         </span>
         <Input
@@ -176,9 +178,13 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
               ? authorMode
                 ? "Type an author name like H G Wells or Jane Austen"
                 : "Search for a book, topic, PDF, or author"
-              : authorMode
-                ? "Author search enabled. Type a name like Mary Shelley"
-                : "Search archives, the web, books, or authors"
+              : uiMode === "motion"
+                ? authorMode
+                  ? "Search by author (e.g. H. G. Wells, Jane Austen)…"
+                  : "Search public-domain books, archive records, or authors…"
+                : authorMode
+                  ? "Author search enabled. Type a name like Mary Shelley"
+                  : "Search archives, the web, books, or authors"
           }
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -198,15 +204,17 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
           className={
             uiMode === "lounge"
               ? "h-14 w-full rounded-full border border-border/60 bg-card/90 pl-12 pr-14 text-base shadow-sm focus-visible:ring-accent/30"
+              : uiMode === "motion"
+              ? "h-14 w-full rounded-2xl border border-black/15 bg-white/95 pl-12 pr-14 text-base text-[#0b0b0c] placeholder:text-black/45 shadow-lg backdrop-blur focus-visible:ring-2 focus-visible:ring-[#6c55db]/40"
               : "w-full bg-input border-border/50 pl-14 h-12 text-lg focus:border-accent"
           }
         />
         <button
           onClick={handleSearchTrigger}
           disabled={isSearching}
-          className="absolute right-4 top-0 h-full text-accent/80 hover:text-accent transition-colors disabled:opacity-50"
+          className={`absolute right-4 top-0 h-full transition-colors disabled:opacity-50 ${uiMode === "motion" ? "text-[#6c55db] hover:text-[#6c55db]/80" : "text-accent/80 hover:text-accent"}`}
         >
-          {isSearching ? <LoaderCircle className="animate-spin" /> : <Search />}
+          {isSearching ? <LoaderCircle className="animate-spin" /> : <Search className="h-5 w-5" />}
         </button>
 
         {showSuggestions && trimmedValue.length >= 2 && (
@@ -214,19 +222,21 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
             className={
               uiMode === "lounge"
                 ? "absolute left-0 right-0 top-[calc(100%+0.6rem)] z-30 overflow-hidden rounded-3xl border border-border/60 bg-card/95 shadow-[0_20px_45px_rgba(79,45,22,0.12)] backdrop-blur"
+                : uiMode === "motion"
+                ? "absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-2xl border border-black/10 bg-white/98 text-[#0b0b0c] shadow-2xl backdrop-blur-xl"
                 : "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 overflow-hidden border border-border/60 bg-card/95 shadow-xl backdrop-blur"
             }
           >
             {isSuggesting ? (
               <div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
-                <LoaderCircle className="h-4 w-4 animate-spin text-accent" />
+                <LoaderCircle className={`h-4 w-4 animate-spin ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent"}`} />
                 <span>{uiMode === "lounge" ? "Finding suggestions..." : "Fetching suggestions..."}</span>
               </div>
             ) : hasSuggestions ? (
               <div className="max-h-80 overflow-y-auto py-2">
                 {gutenbergSuggestions.length > 0 && (
                   <div>
-                    <div className="px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-accent/80">
+                    <div className={`px-4 py-2 text-[11px] uppercase tracking-[0.18em] ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent/80"}`}>
                       {uiMode === "lounge" ? "From Gutenberg" : "GUTENBERG"}
                     </div>
                     {gutenbergSuggestions.map((suggestion) => (
@@ -235,13 +245,13 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={() => handleSuggestionSelect(suggestion)}
-                        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-accent/5"
+                        className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition ${uiMode === "motion" ? "hover:bg-[#6c55db]/10" : "hover:bg-accent/5"}`}
                       >
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-foreground">{suggestion.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{suggestion.meta}</p>
+                          <p className={`truncate font-medium ${uiMode === "motion" ? "text-[#0b0b0c]" : "text-foreground"}`}>{suggestion.title}</p>
+                          <p className={`truncate text-xs ${uiMode === "motion" ? "text-[#0b0b0c]/60" : "text-muted-foreground"}`}>{suggestion.meta}</p>
                         </div>
-                        <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent/80">
+                        <span className={`shrink-0 text-[10px] uppercase tracking-[0.18em] ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent/80"}`}>
                           book
                         </span>
                       </button>
