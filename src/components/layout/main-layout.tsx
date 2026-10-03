@@ -65,7 +65,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (typeof window === "undefined") return;
     
-    let link = document.getElementById("dynamic-favicon");
+    let link = document.getElementById("dynamic-favicon") as HTMLLinkElement | null;
     if (!link) {
       link = document.createElement("link");
       link.id = "dynamic-favicon";

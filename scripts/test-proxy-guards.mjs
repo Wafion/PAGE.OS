@@ -11,6 +11,7 @@ import {
   isRateLimited,
   resetRateLimitsForTests,
   getClientIp,
+  DEFAULT_RATE_LIMIT,
 } from '../src/lib/rate-limit.ts';
 
 /**
@@ -119,7 +120,7 @@ check('blocks not-a-url', () => assertBlocked('not a url', 'Invalid URL'));
 check('blocks null-ish (invalid URL, no scheme)', () => assertBlocked('null', 'Invalid URL'));
 
 // ── 6. Rate limiter ──
-const { maxRequests, windowMs } = { maxRequests: 30, windowMs: 60_000 };
+const { maxRequests, windowMs } = DEFAULT_RATE_LIMIT;
 
 check(`rate limiter allows first ${maxRequests} requests then blocks`, () => {
   resetRateLimitsForTests();
