@@ -36,7 +36,6 @@ export function MotionRouteMenu() {
           {navigationItems.slice(0, 3).map(item => (
              <Link key={item.href} href={item.href}>{item.motionLabel}</Link>
           ))}
-          <Link href={readerHref}>Reader</Link>
         </div>
         <div className="motion-vinyl-actions">
            <AudioControls />
@@ -72,12 +71,6 @@ export function MotionRouteMenu() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href={readerHref} onClick={() => setOpen(false)}>
-                  Reader
-                  <small>/read</small>
-                </Link>
-              </li>
             </ul>
             <div className="motion-vinyl-mobile-rule" />
             <Link href="/library" className="motion-vinyl-drop" onClick={() => setOpen(false)}>
@@ -89,6 +82,8 @@ export function MotionRouteMenu() {
     </>
   );
 }
+
+
 
 
 
