@@ -62,6 +62,26 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     setIsBooting(false);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    let link = document.getElementById("dynamic-favicon");
+    if (!link) {
+      link = document.createElement("link");
+      link.id = "dynamic-favicon";
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    
+    if (uiMode === "motion") {
+      link.type = "image/png";
+      link.href = "/favicon-motion.png";
+    } else {
+      link.type = "image/x-icon";
+      link.href = "/favicon.ico";
+    }
+  }, [uiMode]);
+
   if (isBooting) {
     return <Bootloader onComplete={handleBootComplete} />;
   }
@@ -89,5 +109,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
+
+
+
 
 

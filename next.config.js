@@ -28,6 +28,14 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/assets/:path*',
+        destination: '/Assets/:path*',
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     config.resolve.alias.canvas = false;
 

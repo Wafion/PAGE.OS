@@ -80,9 +80,37 @@ export function MotionRouteMenu() {
   const isReader = pathname.startsWith("/read");
   const isLibrary = pathname === "/library";
   const hideAudioPill = isReader || isLibrary || isNotFound;
+  const hideLogo = pathname !== "/";
+
+  const isDarkSection = pathname === "/infinite" || pathname.startsWith("/read") || isNotFound;
+  const logoColor = isNotFound ? "#ffffff" : isDarkSection ? "#f4efe7" : "#0b0b0c";
+  const logoShadow = isNotFound
+    ? "0 2px 14px rgba(0,0,0,0.75)"
+    : isDarkSection
+    ? "0 1px 4px rgba(0,0,0,0.8)"
+    : "0 1px 2px rgba(255,255,255,0.7)";
 
   return (
     <>
+      {!hideLogo && (
+        <nav
+          className="motion-vinyl-nav"
+          aria-label="Primary"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 60,
+            color: logoColor,
+            textShadow: logoShadow,
+            pointerEvents: "none",
+          }}
+        >
+          <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home" style={{ pointerEvents: "auto" }}>P/OS</Link>
+        </nav>
+      )}
+
       {!hideAudioPill && (
         <div className="motion-audio-pill" aria-label="Ambient music controls">
           <AudioControls />

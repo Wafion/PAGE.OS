@@ -59,6 +59,15 @@ function readStoredNumber(value: string | null, fallback: number): number {
   }
 }
 
+const getDefaultUiMode = (): UiMode => {
+  if (typeof window === "undefined") {
+    return "motion";
+  }
+  // Target only phones, allowing tablets to use the motion UI
+  const isPhone = /iPhone|iPod|Mobi/i.test(navigator.userAgent) || window.innerWidth < 768;
+  return isPhone ? "lounge" : "motion";
+};
+
 const normalizeUiMode = (value: string | null | undefined): UiMode => {
   if (value === "lounge" || value === "simple") {
     return "lounge";
@@ -72,8 +81,7 @@ const normalizeUiMode = (value: string | null | undefined): UiMode => {
     return "classic";
   }
 
-  // Default first-time visitors to lounge mode.
-  return "lounge";
+  return getDefaultUiMode();
 };
 
 function isPermissionDenied(error: unknown) {
@@ -85,11 +93,11 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
   const [autoScroll, setAutoScroll] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>(() => {
     if (typeof window === "undefined") {
-      return "lounge";
+      return "motion";
     }
 
     const storedMode = window.localStorage.getItem("pageos-ui-mode");
-    return storedMode ? normalizeUiMode(storedMode) : "lounge";
+    return storedMode ? normalizeUiMode(storedMode) : getDefaultUiMode();
   });
   const [sourceSettings, setSourceSettings] = useState<SourceSettings>(defaultSourceSettings);
   const [showBootAnimation, setShowBootAnimation] = useState(true);

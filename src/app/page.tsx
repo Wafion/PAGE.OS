@@ -621,13 +621,19 @@ export default function HomePage() {
               <span><span>is waiting somewhere now</span></span>
             </h1>
             <p className="motion-vinyl-lede">Open a living shelf of public-domain books, visual culture, and ideas waiting to be found.</p>
-            <div className="motion-vinyl-hero-actions">
+            <div className="motion-vinyl-hero-actions" style={{ pointerEvents: "auto" }}>
               <button
                 type="button"
                 className="motion-vinyl-primary"
-                onClick={() => document.getElementById("motion-discover")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => {
+                  const searchSection = document.getElementById("motion-search");
+                  searchSection?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  setTimeout(() => {
+                    searchSection?.querySelector("input")?.focus();
+                  }, 500);
+                }}
               >
-                Enter the archive <ChevronRight className="h-4 w-4" />
+                Search the archive <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const backgroundVideoUrl = "/assets/pageos-404-background.mp4";
+const backgroundVideoUrl = "/Assets/pageos-404-background.mp4";
 
 export function NotFoundClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
