@@ -145,7 +145,7 @@ export function AudioControls() {
         onMouseLeave={() => setShowAttribution(false)}
       >
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           onClick={toggle}
           aria-label={enabled ? "Mute ambient music" : "Enable ambient music"}
@@ -196,7 +196,7 @@ export function AudioControls() {
       {enabled && (
         <div className="relative flex items-center">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             aria-label={`Audio console — level ${Math.round(volume * 100)}%`}
             aria-expanded={open}
@@ -378,3 +378,4 @@ export function AudioControls() {
     </div>
   );
 }
+
