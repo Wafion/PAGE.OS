@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GlobalPool } from './global-pool';
 import { hydratePool } from './resolvers';
 import type { MediaItem } from './types';
+import { guardRequest } from '@/lib/api-guard';
 
 const CACHE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000;
 const WIKIMEDIA_THUMBNAIL_WIDTHS = [20, 40, 60, 120, 250, 330, 500, 960, 1280, 1920, 3840];
@@ -341,6 +342,42 @@ async function fetchMetItemById(itemId: string): Promise<MediaItem | null> {
 }
 
 export async function GET(request: Request) {
+  const guard = guardRequest(request, {
+    rules: [
+      {
+        name: 'itemId',
+        pattern: /^met-\d{1,10}$/,
+        description: 'a Met Museum item id like met-12345',
+      },
+      {
+        name: 'seed',
+        pattern: /^-?\d{1,15}$/,
+        description: 'an integer feed seed',
+      },
+      {
+        name: 'page',
+        pattern: /^\d{1,5}$/,
+        description: 'a page number (0-99999)',
+      },
+      {
+        name: 'limit',
+        pattern: /^\d{1,3}$/,
+        description: 'items per page (1-40)',
+      },
+      {
+        name: 'cx',
+        pattern: /^-?\d{1,6}$/,
+        description: 'an integer chunk coordinate',
+      },
+      {
+        name: 'cy',
+        pattern: /^-?\d{1,6}$/,
+        description: 'an integer chunk coordinate',
+      },
+    ],
+  });
+  if (guard.response) return guard.response;
+
   const { searchParams } = new URL(request.url);
   const cx = searchParams.get('cx');
   const cy = searchParams.get('cy');

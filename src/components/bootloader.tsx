@@ -231,7 +231,10 @@ export function Bootloader({ onComplete }: { onComplete: () => void }) {
       prev.map((line) => ({ ...line, isTyping: false })).concat({
         ...item,
         isTyping: true,
-        id: Date.now(),
+        // Use the sequence position instead of a timestamp. Multiple state
+        // updates can happen in the same millisecond, which would otherwise
+        // produce duplicate React keys.
+        id: index,
       }),
     );
   }, [onComplete]);

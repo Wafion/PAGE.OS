@@ -24,6 +24,8 @@ export function AppHeader() {
   const { user } = useAuth();
   const { uiMode, setUiMode } = useReaderSettings();
 
+  const nextUiMode = uiMode === "lounge" ? "motion" : uiMode === "motion" ? "classic" : "lounge";
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -40,10 +42,10 @@ export function AppHeader() {
         variant="outline"
         size="sm"
         className="hidden h-8 gap-2 border-accent/40 text-xs text-accent hover:bg-accent/10 hover:text-accent sm:flex"
-        onClick={() => setUiMode(uiMode === "lounge" ? "classic" : "lounge")}
+        onClick={() => setUiMode(nextUiMode)}
       >
         <MonitorCog className="h-3.5 w-3.5" />
-        {uiMode === "lounge" ? "Classic UI" : "Library Lounge"}
+        {uiMode === "motion" ? "Motion UI" : uiMode === "classic" ? "Classic UI" : "Library Lounge"}
       </Button>
 
       <AudioControls />

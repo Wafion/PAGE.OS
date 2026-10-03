@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchProjectGutenbergOpdsBooks } from '@/lib/gutenberg-opds';
+import { guardRequest } from '@/lib/api-guard';
 
 type GutenbergBook = {
   id: number;
@@ -50,6 +51,18 @@ function mergeGutenbergResults(
 }
 
 export async function GET(request: NextRequest) {
+  const guard = guardRequest(request, {
+    rules: [
+      { name: 'query', maxLength: 200, description: 'search terms' },
+      {
+        name: 'page',
+        pattern: /^\d{1,3}$/,
+        description: 'page number (1-999)',
+      },
+    ],
+  });
+  if (guard.response) return guard.response;
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query')?.trim();
   const page = searchParams.get('page')?.trim() || '1';
@@ -95,8 +108,14 @@ export async function GET(request: NextRequest) {
       console.error('Project Gutenberg OPDS route failed:', opdsResult.reason);
     }
 
+    const gutendexFailed =
+      gutendexResult.status === 'rejected' ||
+      (gutendexResult.status === 'fulfilled' && !gutendexResult.value.ok);
+
+    // An empty result set from healthy upstreams is a legitimate no-match
+    // response, not an outage; only 502 when every upstream source failed.
     const data = mergeGutenbergResults(gutendexData, opdsBooks);
-    if (data.results.length === 0) {
+    if (data.results.length === 0 && gutendexFailed && opdsResult.status === 'rejected') {
       return NextResponse.json(
         { error: 'Failed to fetch Gutenberg data' },
         { status: 502 },

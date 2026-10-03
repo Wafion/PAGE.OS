@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "clean": "node ./scripts/clean-next.mjs",
-    "predev": "node ./scripts/clean-next.mjs dev",
     "dev": "node ./scripts/run-next-dev.mjs",
     "start": "node ./node_modules/next/dist/bin/next start",
     "build": "node ./node_modules/next/dist/bin/next build",
     "lint": "node ./node_modules/next/dist/bin/next lint",
-    "typecheck": "node ./scripts/run-typecheck.mjs"
+    "typecheck": "node ./scripts/run-typecheck.mjs",
+    "test:proxy-guards": "node --experimental-strip-types --no-warnings ./scripts/test-proxy-guards.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",
@@ -44,7 +44,7 @@
     "firebase": "^11.9.1",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.475.0",
-    "next": "^14.2.30",
+    "next": "^15.5.26",
     "patch-package": "^8.0.0",
     "pdfjs-dist": "^4.4.168",
     "react": "^18.3.1",
@@ -65,5 +65,8 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "5.8.3"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

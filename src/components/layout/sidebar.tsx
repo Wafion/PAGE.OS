@@ -3,14 +3,8 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Home,
-  Images,
-  Library,
-  Settings,
-  User,
   Power,
   LogIn,
-  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "firebase/auth";
@@ -18,57 +12,7 @@ import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/auth-provider";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { cn } from "@/lib/utils";
-
-const menuItems = [
-  {
-    href: "/",
-    classicLabel: "System Feed",
-    loungeLabel: "Front Shelf",
-    detail: "Discover public-domain books and open knowledge.",
-    code: "01",
-    icon: Home,
-  },
-  {
-    href: "/infinite",
-    classicLabel: "Open Gallery",
-    loungeLabel: "Artwork Wander",
-    detail: "Drift through public-domain and CC0 artwork.",
-    code: "02",
-    icon: Images,
-  },
-  {
-    href: "/library",
-    classicLabel: "Archive",
-    loungeLabel: "Reading Collection",
-    detail: "Return to saved books, bookmarks, and history.",
-    code: "03",
-    icon: Library,
-  },
-  {
-    href: "/profile",
-    classicLabel: "Profile",
-    loungeLabel: "Reader Card",
-    detail: "Identity, sync status, and account memory.",
-    code: "04",
-    icon: User,
-  },
-  {
-    href: "/settings",
-    classicLabel: "Settings",
-    loungeLabel: "Room Controls",
-    detail: "Theme, reader behavior, and source controls.",
-    code: "05",
-    icon: Settings,
-  },
-  {
-    href: "/legal",
-    classicLabel: "Legal",
-    loungeLabel: "House Rules",
-    detail: "Usage terms, privacy, and content policies.",
-    code: "06",
-    icon: Shield,
-  },
-];
+import { navigationItems } from "@/components/layout/navigation-items";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -89,20 +33,22 @@ export function AppSidebar() {
         <div className="pageos-menu-brand-row">
           <div>
             <p className="pageos-menu-kicker">
-              {uiMode === "lounge" ? "Library lounge" : "Terminal grid"}
+              {uiMode === "lounge" ? "Library lounge" : uiMode === "motion" ? "Motion edition" : "Terminal grid"}
             </p>
             <Link href="/" className="pageos-menu-brand">
               PAGE.OS
             </Link>
           </div>
-          <span className="pageos-menu-chip">{uiMode === "lounge" ? "Shelf map" : "v1.0"}</span>
+          <span className="pageos-menu-chip">{uiMode === "lounge" ? "Shelf map" : uiMode === "motion" ? "Signal map" : "v1.0"}</span>
         </div>
         <div className="pageos-menu-copy">
           <h2>{uiMode === "lounge" ? "Navigation Room" : "Gateway Panel"}</h2>
           <p>
             {uiMode === "lounge"
               ? "Move through books, artwork, settings, and reader spaces."
-              : "Jump between open knowledge routes, operator controls, and runtime pages."}
+              : uiMode === "motion"
+                ? "A fluid index for books, images, and open knowledge."
+                : "Jump between open knowledge routes, operator controls, and runtime pages."}
           </p>
         </div>
       </div>
@@ -126,9 +72,9 @@ export function AppSidebar() {
       </div>
 
       <nav className="pageos-menu-nav">
-        {menuItems.map((item) => {
+        {navigationItems.map((item) => {
           const isActive = pathname === item.href;
-          const label = uiMode === "lounge" ? item.loungeLabel : item.classicLabel;
+          const label = uiMode === "lounge" ? item.loungeLabel : uiMode === "motion" ? item.motionLabel : item.classicLabel;
 
           return (
             <Link

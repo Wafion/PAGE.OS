@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardRequest } from '@/lib/api-guard';
 
 type ArchiveSearchDoc = {
   identifier?: string;
@@ -294,9 +295,22 @@ async function fetchGutenbergOpdsResults(query: string): Promise<OpenTextResult[
 }
 
 export async function GET(req: NextRequest) {
+  const guard = guardRequest(req, {
+    rules: [
+      {
+        name: 'q',
+        required: true,
+        maxLength: 200,
+        description: 'search terms (max 200 chars)',
+      },
+    ],
+  });
+  if (guard.response) return guard.response;
+
   const query = req.nextUrl.searchParams.get('q')?.trim();
 
   if (!query) {
+    // Unreachable when the guard passes, but keeps TS narrowing honest.
     return NextResponse.json({ error: 'Query missing' }, { status: 400 });
   }
 

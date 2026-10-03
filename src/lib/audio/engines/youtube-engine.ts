@@ -171,16 +171,24 @@ export class YouTubePlaybackEngine implements PlaybackEngine {
 
   async fadeIn(duration: number, targetVolume?: number): Promise<void> {
     this._fading = true;
-    const target = (targetVolume ?? this.volume) * 100;
+    if (targetVolume !== undefined) {
+      // Adopt the requested target so a setVolume() mid-fade retargets the
+      // fade instead of being clobbered when the fade completes.
+      this.volume = Math.max(0, Math.min(1, targetVolume));
+    }
     const steps = Math.max(1, Math.floor(duration / 50));
-    const increment = target / steps;
     for (let i = 1; i <= steps; i++) {
       if (!this._fading) return;
-      playerInstance?.setVolume(i * increment);
+      // Glide from the player's current level toward the live target each
+      // step, so retargeting mid-fade converges instead of snapping back.
+      const current = playerInstance?.getVolume() ?? 0;
+      const remaining = steps - i + 1;
+      const next = current + (this.volume * 100 - current) / remaining;
+      playerInstance?.setVolume(next);
       await new Promise((r) => setTimeout(r, 50));
     }
     if (this._fading) {
-      playerInstance?.setVolume(target);
+      playerInstance?.setVolume(this.volume * 100);
     }
     this._fading = false;
   }

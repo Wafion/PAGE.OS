@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Cookie, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
 import { Button } from "@/components/ui/button";
 import { enableOptionalAnalytics } from "@/lib/firebase";
 
@@ -40,7 +41,7 @@ function saveConsent(optional: boolean): CookieConsent {
   return consent;
 }
 
-function ConsentAwareSpeedInsights() {
+function useOptionalConsent() {
   const [optionalAllowed, setOptionalAllowed] = useState(false);
 
   useEffect(() => {
@@ -59,6 +60,12 @@ function ConsentAwareSpeedInsights() {
     };
   }, []);
 
+  return optionalAllowed;
+}
+
+function ConsentAwareInsights() {
+  const optionalAllowed = useOptionalConsent();
+
   useEffect(() => {
     if (!optionalAllowed) {
       return;
@@ -69,7 +76,12 @@ function ConsentAwareSpeedInsights() {
     });
   }, [optionalAllowed]);
 
-  return optionalAllowed ? <SpeedInsights /> : null;
+  return optionalAllowed ? (
+    <>
+      <Analytics />
+      <SpeedInsights />
+    </>
+  ) : null;
 }
 
 export function CookieConsentBanner() {
@@ -91,11 +103,11 @@ export function CookieConsentBanner() {
 
   return (
     <>
-      <ConsentAwareSpeedInsights />
+      <ConsentAwareInsights />
       {isVisible ? (
         <section
           aria-label="Cookie consent"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-4xl rounded-lg border border-accent/25 bg-background/95 p-4 shadow-2xl shadow-black/30 backdrop-blur md:inset-x-6 md:bottom-6"
+          className="pageos-cookie-consent fixed inset-x-3 bottom-3 z-50 mx-auto max-w-4xl rounded-lg border border-accent/25 bg-background/95 p-4 shadow-2xl shadow-black/30 backdrop-blur md:inset-x-6 md:bottom-6"
         >
           <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
             <div className="min-w-0">

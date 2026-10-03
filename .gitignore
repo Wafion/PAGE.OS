@@ -38,6 +38,7 @@ yarn-error.log*
 .codex-*.err
 pageos-dev.log
 pageos-dev.err.log
+pageos-audit-dev.log
 
 # vercel
 .vercel

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { CommandSearch } from "@/components/command-search";
 import type { SearchResult } from "@/adapters/sourceManager";
 import { SearchResultCard } from "@/components/search-result-card";
+import FloatingCards from "@/components/ui/3d-sliding-cards";
 import {
   BookOpen,
   ChevronRight,
@@ -25,6 +26,7 @@ import {
 } from "@/components/web-fallback-results";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import type { RecommendationGenreKey } from "@/lib/recommendations";
+import { isReferenceWork } from "@/lib/recommendations";
 
 const shuffleArray = <T,>(array: T[]) => {
   for (let i = array.length - 1; i > 0; i -= 1) {
@@ -79,6 +81,11 @@ const LOUNGE_GENRES = [
     query: "adventure",
   },
 ] as const;
+
+const MOTION_HERO_POSTER =
+  "https://images.higgs.ai/?default=1&output=webp&url=https%3A%2F%2Fd8j0ntlcm91z4.cloudfront.net%2Fuser_38xzZboKViGWJOttwIXH07lWA1P%2Fhf_20260908_122011_59c97465-4d23-4fdc-ac40-f6832f573e28.png&w=1920&q=85";
+const MOTION_HERO_VIDEO =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260908_125738_eb584080-9f98-489e-adb2-014760aa34da.mp4";
 
 type LoungeGenre = (typeof LOUNGE_GENRES)[number];
 
@@ -199,9 +206,48 @@ export default function HomePage() {
   const [genreBooks, setGenreBooks] = useState<SearchResult[]>([]);
   const [isGenreLoading, setIsGenreLoading] = useState(false);
   const [genreSourceLabel, setGenreSourceLabel] = useState("instant shelf");
+  const orbitVideoRef = useRef<HTMLVideoElement>(null);
+  const [orbitGreeting, setOrbitGreeting] = useState("");
   const [loadedShelves, setLoadedShelves] = useState<
     Partial<Record<RecommendationGenreKey, RecommendationShelfResponse>>
   >({});
+
+  useEffect(() => {
+    if (uiMode !== "motion") return;
+
+    const greeting = "Glad you stopped in. Good taste tends to find us. Now, what are you looking for?";
+    let cursor = 0;
+    let interval: number | undefined;
+    const timeout = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        cursor += 1;
+        setOrbitGreeting(greeting.slice(0, cursor));
+        if (cursor >= greeting.length && interval) window.clearInterval(interval);
+      }, 32);
+    }, 600);
+
+    let pointerX = window.innerWidth / 2;
+    let frame = 0;
+    const scrubVideo = (event: MouseEvent) => {
+      pointerX = event.clientX;
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        const video = orbitVideoRef.current;
+        if (video?.duration) {
+          video.currentTime = Math.max(0, Math.min(video.duration, (pointerX / window.innerWidth) * video.duration));
+        }
+        frame = 0;
+      });
+    };
+
+    window.addEventListener("pointermove", scrubVideo);
+    return () => {
+      window.clearTimeout(timeout);
+      if (interval) window.clearInterval(interval);
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", scrubVideo);
+    };
+  }, [uiMode]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -389,11 +435,7 @@ export default function HomePage() {
 
       if (gutenbergData.status === "fulfilled") {
         setPrimaryResults(gutenbergData.value || []);
-        setPrimaryStatusMessage(
-          gutenbergData.value?.length
-            ? ""
-            : "Primary archive is degraded right now, showing fallback classics when available.",
-        );
+        setPrimaryStatusMessage("");
       } else {
         console.error("Gutenberg search failed:", gutenbergData.reason);
         setPrimaryResults([]);
@@ -521,12 +563,109 @@ export default function HomePage() {
     </div>
   );
 
+  if (uiMode === "motion") {
+    const motionLead = featuredBooks[0] ?? getFallbackGutenbergBooks()[0];
+    const motionShelf = featuredBooks.slice(1, 7);
+
+    return (
+      <div className="motion-vinyl-layout">
+        <section className="motion-vinyl-hero">
+          <div className="motion-vinyl-media" aria-hidden="true">
+            <img src={MOTION_HERO_POSTER} alt="" className="motion-vinyl-poster" />
+            <video
+              className="motion-vinyl-video"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={MOTION_HERO_POSTER}
+              onCanPlay={(event) => event.currentTarget.classList.add("is-ready")}
+              aria-hidden="true"
+            >
+              <source src={MOTION_HERO_VIDEO} type="video/mp4" />
+            </video>
+          </div>
+          <div className="motion-vinyl-wash" aria-hidden="true" />
+          <div className="motion-vinyl-inner">
+            <p className="motion-vinyl-kicker">PAGE.OS / THE OPEN ARCHIVE</p>
+            <h1 className="motion-vinyl-headline">
+              <span><span>The next page you need</span></span>
+              <span><span>is waiting somewhere now</span></span>
+            </h1>
+            <p className="motion-vinyl-lede">Open a living shelf of public-domain books, visual culture, and ideas waiting to be found.</p>
+            <div className="motion-vinyl-hero-actions">
+              <button
+                type="button"
+                className="motion-vinyl-primary"
+                onClick={() => document.getElementById("motion-discover")?.scrollIntoView({ behavior: "smooth" })}
+              >
+                Enter the archive <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="motion-vinyl-issue" aria-hidden="true"><span>01</span><i /><span>∞</span></div>
+        </section>
+
+        <section className="motion-shelf-section">
+          <div className="motion-shelf-heading"><div><p className="motion-eyebrow">A CURATED DRIFT</p><h2>Books with a pulse</h2></div><span>DRAG TO EXPLORE →</span></div>
+          <FloatingCards
+            cards={motionShelf.map((book, index) => ({
+              id: `${book.source}-${book.id}-${index}`,
+              imgSrc: getBookCover(book),
+              title: book.title,
+              author: book.authors || "Unknown author",
+              href: `/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`,
+            }))}
+          />
+          <div className="motion-shelf">
+            {motionShelf.map((book, index) => (
+              <Link key={`${book.source}-${book.id}-${index}`} href={`/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`} className="motion-shelf-card">
+                <div className="motion-shelf-cover" style={getBookCover(book) ? { backgroundImage: `url(${getBookCover(book)})` } : undefined} />
+                <span>{String(index + 2).padStart(2, "0")}</span><strong>{book.title}</strong><small>{book.authors || "Unknown author"}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section id="motion-discover" className="motion-discover motion-orbit-section">
+          <video ref={orbitVideoRef} className="motion-orbit-video" muted playsInline preload="auto" aria-hidden="true">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4" type="video/mp4" />
+          </video>
+          <div className="motion-orbit-overlay" aria-hidden="true" />
+          <div className="motion-orbit-intro">
+            <p className="motion-orbit-blur">Hey there, meet P.A.G.E.,<br />Public Archive Gateway Explorer</p>
+            <p className="motion-orbit-typewriter">{orbitGreeting}<span className="motion-orbit-cursor" /></p>
+            <div id="motion-search" className="motion-orbit-inline-search">
+              <CommandSearch onSearch={handleSearch} />
+            </div>
+            <div className="motion-orbit-signal" aria-label="Archive status">
+              <div><span>LIVE INDEX</span><strong>Open archive</strong><small>Books, images, and ideas in motion</small></div>
+              <div><span>RECOMMENDED</span><strong>{featuredBooks.length || "∞"}</strong><small>Fresh paths to follow</small></div>
+              <div><span>MODE</span><strong>WANDER</strong><small>Move your pointer to explore</small></div>
+            </div>
+            {hasSearched ? <div className="motion-orbit-inline-results">{renderContent()}</div> : null}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   if (uiMode === "lounge") {
     const activeRecommendationBooks =
       selectedGenre.key === "popular" ? featuredBooks.slice(0, 8) : genreBooks.slice(0, 8);
     const recommendationBooks = hasSearched ? primaryResults : activeRecommendationBooks;
+    // Spotlight should open on a real invitation to read, not a reference
+    // work like a dictionary or a contents-only record (shared predicate —
+    // shelves are already filtered server-side, this guards the fallback).
+    const isSpotlightWorthy = (book: SearchResult) => !isReferenceWork(book);
     const spotlightBook =
-      activeRecommendationBooks[0] ?? featuredBooks[0] ?? getFallbackGutenbergBooks()[0];
+      activeRecommendationBooks.find(isSpotlightWorthy) ??
+      featuredBooks.find(isSpotlightWorthy) ??
+      getFallbackGutenbergBooks().find(isSpotlightWorthy) ??
+      activeRecommendationBooks[0] ??
+      featuredBooks[0] ??
+      getFallbackGutenbergBooks()[0];
     const shelfBooks =
       selectedGenre.key === "popular" ? featuredBooks.slice(2, 10) : genreBooks.slice(0, 10);
     const isRecommendationLoading =
@@ -538,8 +677,13 @@ export default function HomePage() {
       <div className="library-page">
         <section className="library-hero">
           <div className="library-hero-copy">
+            <div className="library-hero-badge">
+              <span className="library-hero-badge-dot" /> Fresh shelves, open daily
+            </div>
             <p className="library-kicker">PAGE.OS</p>
-            <h1>Escape into a world of words</h1>
+            <h1>
+              Escape into a world of <span className="library-hero-accent">words</span>
+            </h1>
             <p>
               Discover public-domain books, open knowledge, and artwork from
               trusted cultural archives in a calmer space built for wandering.
@@ -590,7 +734,7 @@ export default function HomePage() {
           <CommandSearch onSearch={handleSearch} />
         </section>
 
-        <div className="library-tabs" aria-label="Book categories">
+        <div className="library-tabs library-template-pills" aria-label="Book categories">
           {LOUNGE_GENRES.map((genre) => (
             <button
               key={genre.key}
@@ -656,7 +800,7 @@ export default function HomePage() {
                       </span>
                     </div>
                   ) : spotlightBook ? (
-                    <div className="library-spotlight">
+                    <div className="library-spotlight library-template-feature">
                       <div
                         className="library-spotlight-cover"
                         style={
@@ -668,7 +812,6 @@ export default function HomePage() {
                       <div>
                         <h3>{spotlightBook.title}</h3>
                         <p>by {spotlightBook.authors || "Unknown author"}</p>
-                        <div className="library-rating">4.6 reader score</div>
                         <Link
                           href={`/read?source=${spotlightBook.source}&id=${spotlightBook.id}&title=${encodeURIComponent(spotlightBook.title)}&authors=${encodeURIComponent(spotlightBook.authors)}${spotlightBook.source === "gutendex" ? `&formats=${encodeURIComponent(JSON.stringify(spotlightBook.formats))}` : ""}`}
                           className="library-read-now"

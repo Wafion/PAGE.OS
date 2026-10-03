@@ -3,7 +3,7 @@ import type { SearchResult } from "@/adapters/sourceManager";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Progress } from "./ui/progress";
 import { useReaderSettings } from "@/context/reader-settings-provider";
-import { Bookmark, Share2, Star } from "lucide-react";
+import { Bookmark, Share2 } from "lucide-react";
 
 function createBookQuery(book: SearchResult): string {
   const params = new URLSearchParams();
@@ -61,10 +61,6 @@ export function SearchResultCard({
           </p>
           <h3>{book.title}</h3>
           <p className="library-result-author">by {book.authors || "Unknown author"}</p>
-          <div className="library-result-rating">
-            <Star className="h-3.5 w-3.5 fill-current" />
-            <span>4.6</span>
-          </div>
           <div className="library-result-actions">
             <span>Start reading</span>
             <Share2 className="h-4 w-4" />

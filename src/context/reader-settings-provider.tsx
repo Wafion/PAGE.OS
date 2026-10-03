@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-provider';
 
 type SourceKey = "gutendex" | "internetArchive" | "openArt";
-export type UiMode = "classic" | "lounge";
+export type UiMode = "classic" | "lounge" | "motion";
 
 export type SourceSettings = Partial<Record<SourceKey, boolean>>;
 
@@ -37,9 +37,35 @@ const defaultSourceSettings: SourceSettings = {
   openArt: true,
 };
 
+function readStoredBoolean(value: string | null, fallback: boolean): boolean {
+  if (value === null) return fallback;
+
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "boolean" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readStoredNumber(value: string | null, fallback: number): number {
+  if (value === null) return fallback;
+
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const normalizeUiMode = (value: string | null | undefined): UiMode => {
   if (value === "lounge" || value === "simple") {
     return "lounge";
+  }
+
+  if (value === "motion") {
+    return "motion";
   }
 
   if (value === "classic") {
@@ -72,14 +98,14 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       return true;
     }
     const stored = window.localStorage.getItem("pageos-music-enabled");
-    return stored !== null ? JSON.parse(stored) : true;
+    return readStoredBoolean(stored, true);
   });
   const [musicVolume, setMusicVolumeState] = useState<number>(() => {
     if (typeof window === "undefined") {
       return 0.5;
     }
     const stored = window.localStorage.getItem("pageos-music-volume");
-    const parsed = stored !== null ? JSON.parse(stored) : 0.5;
+    const parsed = readStoredNumber(stored, 0.5);
     return Math.max(0, Math.min(1, parsed));
   });
   const [collectStatistics, setCollectStatisticsState] = useState<boolean>(() => {
@@ -87,13 +113,13 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       return true; // Default to enabled
     }
     const stored = window.localStorage.getItem('pageos-collect-statistics');
-    return stored ? JSON.parse(stored) : true; // Default to enabled
+    return readStoredBoolean(stored, true); // Default to enabled
   });
 
   const applyUiMode = useCallback((value: UiMode) => {
     const root = window.document.documentElement;
-    root.classList.remove("ui-classic", "ui-lounge");
-    root.classList.add(value === "lounge" ? "ui-lounge" : "ui-classic");
+    root.classList.remove("ui-classic", "ui-lounge", "ui-motion");
+    root.classList.add(`ui-${value}`);
     setUiMode(value);
   }, []);
 
@@ -191,7 +217,7 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
     try {
       const storedAutoScroll = localStorage.getItem('pageos-autoscroll');
       if (storedAutoScroll) {
-        setAutoScroll(JSON.parse(storedAutoScroll));
+        setAutoScroll(readStoredBoolean(storedAutoScroll, false));
       }
       const storedSources = localStorage.getItem('pageos-source-settings');
       if (storedSources) {
@@ -204,19 +230,19 @@ export function ReaderSettingsProvider({ children }: { children: ReactNode }) {
       }
       const storedBootAnimation = localStorage.getItem('pageos-show-boot-animation');
       if (storedBootAnimation !== null) {
-        setShowBootAnimation(JSON.parse(storedBootAnimation));
+        setShowBootAnimation(readStoredBoolean(storedBootAnimation, true));
       }
       const storedMusicEnabled = localStorage.getItem('pageos-music-enabled');
       if (storedMusicEnabled !== null) {
-        setMusicEnabledState(JSON.parse(storedMusicEnabled));
+        setMusicEnabledState(readStoredBoolean(storedMusicEnabled, true));
       }
       const storedMusicVolume = localStorage.getItem('pageos-music-volume');
       if (storedMusicVolume !== null) {
-        setMusicVolumeState(JSON.parse(storedMusicVolume));
+        setMusicVolumeState(Math.max(0, Math.min(1, readStoredNumber(storedMusicVolume, 0.5))));
       }
       const storedCollectStatistics = localStorage.getItem('pageos-collect-statistics');
       if (storedCollectStatistics !== null) {
-        setCollectStatisticsState(JSON.parse(storedCollectStatistics));
+        setCollectStatisticsState(readStoredBoolean(storedCollectStatistics, true));
       }
       const storedUiMode = normalizeUiMode(localStorage.getItem("pageos-ui-mode"));
       localStorage.setItem("pageos-ui-mode", storedUiMode);

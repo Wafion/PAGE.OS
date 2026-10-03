@@ -8,71 +8,15 @@ import { useAuth } from "@/context/auth-provider";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { auth } from "@/lib/firebase";
 
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   PanelLeft,
-  Home,
-  Library,
-  Settings,
-  User,
   Power,
   LogIn,
-  Shield,
-  Infinity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const menuItems = [
-  {
-    href: "/",
-    classicLabel: "System Feed",
-    loungeLabel: "Front Shelf",
-    detail: "Discover books, prompts, and live shelves.",
-    code: "01",
-    icon: Home,
-  },
-  {
-    href: "/library",
-    classicLabel: "Archive",
-    loungeLabel: "Reading Collection",
-    detail: "Return to saved books, bookmarks, and history.",
-    code: "02",
-    icon: Library,
-  },
-  {
-    href: "/infinite",
-    classicLabel: "Discover",
-    loungeLabel: "Deep Space",
-    detail: "Explore artworks and ideas across time and space.",
-    code: "03",
-    icon: Infinity,
-  },
-  {
-    href: "/profile",
-    classicLabel: "Profile",
-    loungeLabel: "Reader Card",
-    detail: "Identity, sync status, and account memory.",
-    code: "04",
-    icon: User,
-  },
-  {
-    href: "/settings",
-    classicLabel: "Settings",
-    loungeLabel: "Room Controls",
-    detail: "Theme, reader behavior, and source controls.",
-    code: "05",
-    icon: Settings,
-  },
-  {
-    href: "/legal",
-    classicLabel: "Legal",
-    loungeLabel: "House Rules",
-    detail: "Usage terms, privacy, and content policies.",
-    code: "06",
-    icon: Shield,
-  },
-];
+import { navigationItems } from "@/components/layout/navigation-items";
 
 export function SidebarPopup() {
   const [open, setOpen] = useState(false);
@@ -88,23 +32,29 @@ export function SidebarPopup() {
     }
   };
 
-  const menuTitle = uiMode === "lounge" ? "Navigation Room" : "Gateway Panel";
-  const menuBadge = uiMode === "lounge" ? "Library lounge" : "Terminal grid";
+  const menuTitle = uiMode === "lounge" ? "Navigation Room" : uiMode === "motion" ? "Field Notes" : "Gateway Panel";
+  const menuBadge = uiMode === "lounge" ? "Library lounge" : uiMode === "motion" ? "Motion edition" : "Terminal grid";
   const menuSubtitle =
     uiMode === "lounge"
       ? "Move through the shelves, settings, and reader spaces."
-      : "Jump between system routes, operator controls, and runtime pages.";
+      : uiMode === "motion"
+        ? "A visual index of books, images, and open knowledge."
+        : "Jump between system routes, operator controls, and runtime pages.";
   const userLabel = user ? user.displayName || "Signed in reader" : "Guest session";
   const userMeta = user
     ? uiMode === "lounge"
       ? "Your preferences and bookmarks are being remembered."
-      : "Authenticated operator with synced state."
+      : uiMode === "motion"
+        ? "Your reading trail is being remembered."
+        : "Authenticated operator with synced state."
     : uiMode === "lounge"
       ? "Sign in to carry your room, books, and bookmarks with you."
-      : "Anonymous session. Authentication unlocks synced persistence.";
+      : uiMode === "motion"
+        ? "Sign in to keep your trail across the field."
+        : "Anonymous session. Authentication unlocks synced persistence.";
 
   return (
-    <div className="fixed top-4 left-4 z-50">
+    <div className="pageos-sidebar-trigger fixed top-4 left-4 z-50">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <Button
@@ -121,6 +71,7 @@ export function SidebarPopup() {
           side="left"
           className="pageos-menu-shell w-[320px] max-w-[92vw] border-0 bg-transparent p-0 shadow-none sm:w-[380px] [&>button]:hidden"
         >
+          <SheetTitle className="sr-only">{menuTitle}</SheetTitle>
           <div className="pageos-menu-frame">
             <div className="pageos-menu-header">
               <div className="pageos-menu-brand-row">
@@ -130,7 +81,7 @@ export function SidebarPopup() {
                     PAGE.OS
                   </Link>
                 </div>
-                <span className="pageos-menu-chip">{uiMode === "lounge" ? "Shelf map" : "v1.0"}</span>
+                  <span className="pageos-menu-chip">{uiMode === "lounge" ? "Shelf map" : uiMode === "motion" ? "Issue 004" : "v1.0"}</span>
               </div>
               <div className="pageos-menu-copy">
                 <h2>{menuTitle}</h2>
@@ -141,7 +92,7 @@ export function SidebarPopup() {
             <div className="pageos-menu-status">
               <div>
                 <span className="pageos-menu-status-label">
-                  {uiMode === "lounge" ? "Reader status" : "Operator status"}
+                    {uiMode === "lounge" ? "Reader status" : uiMode === "motion" ? "Trail status" : "Operator status"}
                 </span>
                 <strong>{userLabel}</strong>
               </div>
@@ -149,9 +100,9 @@ export function SidebarPopup() {
             </div>
 
             <nav className="pageos-menu-nav">
-              {menuItems.map((item) => {
+              {navigationItems.map((item) => {
                 const isActive = pathname === item.href;
-                const label = uiMode === "lounge" ? item.loungeLabel : item.classicLabel;
+                    const label = uiMode === "lounge" ? item.loungeLabel : uiMode === "motion" ? item.motionLabel : item.classicLabel;
 
                 return (
                   <Link
@@ -169,6 +120,7 @@ export function SidebarPopup() {
                         <span>{item.code}</span>
                       </div>
                       <p>{item.detail}</p>
+                      <small className="pageos-menu-item-location">{item.location}</small>
                     </div>
                   </Link>
                 );
@@ -186,13 +138,13 @@ export function SidebarPopup() {
                   }}
                 >
                   <Power className="h-4 w-4 text-destructive" />
-                  <span>{uiMode === "lounge" ? "Leave the room" : "Terminate session"}</span>
+                    <span>{uiMode === "lounge" ? "Leave the room" : uiMode === "motion" ? "Leave the field" : "Terminate session"}</span>
                 </Button>
               ) : (
                 <Button variant="ghost" asChild className="pageos-menu-action w-full justify-start gap-3">
                   <Link href="/profile" onClick={() => setOpen(false)}>
                     <LogIn className="h-4 w-4 text-accent" />
-                    <span>{uiMode === "lounge" ? "Sign in to save your room" : "Authenticate operator"}</span>
+                    <span>{uiMode === "lounge" ? "Sign in to save your room" : uiMode === "motion" ? "Sign in to save your trail" : "Authenticate operator"}</span>
                   </Link>
                 </Button>
               )}

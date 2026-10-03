@@ -235,6 +235,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
+    // Music off means no engine and no preload: don't download a single byte.
+    if (!musicEnabledRef.current) return;
     startPlaylist(DEFAULT_PLAYLIST);
   }, [startPlaylist]);
 
@@ -291,9 +293,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         engine.setVolume(0);
         await engine.play().catch(() => {});
         engine.fadeIn(FADE_MS, musicVolume);
+      } else if (value && !engine) {
+        // Music was off at boot so no engine exists yet — load the ambient
+        // playlist only now that the user opted in.
+        await startPlaylist(DEFAULT_PLAYLIST, "ambient");
       }
     },
-    [musicVolume, setMusicEnabled],
+    [musicVolume, setMusicEnabled, startPlaylist],
   );
 
   const toggle = useCallback(async () => {

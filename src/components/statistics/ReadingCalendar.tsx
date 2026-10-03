@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 interface ReadingCalendarProps {
   readingCalendar: Record<string, number>; // Map of dates (YYYY-MM-DD) to reading time in seconds
-  variant?: 'classic' | 'lounge';
+  variant?: 'classic' | 'lounge' | 'motion';
 }
 
 export default function ReadingCalendar({

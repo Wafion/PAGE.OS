@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { MediaItem } from "./types";
 
@@ -323,6 +323,7 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="pageos-detail-dialog border-0 bg-transparent p-0 shadow-none [&>button]:hidden sm:max-w-[min(1120px,94vw)]">
+        <DialogTitle className="sr-only">{displayItem.title} details</DialogTitle>
         <div className="pageos-detail-panel">
           <div className="pageos-detail-toolbar">
             <DialogClose asChild>
@@ -455,8 +456,8 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
 
               {tags.length > 0 && (
                 <div className="pageos-detail-chip-row">
-                  {tags.slice(0, 6).map((tag) => (
-                    <span key={tag} className="pageos-detail-chip">
+                  {tags.slice(0, 6).map((tag, index) => (
+                    <span key={`${tag}-${index}`} className="pageos-detail-chip">
                       {tag}
                     </span>
                   ))}
@@ -503,8 +504,8 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
                 <div className="pageos-detail-section">
                   <p className="pageos-detail-section-kicker">Tags</p>
                   <div className="pageos-detail-tag-cloud">
-                    {tags.map((tag) => (
-                      <span key={tag} className="pageos-detail-chip">
+                    {tags.map((tag, index) => (
+                      <span key={`${tag}-${index}`} className="pageos-detail-chip">
                         {tag}
                       </span>
                     ))}

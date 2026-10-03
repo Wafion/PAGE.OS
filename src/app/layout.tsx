@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Orbitron, Space_Grotesk } from "next/font/google";
+import { Bodoni_Moda, JetBrains_Mono, Orbitron, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import MainLayout from "@/components/layout/main-layout";
@@ -11,7 +11,6 @@ import { AudioProvider } from "@/context/audio-provider";
 import { AmbienceProvider } from "@/context/ambience-provider";
 import { NowPlayingBar } from "@/components/audio/now-playing-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent";
-import { Analytics } from "@vercel/analytics/next";
 
 const fontHeadline = Orbitron({
   subsets: ["latin"],
@@ -26,6 +25,11 @@ const fontBody = JetBrains_Mono({
 const fontReader = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-reader",
+});
+
+const fontMotion = Bodoni_Moda({
+  subsets: ["latin"],
+  variable: "--font-motion",
 });
 
 const siteUrl = "https://pageos.vercel.app";
@@ -75,7 +79,8 @@ export default function RootLayout({
           "min-h-screen bg-background font-body antialiased",
           fontHeadline.variable,
           fontBody.variable,
-          fontReader.variable
+          fontReader.variable,
+          fontMotion.variable
         )}
       >
         <ThemeProvider>
@@ -92,7 +97,6 @@ export default function RootLayout({
             </ReaderSettingsProvider>
           </AuthProvider>
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );

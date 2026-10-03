@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 type ReadingOverviewProps = {
   statistics: UserStatistics | null;
-  variant?: 'classic' | 'lounge';
+  variant?: 'classic' | 'lounge' | 'motion';
   loading?: boolean;
 };
 

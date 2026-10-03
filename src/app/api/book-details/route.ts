@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardRequest } from '@/lib/api-guard';
 
 type GutendexBook = {
   id: number;
@@ -21,12 +22,20 @@ type GutendexBook = {
  * subjects, bookshelves, author lifespan) via the Gutendex books endpoint.
  */
 export async function GET(request: NextRequest) {
+  const guard = guardRequest(request, {
+    rules: [
+      {
+        name: 'id',
+        required: true,
+        pattern: /^\d{1,7}$/,
+        description: 'a numeric book id (max 7 digits)',
+      },
+    ],
+  });
+  if (guard.response) return guard.response;
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id')?.trim();
-
-  if (!id || !/^\d+$/.test(id)) {
-    return NextResponse.json({ error: 'A numeric book id is required' }, { status: 400 });
-  }
 
   try {
     const res = await fetch(`https://gutendex.com/books/${id}`, {

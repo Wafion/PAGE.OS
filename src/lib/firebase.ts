@@ -3,19 +3,28 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  // Fallback to hardcoded values for local development
-  // In a deployed environment, these are pulled from environment variables
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDcetZGa7-_c28lbdZ-ZqvAbXaIQ_mEpwQ",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? '',
   // Never fall back to window.location.hostname here. Firebase Auth expects a
   // real authorized auth domain, and using "localhost" breaks the popup/handler
   // flow by redirecting to http://localhost/__/auth/handler on port 80.
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "pageos.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "pageos",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "pageos.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "588283938271",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:588283938271:web:b739830deb89e91765f06a",
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-58C85TP1KC"
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '',
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? '',
 };
+
+if (
+  typeof process.env.NEXT_PUBLIC_FIREBASE_API_KEY === 'undefined' &&
+  typeof window !== 'undefined'
+) {
+  // Fail loudly in dev when the env file is missing instead of falling back to
+  // committed values. Production builds read the same vars from the platform.
+  console.warn(
+    '[PAGE.OS] NEXT_PUBLIC_FIREBASE_* environment variables are not set. Firebase features are disabled. Copy .env.local from your deployment config.',
+  );
+}
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

@@ -29,6 +29,24 @@ import { ThemeToggleButton } from '@/components/theme-toggle-button';
 import { AmbiencePopover } from '@/components/audio/ambience-popover';
 import PdfReader from './PdfReader';
 
+const pageVariants = {
+  enter: (direction: number) => ({
+    y: direction > 0 ? 50 : -50,
+    opacity: 0,
+    scale: 0.98,
+  }),
+  center: {
+    y: 0,
+    opacity: 1,
+    scale: 1,
+  },
+  exit: (direction: number) => ({
+    y: direction < 0 ? 50 : -50,
+    opacity: 0,
+    scale: 1.02,
+  }),
+};
+
 export default function Reader() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -223,6 +241,118 @@ export default function Reader() {
         hasUser={Boolean(user)}
         userId={user?.uid}
       />
+    );
+  }
+
+  if (uiMode === 'motion') {
+    return (
+      <div className="relative flex flex-col w-full h-[100dvh] overflow-hidden text-[var(--route-ink)] pt-24 pb-8 px-4 md:px-8 bg-[var(--route-paper)]">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--route-accent)_0%,_transparent_40%)] opacity-10" />
+        
+        <div className="flex-1 flex flex-col md:flex-row relative z-10 gap-8 max-w-7xl mx-auto w-full">
+          
+          <aside className="hidden md:flex flex-col w-72 h-full border border-white/10 bg-black/40 backdrop-blur-2xl rounded-2xl overflow-hidden shrink-0 shadow-2xl">
+             <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-white/10 text-inherit h-8 w-8">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2">
+                   <span className="text-[10px] opacity-50 tracking-widest uppercase">{completion.toFixed(1)}%</span>
+                   <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleBookmark}
+                      disabled={isBookmarkLoading || !user}
+                      className="rounded-full hover:bg-white/10 text-inherit h-8 w-8"
+                    >
+                      {isBookmarkLoading ? (
+                        <LoaderCircle className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Bookmark className={`h-3 w-3 ${isBookmarked ? 'fill-current' : ''}`} />
+                      )}
+                   </Button>
+                </div>
+             </div>
+             <div className="p-6 pb-2">
+                <h3 className="text-xs font-headline tracking-widest opacity-40 uppercase mb-1">{sourceLabel}</h3>
+                <h2 className="text-lg font-medium opacity-90 leading-tight">{book?.title}</h2>
+                <p className="text-sm opacity-50 mt-2">{book?.authors || 'Unknown author'}</p>
+             </div>
+             <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-1">
+                <h4 className="text-[10px] tracking-widest uppercase opacity-30 mb-4">Index</h4>
+                {toc.map((entry, index) => {
+                  const nextEntry = toc[index + 1];
+                  const isActive = activeSector >= entry.sectorIndex && (!nextEntry || activeSector < nextEntry.sectorIndex);
+                  return (
+                    <button
+                      key={`${entry.title}-${entry.sectorIndex}`}
+                      onClick={() => {
+                        setDirection(entry.sectorIndex > activeSector ? 1 : -1);
+                        setActiveSector(entry.sectorIndex);
+                      }}
+                      className={`block w-full text-left py-2 px-3 rounded-lg transition-all duration-300 ${isActive ? 'bg-white/10 shadow-sm' : 'opacity-40 hover:opacity-80 hover:bg-white/5'}`}
+                    >
+                      <div className="text-sm">{entry.title}</div>
+                    </button>
+                  );
+                })}
+             </div>
+          </aside>
+
+          <section className="flex-1 flex flex-col relative h-full bg-black/20 border border-white/5 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl">
+            <div className="flex-1 overflow-y-auto relative p-6 md:p-12 lg:px-20 lg:py-16">
+               <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                  <motion.div
+                    key={activeSector}
+                    custom={direction}
+                    variants={pageVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="w-full max-w-3xl mx-auto pb-32"
+                  >
+                    <div className="mb-16">
+                       <h2 className="text-3xl md:text-5xl font-motion tracking-tight opacity-90">{currentSector?.chapterTitle ?? book?.title}</h2>
+                    </div>
+                    
+                    <div className="prose prose-invert prose-lg md:prose-xl max-w-none opacity-80 leading-relaxed font-serif prose-p:mb-8">
+                      {currentSector?.paragraphs.map((paragraph, index) => (
+                        <p key={`${currentSector?.startParagraphIndex}-${index}`}>
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </motion.div>
+               </AnimatePresence>
+            </div>
+
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/80 backdrop-blur-2xl border border-white/10 rounded-full px-2 py-2 shadow-2xl">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { setDirection(-1); setActiveSector(Math.max(0, activeSector - 1)); }}
+                disabled={activeSector === 0}
+                className="text-inherit hover:bg-white/10 rounded-full h-10 w-10 shrink-0"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="text-[11px] tracking-[0.2em] opacity-60 uppercase w-32 text-center font-medium">
+                Page {activeSector + 1} of {sectors.length}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { setDirection(1); setActiveSector(Math.min(sectors.length - 1, activeSector + 1)); }}
+                disabled={activeSector === sectors.length - 1}
+                className="text-inherit hover:bg-white/10 rounded-full h-10 w-10 shrink-0"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </section>
+        </div>
+      </div>
     );
   }
 
@@ -666,3 +796,11 @@ export default function Reader() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

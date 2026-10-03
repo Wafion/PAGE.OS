@@ -8,7 +8,7 @@ interface StatCardProps {
   value: string | number;
   label?: string;
   icon?: React.ComponentType<{ className?: string }>;
-  variant?: 'classic' | 'lounge';
+  variant?: 'classic' | 'lounge' | 'motion';
   accent?: boolean;
 }
 

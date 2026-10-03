@@ -4,8 +4,30 @@ import {
   isRecommendationGenreKey,
   type RecommendationGenreKey,
 } from "@/lib/recommendations";
+import { guardRequest } from "@/lib/api-guard";
 
 export async function GET(request: NextRequest) {
+  const guard = guardRequest(request, {
+    rules: [
+      {
+        name: 'genre',
+        pattern: /^[a-z-]{1,30}$/,
+        description: 'a genre key like popular, mystery, science-fiction',
+      },
+      {
+        name: 'limit',
+        pattern: /^\d{1,2}$/,
+        description: 'books per shelf (1-24)',
+      },
+      {
+        name: 'day',
+        pattern: /^\d{4}-\d{2}-\d{2}$/,
+        description: 'a YYYY-MM-DD date',
+      },
+    ],
+  });
+  if (guard.response) return guard.response;
+
   const { searchParams } = new URL(request.url);
   const rawGenre = searchParams.get("genre")?.trim() ?? "popular";
   const rawLimit = Number(searchParams.get("limit") ?? "12");

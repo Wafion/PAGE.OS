@@ -91,7 +91,9 @@ export class HTMLAudioPlaybackEngine implements PlaybackEngine {
 
   async fadeIn(duration: number, targetVolume?: number): Promise<void> {
     this.cancelFade();
-    const target = Math.min(1, Math.max(0, targetVolume ?? this._targetVolume));
+    if (targetVolume !== undefined) {
+      this._targetVolume = Math.min(1, Math.max(0, targetVolume));
+    }
     this.audio.volume = 0;
 
     return new Promise<void>((resolve) => {
@@ -100,6 +102,9 @@ export class HTMLAudioPlaybackEngine implements PlaybackEngine {
       const step = (now: number) => {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
+        // Read the target live every frame: a setVolume() mid-fade retargets
+        // the fade instead of being clobbered when the fade completes.
+        const target = this._targetVolume;
         const vol = progress * target;
         this.audio.volume = vol < 0 || isNaN(vol) ? 0 : Math.min(1, vol);
 

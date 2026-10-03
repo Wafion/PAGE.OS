@@ -10,7 +10,7 @@ export function NowPlayingBar() {
   if (!enabled || !playing || !currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 bg-background/90 px-4 py-1.5 text-[10px] text-muted-foreground backdrop-blur-sm">
+    <div className="pageos-now-playing-bar fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 bg-background/90 px-4 py-1.5 text-[10px] text-muted-foreground backdrop-blur-sm">
       <div className="mx-auto flex max-w-screen-lg items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent/60 animate-pulse" />

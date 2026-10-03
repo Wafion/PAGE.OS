@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "lastUpdated": 1790161675866,
-    "hydrationLevel": 241
+    "lastUpdated": 1790954763569,
+    "hydrationLevel": 243
   },
   "seen_urls": [
     "https://images.metmuseum.org/CRDImages/ep/web-large/DP-14286-001.jpg",
@@ -244,7 +244,9 @@
     "https://images.metmuseum.org/CRDImages/is/web-large/DP240813.jpg",
     "https://images.metmuseum.org/CRDImages/is/web-large/DP231324.jpg",
     "https://images.metmuseum.org/CRDImages/as/web-large/DP-41816-002.jpg",
-    "https://openaccess-cdn.clevelandart.org/1990.141/1990.141_web.jpg"
+    "https://openaccess-cdn.clevelandart.org/1990.141/1990.141_web.jpg",
+    "https://images.metmuseum.org/CRDImages/rl/web-large/DP-29454-001.jpg",
+    "https://images.metmuseum.org/CRDImages/ep/web-large/DP331534.jpg"
   ],
   "items": [
     {
@@ -6025,6 +6027,68 @@
       "culture": "Mesoamerica, Central Mexico, Tlatilco",
       "attribution": "Two-headed Female Figurine. 1200–400 BCE. Cleveland Museum of Art",
       "rightsLabel": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "met-459136",
+      "sourceRecordId": "met:459136",
+      "url": "https://images.metmuseum.org/CRDImages/rl/web-large/DP-29454-001.jpg",
+      "detailUrl": "https://images.metmuseum.org/CRDImages/rl/original/DP-29454-001.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "Madonna and Child",
+      "creator": "Simone Martini",
+      "year": "ca. 1326",
+      "type": "artwork",
+      "source": "met",
+      "sourceName": "The Metropolitan Museum of Art",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/459136",
+      "description": "Robert Lehman Collection, 1975",
+      "tags": [
+        "Paintings",
+        "Madonna and Child"
+      ],
+      "medium": "Tempera on wood, gold ground",
+      "dimensions": "23 1/8 × 15 1/2 in. (58.7 × 39.4 cm)\r\nFramed: 26 1/2 in. × 19 in. × 1 3/4 in. (67.3 × 48.3 × 4.4 cm)",
+      "location": "Metropolitan Museum of Art, New York, NY",
+      "collection": "Robert Lehman Collection",
+      "accessionNumber": "1975.1.12",
+      "creditLine": "Robert Lehman Collection, 1975",
+      "region": "Europe",
+      "attribution": "Madonna and Child. ca. 1326. Simone Martini. The Metropolitan Museum of Art",
+      "rightsLabel": "Public Domain",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+    },
+    {
+      "id": "met-655744",
+      "sourceRecordId": "met:655744",
+      "url": "https://images.metmuseum.org/CRDImages/ep/web-large/DP331534.jpg",
+      "detailUrl": "https://images.metmuseum.org/CRDImages/ep/original/DP331534.jpg",
+      "width": 500,
+      "height": 500,
+      "title": "William Edward Dighton (1822–1853) in Middle Eastern Dress",
+      "creator": "Frederick Goodall",
+      "year": "ca. 1852–53",
+      "type": "artwork",
+      "source": "met",
+      "sourceName": "The Metropolitan Museum of Art",
+      "sourceUrl": "https://www.metmuseum.org/art/collection/search/655744",
+      "description": "Gift of Kenneth Jay Lane, 2014",
+      "tags": [
+        "Paintings",
+        "Men",
+        "Portraits",
+        "Orientalist"
+      ],
+      "medium": "Oil on canvas",
+      "dimensions": "21 × 15 1/2 in. (53.3 × 39.4 cm)",
+      "location": "Metropolitan Museum of Art, New York, NY",
+      "collection": "European Paintings",
+      "accessionNumber": "2014.435.5",
+      "creditLine": "Gift of Kenneth Jay Lane, 2014",
+      "region": "Europe",
+      "attribution": "William Edward Dighton (1822–1853) in Middle Eastern Dress. ca. 1852–53. Frederick Goodall. The Metropolitan Museum of Art",
+      "rightsLabel": "Public Domain",
       "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
     }
   ]

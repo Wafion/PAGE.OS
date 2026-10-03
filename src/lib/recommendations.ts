@@ -70,6 +70,13 @@ type CachedShelf = RecommendationShelfResponse & {
 const RECOMMENDATION_CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const recommendationShelfCache = new Map<string, CachedShelf>();
 
+function isTimeoutError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const candidate = error as { name?: string; code?: number };
+  return candidate.name === "TimeoutError" || candidate.name === "AbortError" || candidate.code === 23;
+}
+
 function normalizeText(value: string) {
   return value
     .normalize("NFKD")
@@ -144,13 +151,23 @@ function seededShuffle<T>(items: T[], seedValue: string) {
   return shuffled;
 }
 
+// Reference works (dictionaries, indexes, contents-only records) are real
+// Gutenberg traffic magnets but make terrible storefront invitations; keep
+// them off every curated shelf.
+const REFERENCE_TITLE_PATTERN =
+  /dictionary|glossary|thesaurus|atlas|encyclop|index\s+of|\bcontents\b/i;
+
+export function isReferenceWork(book: { title: string }): boolean {
+  return REFERENCE_TITLE_PATTERN.test(book.title);
+}
+
 function rotateDailyShelf(
   books: MappedGutenbergBook[],
   genre: RecommendationGenreKey,
   limit: number,
   tier: string,
 ) {
-  const dedupedBooks = dedupeBooks(books);
+  const dedupedBooks = dedupeBooks(books).filter((book) => !isReferenceWork(book));
   const poolSize = Math.min(dedupedBooks.length, Math.max(limit * 3, limit));
   const dailyKey = getDailyRecommendationKey();
   const topPool = dedupedBooks.slice(0, poolSize);
@@ -262,11 +279,15 @@ async function fetchLiveGutenbergShelf(query: string | undefined, genre: Recomme
   const opdsBooks = opdsResult.status === "fulfilled" ? opdsResult.value : [];
 
   if (gutendexResult.status === "rejected") {
-    console.error("Gutendex recommendation fetch failed:", gutendexResult.reason);
+    if (!isTimeoutError(gutendexResult.reason)) {
+      console.warn("Gutendex recommendation fetch failed:", gutendexResult.reason);
+    }
   }
 
   if (opdsResult.status === "rejected") {
-    console.error("Project Gutenberg OPDS recommendation fetch failed:", opdsResult.reason);
+    if (!isTimeoutError(opdsResult.reason)) {
+      console.warn("Project Gutenberg OPDS recommendation fetch failed:", opdsResult.reason);
+    }
   }
 
   return dedupeBooks([...gutendexBooks, ...opdsBooks]);

@@ -251,11 +251,18 @@ export default function useBookLoader(searchParams: URLSearchParams, enabled = t
             formats: { web: url },
           };
         } else {
+          const providedFormats = JSON.parse(searchParams.get('formats') || '{}') as Record<string, string>;
+          const formats = Object.keys(providedFormats).length > 0
+            ? providedFormats
+            : {
+                'text/plain; charset=utf-8': `https://www.gutenberg.org/cache/epub/${resolvedId}/pg${resolvedId}.txt`,
+              };
           parsedBook = {
             id: resolvedId,
             title,
             source: source as 'gutendex',
-            authors: searchParams.get('authors') || 'Unknown',            formats: JSON.parse(searchParams.get('formats') || '{}'),
+            authors: searchParams.get('authors') || 'Unknown',
+            formats,
           };
           setMediaType('text');
         }

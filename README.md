@@ -11,7 +11,7 @@ The goal is simple: make exploration of free knowledge feel intentional, beautif
 - Provides an infinite public-domain artwork wander space powered by open cultural collections.
 - Opens TXT books directly in the PAGE.OS reader and launches PDFs in a dedicated browser tab.
 - Tracks saved books, bookmarks, reading progress, and optional reading statistics.
-- Offers two interface modes: a classic terminal grid and a softer library lounge.
+- Offers three interface modes: a classic terminal grid, a softer library lounge, and a motion-focused presentation.
 
 ## Source Philosophy
 
@@ -35,7 +35,7 @@ PAGE.OS is not a general-purpose search scraper. Discovery is routed through ope
 
 ## Built With
 
-- Next.js 14 and React.
+- Next.js 15 and React.
 - TypeScript.
 - Tailwind CSS.
 - Radix UI.

@@ -6,6 +6,7 @@ import { AppHeader } from "./header";
 import { Bootloader } from "@/components/bootloader";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { SidebarPopup } from "@/components/ui/sidebar/popup";
+import { MotionRouteMenu } from "./motion-route-menu";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { showBootAnimation, uiMode } = useReaderSettings();
@@ -14,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const isInfinitePage = pathname.startsWith("/infinite");
 
   useEffect(() => {
-    if (uiMode === "lounge") {
+    if (uiMode === "lounge" || uiMode === "motion") {
       setIsBooting(false);
       return;
     }
@@ -43,18 +44,27 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   if (pathname.startsWith("/read")) {
-    return <>{children}</>;
+    return (
+      <main className="pageos-app-shell pageos-reader-shell" data-page-route={pathname}>
+        {uiMode === "motion" ? <MotionRouteMenu /> : <SidebarPopup />}
+        {children}
+      </main>
+    );
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SidebarPopup />
+      {uiMode === "motion" ? <MotionRouteMenu /> : <SidebarPopup />}
       <AppHeader />
       <main
-        className={`flex-1 animate-fade-in${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
+        key={pathname}
+        data-page-route={pathname}
+        className={`${uiMode === "motion" ? "pageos-route-stage" : ""} flex-1${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
       >
         {children}
       </main>
     </div>
   );
 }
+
+

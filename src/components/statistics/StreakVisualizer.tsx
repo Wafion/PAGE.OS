@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 interface StreakVisualizerProps {
   currentStreak: number;
   longestStreak: number;
-  variant?: 'classic' | 'lounge';
+  variant?: 'classic' | 'lounge' | 'motion';
 }
 
 export default function StreakVisualizer({

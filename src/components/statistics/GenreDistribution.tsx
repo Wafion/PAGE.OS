@@ -4,7 +4,7 @@ import { BookOpen } from 'lucide-react';
 
 interface GenreDistributionProps {
   booksByGenre: Record<string, number>;
-  variant?: 'classic' | 'lounge';
+  variant?: 'classic' | 'lounge' | 'motion';
 }
 
 export default function GenreDistribution({
