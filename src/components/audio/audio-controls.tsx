@@ -149,13 +149,13 @@ export function AudioControls() {
           size="icon"
           onClick={toggle}
           aria-label={enabled ? "Mute ambient music" : "Enable ambient music"}
-          className="h-8 w-8 border-transparent text-muted-foreground hover:bg-accent/10 hover:text-accent"
+          className="h-8 w-8 border-transparent text-muted-foreground hover:bg-[#6c55db]/10 hover:text-[#6c55db]"
           title={enabled ? "Ambient music is on" : "Ambient music is off"}
         >
           {enabled ? (
             <Music
               className={cn(
-                "h-3.5 w-3.5 text-accent",
+                "h-3.5 w-3.5 text-[#6c55db]",
                 playing ? "opacity-100" : "opacity-70",
               )}
             />
@@ -166,7 +166,7 @@ export function AudioControls() {
 
         {showAttribution && currentTrack && playing && (
           <div className="absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-md border border-border/50 bg-background p-2.5 shadow-md">
-            <p className="truncate text-xs font-medium text-accent">
+            <p className="truncate text-xs font-medium text-[#6c55db]">
               {currentTrack.title || "Untitled"}
             </p>
             <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
@@ -182,7 +182,7 @@ export function AudioControls() {
                 href={currentTrack.sourceURL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 flex items-center gap-1 text-[10px] text-accent/60 hover:text-accent"
+                className="mt-1 flex items-center gap-1 text-[10px] text-[#6c55db]/60 hover:text-[#6c55db]"
               >
                 <ExternalLink className="h-2.5 w-2.5" />
                 View source
@@ -201,8 +201,8 @@ export function AudioControls() {
             aria-label={`Audio console — level ${Math.round(volume * 100)}%`}
             aria-expanded={open}
             className={cn(
-              "h-8 w-8 border-transparent text-muted-foreground hover:bg-accent/10 hover:text-accent",
-              open && "bg-accent/10 text-accent",
+              "h-8 w-8 border-transparent text-muted-foreground hover:bg-[#6c55db]/10 hover:text-[#6c55db]",
+              open && "bg-[#6c55db]/10 text-[#6c55db]",
             )}
             onClick={() => {
               // Discard any uncommitted hover preview so a stale preview can
@@ -214,30 +214,30 @@ export function AudioControls() {
             {isMuted ? (
               <VolumeX className="h-3.5 w-3.5 text-destructive" />
             ) : volume < 0.5 ? (
-              <Volume1 className="h-3.5 w-3.5 text-accent opacity-70" />
+              <Volume1 className="h-3.5 w-3.5 text-[#6c55db] opacity-70" />
             ) : (
-              <Volume2 className="h-3.5 w-3.5 text-accent opacity-70" />
+              <Volume2 className="h-3.5 w-3.5 text-[#6c55db] opacity-70" />
             )}
           </Button>
 
           {open && (
             <div
               ref={panelRef}
-              className="box-glow absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-border/60 bg-background/95 p-3 shadow-xl backdrop-blur-md"
+              className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-border/60 bg-background/95 p-3 shadow-xl backdrop-blur-md"
             >
-              <div className="pointer-events-none absolute inset-x-2 top-1 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+              <div className="pointer-events-none absolute inset-x-2 top-1 h-px bg-gradient-to-r from-transparent via-[#6c55db]/40 to-transparent" />
 
               <div className="mb-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Radio className="h-3 w-3 text-accent" />
-                  <span className="font-headline text-[10px] uppercase tracking-[0.2em] text-accent">
+                  <Radio className="h-3 w-3 text-[#6c55db]" />
+                  <span className="font-sans font-medium text-[10px] uppercase tracking-[0.2em] text-[#6c55db]">
                     audio console
                   </span>
                 </div>
                 <span
                   className={cn(
-                    "font-headline text-[10px] uppercase tracking-[0.15em]",
-                    playing ? "text-accent/80" : "text-muted-foreground",
+                    "font-sans font-medium text-[10px] uppercase tracking-[0.15em]",
+                    playing ? "text-[#6c55db]/80" : "text-muted-foreground",
                   )}
                 >
                   {playing ? "● live" : "○ paused"}
@@ -288,8 +288,8 @@ export function AudioControls() {
                           "h-full w-full rounded-[1px] transition-colors duration-150",
                           active
                             ? hot
-                              ? "bg-accent shadow-[0_0_5px_rgba(0,229,163,0.55)]"
-                              : "bg-accent/80"
+                              ? "bg-[#6c55db] shadow-[0_0_5px_rgba(108,85,219,0.55)]"
+                              : "bg-[#6c55db]/80"
                             : "bg-muted-foreground/20 group-hover:bg-muted-foreground/30",
                         )}
                       />
@@ -299,13 +299,13 @@ export function AudioControls() {
               </div>
 
               <div className="mb-2 flex items-center justify-between">
-                <span className="font-headline text-[11px] tabular-nums tracking-wider text-foreground">
+                <span className="font-sans font-medium text-[11px] tabular-nums tracking-wider text-foreground">
                   {percent}%
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-5 gap-1 rounded-full px-2 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-accent/10 hover:text-accent"
+                  className="h-5 gap-1 rounded-full px-2 text-[10px] uppercase tracking-wider text-muted-foreground hover:bg-[#6c55db]/10 hover:text-[#6c55db]"
                   onClick={() =>
                     commitVolume(
                       isMuted
@@ -337,8 +337,8 @@ export function AudioControls() {
                       className={cn(
                         "flex-1 rounded-full border px-0 py-1 text-[9px] uppercase tracking-wider transition-colors",
                         isActive
-                          ? "border-accent/60 bg-accent/10 text-accent"
-                          : "border-border/60 text-muted-foreground hover:border-accent/40 hover:text-accent",
+                          ? "border-[#6c55db]/60 bg-[#6c55db]/10 text-[#6c55db]"
+                          : "border-border/60 text-muted-foreground hover:border-[#6c55db]/40 hover:text-[#6c55db]",
                       )}
                     >
                       {preset.label}
@@ -349,7 +349,7 @@ export function AudioControls() {
 
               {/* Now playing strip */}
               <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-2 py-1.5">
-                <AudioLines className="h-3 w-3 shrink-0 text-accent" />
+                <AudioLines className="h-3 w-3 shrink-0 text-[#6c55db]" />
                 <span className="min-w-0 flex-1 truncate text-[10px] text-muted-foreground">
                   {playing && currentTrack
                     ? currentTrack.title || "Untitled"
@@ -360,7 +360,7 @@ export function AudioControls() {
                     {[0, 1, 2].map((i) => (
                       <span
                         key={i}
-                        className="eq-bar w-[2px] rounded-full bg-accent"
+                        className="eq-bar w-[2px] rounded-full bg-[#6c55db]"
                         style={{ animationDelay: `${i * 150}ms` }}
                       />
                     ))}
@@ -378,4 +378,7 @@ export function AudioControls() {
     </div>
   );
 }
+
+
+
 

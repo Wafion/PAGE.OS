@@ -3133,7 +3133,7 @@ html.gallery-feed-scroll::-webkit-scrollbar {
 @keyframes sidebar-pulse { 50% { box-shadow: 0 0 0 .42rem rgba(108,85,219,0); } }
 .motion-vinyl-hero { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 0; }
 .motion-vinyl-nav { position: relative; z-index: 60; flex: 0 0 auto; padding: clamp(1.1rem, 2.4vw, 1.9rem) var(--pad-x, clamp(1.25rem, 4vw, 3.6rem)); }
-.motion-vinyl-inner { flex: 1; align-items: center; justify-content: flex-start; width: 100%; padding: clamp(1.5rem, 5vh, 4.5rem) var(--pad-x, clamp(1.25rem, 4vw, 3.6rem)) 0; pointer-events: none; }
+.motion-vinyl-inner { flex: 1; align-items: center; justify-content: flex-start; width: 100%; padding: clamp(5rem, 12vh, 7.5rem) var(--pad-x, clamp(1.25rem, 4vw, 3.6rem)) 0; pointer-events: none; }
 .motion-vinyl-hero .motion-vinyl-inner { min-height: 0; }
 .motion-vinyl-media { position: absolute; inset: 0; z-index: 0; width: auto; height: auto; border-radius: 0; background: var(--motion-poster) center / cover no-repeat; box-shadow: none; filter: none; transform: none; animation: vinyl-media-in 1.9s cubic-bezier(.22,1,.36,1) .1s both; }
 .motion-vinyl-poster, .motion-vinyl-video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 62%; }
@@ -3535,6 +3535,7 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   .motion-orbit-signal > div { min-height: auto; grid-template-columns: 7rem 1fr; align-items: center; padding: .6rem .7rem; }
   .motion-orbit-signal small { grid-column: 2; }
 }
+
 
 
 
