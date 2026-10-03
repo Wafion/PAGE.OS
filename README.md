@@ -1,6 +1,6 @@
 # P/OS
 
-<p align="center"><img src="Assests/Thumbnail.png" alt="PAGE.OS" width="900"></p>
+<p align="center"><img src="Assets/Thumbnail.png" alt="PAGE.OS" width="900"></p>
 
 <h3 align="center">A living room for books, art, and open knowledge.</h3>
 
@@ -36,7 +36,7 @@ Three ideas sit underneath the whole thing:
 
 ## 01 · The front door
 
-<p align="center"><img src="Assests/Landing 1.png" alt="PAGE.OS landing experience" width="900"></p>
+<p align="center"><img src="Assets/Landing 1.png" alt="PAGE.OS landing experience" width="900"></p>
 
 The landing experience sits somewhere between a reading room and a record sleeve left on a mountain.
 
@@ -50,7 +50,7 @@ The classic interface can also use a small boot experience, while Lounge and Mot
 
 ## 02 · Recommendations that drift
 
-<p align="center"><img src="Assests/Landing 2.png" alt="PAGE.OS recommendation shelf" width="900"></p>
+<p align="center"><img src="Assets/Landing 2.png" alt="PAGE.OS recommendation shelf" width="900"></p>
 
 Books do not sit there waiting for you like obedient database rows.
 
@@ -68,7 +68,7 @@ The result is less "catalogue grid" and more "someone left a really good shelf u
 
 ## 03 · A book before you commit
 
-<p align="center"><img src="Assests/Book preview.png" alt="PAGE.OS book briefing" width="900"></p>
+<p align="center"><img src="Assets/Book preview.png" alt="PAGE.OS book briefing" width="900"></p>
 
 A book can open into a focused briefing before you start reading.
 
@@ -80,7 +80,7 @@ It creates a useful pause between **"that looks interesting"** and **"well, I gu
 
 ## 04 · Read like you mean it
 
-<p align="center"><img src="Assests/Reader.png" alt="PAGE.OS reader" width="900"></p>
+<p align="center"><img src="Assets/Reader.png" alt="PAGE.OS reader" width="900"></p>
 
 The reader is built around the actual act of reading rather than the ceremony around it.
 
@@ -107,7 +107,7 @@ The classic reader takes a more structural approach, with a chapter map on the l
 
 ## 05 · The archive is bigger than books
 
-<p align="center"><img src="Assests/infinite mode canvas.png" alt="PAGE.OS Infinite Mode" width="900"></p>
+<p align="center"><img src="Assets/infinite mode canvas.png" alt="PAGE.OS Infinite Mode" width="900"></p>
 
 This is where PAGE.OS stops behaving like a bookshelf.
 
@@ -136,7 +136,7 @@ You are walking around inside it.
 
 ## 06 · Infinite Mode has a second language
 
-<p align="center"><img src="Assests/infinite mode Table.png" alt="PAGE.OS Infinite Mode feed" width="900"></p>
+<p align="center"><img src="Assets/infinite mode Table.png" alt="PAGE.OS Infinite Mode feed" width="900"></p>
 
 Not everyone wants a spatial museum every day.
 
@@ -152,7 +152,7 @@ Open a painting. Find a sculpture. Drift sideways. Find something from another c
 
 ## 07 · Art gets its own room
 
-<p align="center"><img src="Assests/Artwork info.png" alt="PAGE.OS artwork information" width="900"></p>
+<p align="center"><img src="Assets/Artwork info.png" alt="PAGE.OS artwork information" width="900"></p>
 
 Artwork is not treated like an oversized thumbnail.
 
@@ -182,7 +182,7 @@ It is to keep the **context around the image**.
 
 # Your library
 
-<p align="center"><img src="Assests/Library.png" alt="PAGE.OS library" width="900"></p>
+<p align="center"><img src="Assets/Library.png" alt="PAGE.OS library" width="900"></p>
 
 Your library is where wandering becomes memory.
 
@@ -196,7 +196,7 @@ The library route can also hand off directly into the Motion bookshelf experienc
 
 # Your reading memory
 
-<p align="center"><img src="Assests/Stats.png" alt="PAGE.OS reading statistics" width="900"></p>
+<p align="center"><img src="Assets/Stats.png" alt="PAGE.OS reading statistics" width="900"></p>
 
 PAGE.OS keeps a small record of the person behind the reading session.
 
@@ -421,7 +421,7 @@ Some pages should whisper.
 The screenshots used throughout this README live directly in the repository:
 
 ```text
-Assests/
+Assets/
 ├─ Artwork info.png
 ├─ Book preview.png
 ├─ infinite mode canvas.png
@@ -434,10 +434,6 @@ Assests/
 ├─ Stats.png
 └─ Thumbnail.png
 ```
-
-Yes, the folder is intentionally named **Assests**.
-
-No, we are not fixing it just because English teachers exist.
 
 ---
 
