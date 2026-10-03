@@ -85,10 +85,6 @@ export function AudioControls() {
     return () => observer.disconnect();
   }, [pathname]);
 
-  if (isNotFound) {
-    return null;
-  }
-
   // Mirror latest values so native (non-passive) listeners never go stale.
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
@@ -191,6 +187,12 @@ export function AudioControls() {
   const activeSegments = Math.round(shownVolume * SEGMENT_COUNT);
   const percent = Math.round(shownVolume * 100);
   const isMuted = volume === 0;
+
+  // Must stay below every hook: returning earlier would run fewer hooks on
+  // 404 renders than on normal renders (React error #310).
+  if (isNotFound) {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-1" ref={rootRef}>

@@ -9,7 +9,6 @@ import { AudioControls } from "@/components/audio/audio-controls";
 export function MotionRouteMenu() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const readerHref = pathname === "/profile" ? "/read?readerMode=lounge" : "/read";
 
   useEffect(() => {
     setOpen(false);
@@ -78,48 +77,16 @@ export function MotionRouteMenu() {
     return () => observer.disconnect();
   }, [pathname]);
 
-  const isDarkSection = pathname === "/infinite" || pathname.startsWith("/read") || isNotFound;
-  const navColor = isNotFound ? "#ffffff" : isDarkSection ? "#f4efe7" : "#0b0b0c";
-  const navShadow = isNotFound
-    ? "0 2px 14px rgba(0,0,0,0.75)"
-    : isDarkSection
-    ? "0 1px 4px rgba(0,0,0,0.8)"
-    : "0 1px 2px rgba(255,255,255,0.7)";
-
   const isReader = pathname.startsWith("/read");
   const isLibrary = pathname === "/library";
-  const hideVinylNav = isReader || isLibrary;
+  const hideAudioPill = isReader || isLibrary || isNotFound;
 
   return (
     <>
-      {!hideVinylNav && (
-        <nav
-          className="motion-vinyl-nav"
-          aria-label="Primary"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 60,
-            color: navColor,
-            textShadow: navShadow,
-          }}
-        >
-          <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home">P/OS</Link>
-          {!isNotFound && (
-            <>
-              <div className="motion-vinyl-links">
-                {navigationItems.slice(0, 3).map(item => (
-                   <Link key={item.href} href={item.href}>{item.motionLabel}</Link>
-                ))}
-              </div>
-              <div className="motion-vinyl-actions">
-                 <AudioControls />
-              </div>
-            </>
-          )}
-        </nav>
+      {!hideAudioPill && (
+        <div className="motion-audio-pill" aria-label="Ambient music controls">
+          <AudioControls />
+        </div>
       )}
 
       <div className="motion-route-menu">

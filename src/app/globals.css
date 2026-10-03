@@ -3410,6 +3410,21 @@ html.ui-motion [data-theme="night"] ::-webkit-scrollbar-thumb:hover,
   width: 40px;
   height: 40px;
 }
+/* Floating sound control: the removed vinyl navbar carried the only
+   AudioControls instance in Motion UI, so it now lives in its own pill just
+   left of the route-menu toggle instead of under it. */
+.ui-motion .motion-audio-pill {
+  position: fixed;
+  top: 1rem;
+  right: 4.6rem;
+  z-index: 9990;
+  padding: .25rem .4rem;
+  border: 1px solid rgba(11,11,12,.2);
+  border-radius: 999px;
+  background: rgba(244,239,231,.72);
+  box-shadow: 0 12px 34px rgba(24,21,28,.12);
+  color: #18151c;
+}
 .ui-motion .motion-vinyl-mobile-menu { z-index: 9998; }
 .ui-motion .motion-vinyl-mobile-menu a.is-current { color: #6c55db; }
 .ui-motion .pageos-reader-shell { min-height: 100dvh; background: #0b0b0c; }
@@ -3600,6 +3615,9 @@ html.ui-motion [data-theme="night"] ::-webkit-scrollbar-thumb:hover,
   scrollbar-color: rgba(244, 239, 231, 0.25) transparent;
   cursor: grab;
   user-select: none;
+  /* Reserve vertical panning for the page; horizontal swipes are handled by
+     the shelf's pointer-drag logic so the browser can't steal the gesture. */
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
 

@@ -72,6 +72,10 @@ export default function MotionRecommendationShelf<T extends LoungeGenre = Lounge
 
     let animId: number;
     const speed = 0.55; // Pixels per frame (~33px/sec at 60fps)
+    // Browsers floor fractional scrollLeft assignments, so `scrollLeft += 0.55`
+    // never actually moves in Chrome. Accumulate the fractional position here
+    // and write the running total instead.
+    let driftPosition = el.scrollLeft;
 
     const step = () => {
       if (
@@ -80,11 +84,15 @@ export default function MotionRecommendationShelf<T extends LoungeGenre = Lounge
         !isInteractingRef.current &&
         el
       ) {
-        el.scrollLeft += speed;
+        driftPosition += speed;
         const halfWidth = el.scrollWidth / 2;
-        if (halfWidth > 0 && el.scrollLeft >= halfWidth) {
-          el.scrollLeft -= halfWidth;
+        if (halfWidth > 0 && driftPosition >= halfWidth) {
+          driftPosition -= halfWidth;
         }
+        el.scrollLeft = driftPosition;
+      } else {
+        // Stay in sync while the user hovers or drags the shelf manually.
+        driftPosition = el.scrollLeft;
       }
       animId = requestAnimationFrame(step);
     };
@@ -160,9 +168,15 @@ export default function MotionRecommendationShelf<T extends LoungeGenre = Lounge
 
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
+    // Browsers fire pointercancel instead of pointerup when they steal the
+    // gesture (vertical page scroll, rotation, app switch). Without this
+    // listener the drag refs stayed wedged after the cancel and the drift
+    // never resumed on touch devices.
+    window.addEventListener("pointercancel", onPointerUp);
     return () => {
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
     };
   }, []);
 
@@ -287,11 +301,17 @@ export default function MotionRecommendationShelf<T extends LoungeGenre = Lounge
       <div
         ref={shelfRef}
         className="motion-drift-scroll"
-        onMouseEnter={() => {
+        onPointerEnter={(e) => {
+          // Touch taps emulate mouse enter/leave, but mouseleave only fires
+          // when the user taps elsewhere — the old hover-pause stayed wedged
+          // after the first touch and froze the drift on mobile. Only real
+          // mouse pointers may pause the shelf.
+          if (e.pointerType !== "mouse") return;
           isHoveredRef.current = true;
           setIsPaused(true);
         }}
-        onMouseLeave={() => {
+        onPointerLeave={(e) => {
+          if (e.pointerType !== "mouse") return;
           isHoveredRef.current = false;
           setIsPaused(false);
         }}
