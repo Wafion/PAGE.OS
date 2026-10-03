@@ -165,7 +165,7 @@ export function AudioControls() {
         </Button>
 
         {showAttribution && currentTrack && playing && (
-          <div className="absolute bottom-full left-1/2 z-50 mb-2 w-56 -translate-x-1/2 rounded-md border border-border/50 bg-background p-2.5 shadow-md">
+          <div className="absolute top-full right-0 z-50 mt-2 w-56 rounded-md border border-border/50 bg-background p-2.5 shadow-md">
             <p className="truncate text-xs font-medium text-[#6c55db]">
               {currentTrack.title || "Untitled"}
             </p>
