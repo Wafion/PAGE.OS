@@ -30,7 +30,7 @@ export function MotionRouteMenu() {
 
   return (
     <>
-      <nav className="motion-vinyl-nav" aria-label="Primary" style={{ color: pathname.startsWith('/read') ? '#f4efe7' : '#0b0b0c' }}>
+      <nav className="motion-vinyl-nav" aria-label="Primary" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60, color: pathname.startsWith('/read') ? '#f4efe7' : '#0b0b0c' }}>
         <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home">P/OS</Link>
         <div className="motion-vinyl-links">
           {navigationItems.slice(0, 3).map(item => (
@@ -89,6 +89,7 @@ export function MotionRouteMenu() {
     </>
   );
 }
+
 
 
 
