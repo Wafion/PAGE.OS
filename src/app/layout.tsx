@@ -9,6 +9,7 @@ import { ReaderSettingsProvider } from "@/context/reader-settings-provider";
 import { AuthProvider } from "@/context/auth-provider";
 import { AudioProvider } from "@/context/audio-provider";
 import { AmbienceProvider } from "@/context/ambience-provider";
+import { BookBriefingProvider } from "@/context/book-briefing-provider";
 import { NowPlayingBar } from "@/components/audio/now-playing-bar";
 import { CookieConsentBanner } from "@/components/cookie-consent";
 
@@ -88,8 +89,8 @@ export default function RootLayout({
             <ReaderSettingsProvider>
               <AmbienceProvider>
                 <AudioProvider>
-                  <MainLayout>{children}</MainLayout>
-                  <NowPlayingBar />
+                  <BookBriefingProvider><MainLayout>{children}</MainLayout>
+                  <NowPlayingBar /></BookBriefingProvider>
                 </AudioProvider>
                 <Toaster />
                 <CookieConsentBanner />
@@ -101,3 +102,4 @@ export default function RootLayout({
     </html>
   );
 }
+

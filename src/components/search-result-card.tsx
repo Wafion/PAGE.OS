@@ -1,9 +1,10 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import type { SearchResult } from "@/adapters/sourceManager";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Progress } from "./ui/progress";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { Bookmark, Share2 } from "lucide-react";
+import { useBookBriefing } from "@/context/book-briefing-provider";
 
 function createBookQuery(book: SearchResult): string {
   const params = new URLSearchParams();
@@ -41,12 +42,12 @@ export function SearchResultCard({
   variant?: "classic" | "simple";
 }) {
   const { uiMode } = useReaderSettings();
+  const { showBriefing } = useBookBriefing();
   const resolvedVariant = variant ?? (uiMode === "lounge" ? "simple" : "classic");
-  const href = `/read?${createBookQuery(book)}`;
 
   if (resolvedVariant === "simple") {
     return (
-      <Link href={href} className="library-result-card">
+      <button type="button" onClick={() => showBriefing(book)} className="library-result-card text-left w-full">
         <div
           className="library-result-cover"
           style={
@@ -67,12 +68,12 @@ export function SearchResultCard({
             <Bookmark className="h-4 w-4" />
           </div>
         </div>
-      </Link>
+      </button>
     );
   }
 
   return (
-    <Link href={href} className="h-full">
+    <button type="button" onClick={() => showBriefing(book)} className="h-full text-left w-full block">
       <Card className="group flex h-full flex-col justify-between border bg-card transition-all hover:border-accent hover:box-glow hover:bg-accent/10">
         <CardContent className="p-4 space-y-3">
           <div>
@@ -108,7 +109,7 @@ export function SearchResultCard({
           )}
         </CardFooter>
       </Card>
-    </Link>
+    </button>
   );
 }
 

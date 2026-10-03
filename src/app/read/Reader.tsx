@@ -54,7 +54,7 @@ export default function Reader() {
   const { uiMode } = useReaderSettings();
 
   // Briefing first: the user reviews the book before the reader opens.
-  const [stage, setStage] = useState<'briefing' | 'reading'>('briefing');
+  const [stage, setStage] = useState<'briefing' | 'reading'>('reading');
   const {
     book,
     isLoading,
@@ -796,6 +796,7 @@ export default function Reader() {
     </div>
   );
 }
+
 
 
 

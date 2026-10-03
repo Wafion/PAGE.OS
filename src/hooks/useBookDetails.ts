@@ -82,7 +82,7 @@ export function useBookDetails(book: SearchResult | null): BookDetailsResult {
 
     const load = async () => {
       try {
-        const res = await fetch(`/api/book-details?id=${encodeURIComponent(book.id)}`);
+        const res = await fetch(`/api/book-details?id=${encodeURIComponent(book.id)}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}`);
         if (!res.ok) throw new Error('lookup failed');
         const data = (await res.json()) as GutendexBook;
 
@@ -123,3 +123,4 @@ export function useBookDetails(book: SearchResult | null): BookDetailsResult {
 }
 
 export default useBookDetails;
+

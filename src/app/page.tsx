@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { CommandSearch } from "@/components/command-search";
+import { useBookBriefing } from "@/context/book-briefing-provider";
 import type { SearchResult } from "@/adapters/sourceManager";
 import { SearchResultCard } from "@/components/search-result-card";
 import FloatingCards from "@/components/ui/3d-sliding-cards";
@@ -192,6 +193,7 @@ async function fetchRecommendationShelf(
 
 export default function HomePage() {
   const { uiMode } = useReaderSettings();
+  const { showBriefing } = useBookBriefing();
   const [primaryResults, setPrimaryResults] = useState<SearchResult[]>([]);
   const [webResults, setWebResults] = useState<WebFallbackResult[]>([]);
   const [webArchiveError, setWebArchiveError] = useState<string | null>(null);
@@ -620,10 +622,10 @@ export default function HomePage() {
           />
           <div className="motion-shelf">
             {motionShelf.map((book, index) => (
-              <Link key={`${book.source}-${book.id}-${index}`} href={`/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`} className="motion-shelf-card">
+              <button key={`${book.source}-${book.id}-${index}`} type="button" onClick={() => showBriefing(book)} className="motion-shelf-card text-left">
                 <div className="motion-shelf-cover" style={getBookCover(book) ? { backgroundImage: `url(${getBookCover(book)})` } : undefined} />
                 <span>{String(index + 2).padStart(2, "0")}</span><strong>{book.title}</strong><small>{book.authors || "Unknown author"}</small>
-              </Link>
+              </button>
             ))}
           </div>
         </section>
@@ -812,12 +814,9 @@ export default function HomePage() {
                       <div>
                         <h3>{spotlightBook.title}</h3>
                         <p>by {spotlightBook.authors || "Unknown author"}</p>
-                        <Link
-                          href={`/read?source=${spotlightBook.source}&id=${spotlightBook.id}&title=${encodeURIComponent(spotlightBook.title)}&authors=${encodeURIComponent(spotlightBook.authors)}${spotlightBook.source === "gutendex" ? `&formats=${encodeURIComponent(JSON.stringify(spotlightBook.formats))}` : ""}`}
-                          className="library-read-now"
-                        >
+                        <button type="button" onClick={() => showBriefing(spotlightBook)} className="library-read-now">
                           Start reading
-                        </Link>
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -884,3 +883,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+
