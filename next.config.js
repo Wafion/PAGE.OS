@@ -31,8 +31,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/assets/:path*',
-        destination: '/Assets/:path*',
+        source: '/Assets/:path*',
+        destination: '/assets/:path*',
       },
     ];
   },

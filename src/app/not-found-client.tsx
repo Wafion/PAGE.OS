@@ -2,13 +2,17 @@
 
 import { useEffect, useRef } from "react";
 
-const backgroundVideoUrl = "/Assets/pageos-404-background.mp4";
+const backgroundVideoUrl = "/assets/pageos-404-background.mp4";
 
 export function NotFoundClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     document.body.dataset.pageosNotFound = "true";
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+    }
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const pauseForReducedMotion = () => {
       if (mediaQuery.matches) {
@@ -35,6 +39,7 @@ export function NotFoundClient() {
       loop
       muted
       playsInline
+      preload="auto"
       aria-hidden="true"
     >
       <source src={backgroundVideoUrl} type="video/mp4" />
