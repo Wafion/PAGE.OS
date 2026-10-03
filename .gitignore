@@ -66,3 +66,15 @@ firestore-debug.log
 # Python cache
 __pycache__/
 *.pyc
+
+# AI Agents and Skills
+.agents/
+.claude/
+skills/
+skills-lock.json
+
+# Temp output files
+brag-output-*/
+downloaded.pdf
+test-next-blob.mjs
+test-server.mjs

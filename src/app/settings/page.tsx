@@ -110,7 +110,19 @@ export default function SettingsPage() {
               <CardDescription>Adjust fonts, colors, and layout.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-3 rounded-md border border-border/50 p-4 md:grid-cols-2">
+              <div className="grid gap-3 rounded-md border border-border/50 p-4 md:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => setUiMode("motion")}
+                  className={`rounded-md border p-4 text-left transition hover:border-accent/60 ${
+                    uiMode === "motion" ? "border-accent bg-accent/10" : "border-border/50"
+                  }`}
+                >
+                  <span className="font-medium">Motion UI</span>
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    Cinematic visuals, fluid typography, drifting recommendations, and vinyl aesthetic.
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setUiMode("lounge")}

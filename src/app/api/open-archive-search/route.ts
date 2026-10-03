@@ -106,7 +106,11 @@ function getReadableFiles(files: ArchiveMetadataFile[] | undefined) {
       !name.includes('scandata') &&
       !name.endsWith('_djvu.xml') &&
       !name.endsWith('.json') &&
-      !name.endsWith('.xml'),
+      !name.endsWith('.xml') &&
+      !name.endsWith('.lcpdf') &&
+      !name.endsWith('.kpdf') &&
+      !name.includes('_encrypted') &&
+      !(file.format?.toLowerCase() ?? '').includes('encrypted'),
     );
   });
   const supportedFiles = readableFiles.filter((file) => {

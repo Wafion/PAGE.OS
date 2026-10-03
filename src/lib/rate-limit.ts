@@ -14,7 +14,7 @@ export type RateLimitConfig = {
 
 /** Default per-route budget: a normal reader session stays well under this. */
 export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
-  maxRequests: 30,
+  maxRequests: 300,
   windowMs: 60_000,
 };
 

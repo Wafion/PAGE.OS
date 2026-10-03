@@ -20,7 +20,7 @@ type GutendexBook = {
 /**
  * Returns rich details for a single Project Gutenberg book (summary,
  * subjects, bookshelves, author lifespan) via the Gutendex books endpoint.
- * Falls back to Google Books API for the summary if Gutendex fails or returns empty.
+ * Falls back to Open Library API for the summary if Gutendex fails or returns empty.
  */
 export async function GET(request: NextRequest) {
   const guard = guardRequest(request, {
@@ -67,9 +67,9 @@ export async function GET(request: NextRequest) {
     })
     .catch(() => null);
 
-  const googleBooksPromise = titleParam
+  const openLibraryPromise = titleParam
     ? fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(titleParam)}${authorsParam ? `+inauthor:${encodeURIComponent(authorsParam.split(',')[0])}` : ''}&maxResults=1&langRestrict=en`,
+        `https://openlibrary.org/search.json?title=${encodeURIComponent(titleParam)}${authorsParam ? `&author=${encodeURIComponent(authorsParam.split(',')[0])}` : ''}&limit=1&fields=description`,
         {
           signal: AbortSignal.timeout(3000),
           next: { revalidate: 86400 * 7 },
@@ -77,26 +77,29 @@ export async function GET(request: NextRequest) {
       )
         .then(async (res) => {
           if (res.ok) {
-            const gbData = await res.json();
-            return (gbData.items?.[0]?.volumeInfo?.description as string | undefined) ?? null;
+            const olData = await res.json();
+            const desc = olData.docs?.[0]?.description;
+            if (typeof desc === 'string') return desc;
+            if (desc && typeof desc === 'object' && desc.value) return desc.value;
+            return null;
           }
           return null;
         })
         .catch(() => null)
     : Promise.resolve(null);
 
-  const [gutendexResult, googleSummary] = await Promise.all([
+  const [gutendexResult, olSummary] = await Promise.all([
     gutendexPromise,
-    googleBooksPromise,
+    openLibraryPromise,
   ]);
 
   if (gutendexResult) {
     book = gutendexResult;
   }
 
-  // If Gutendex has no summary or failed, use Google Books summary
-  if ((!book.summaries || book.summaries.length === 0) && googleSummary) {
-    book.summaries = [googleSummary];
+  // If Gutendex has no summary or failed, use Open Library summary
+  if ((!book.summaries || book.summaries.length === 0) && olSummary) {
+    book.summaries = [olSummary];
   }
 
   return NextResponse.json(

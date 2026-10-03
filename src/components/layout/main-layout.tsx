@@ -30,6 +30,29 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [showBootAnimation, uiMode]);
 
+  useEffect(() => {
+    const handleChunkError = (event: PromiseRejectionEvent | ErrorEvent) => {
+      const error = "reason" in event ? event.reason : event.error;
+      const message = error?.message || "";
+      if (
+        error?.name === "ChunkLoadError" ||
+        message.includes("Loading chunk") ||
+        message.includes("ChunkLoadError")
+      ) {
+        console.warn("ChunkLoadError detected, reloading page to fetch latest chunks...", error);
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleChunkError);
+    window.addEventListener("error", handleChunkError);
+
+    return () => {
+      window.removeEventListener("unhandledrejection", handleChunkError);
+      window.removeEventListener("error", handleChunkError);
+    };
+  }, []);
+
   const handleBootComplete = () => {
     try {
       sessionStorage.setItem("pageos-booted", "true");

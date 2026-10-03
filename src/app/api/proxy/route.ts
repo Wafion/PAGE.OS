@@ -116,13 +116,13 @@ export async function GET(request: NextRequest) {
         }
 
         const contentType = res.headers.get('Content-Type') || 'application/octet-stream';
-        const body = await res.blob();
+        const buffer = await res.arrayBuffer();
 
-        if (body.size > MAX_PROXY_BODY_BYTES) {
+        if (buffer.byteLength > MAX_PROXY_BODY_BYTES) {
           return errorResponse('Resource exceeds proxy size limit', 413);
         }
 
-        return new NextResponse(body, {
+        return new NextResponse(buffer, {
           status: 200,
           headers: {
             'Content-Type': contentType,

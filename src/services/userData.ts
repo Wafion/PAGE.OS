@@ -79,11 +79,19 @@ export async function updateBookProgress(userId: string, bookId: string, progres
   }
   const bookRef = doc(db, 'users', userId, 'library', bookId);
   // Use updateDoc to avoid overwriting the whole document
-  await updateDoc(bookRef, {
-      progress: percentage,
-      lastReadSector: lastReadSector,
-      lastReadAt: new Date().toISOString(),
-  });
+  try {
+    await updateDoc(bookRef, {
+        progress: percentage,
+        lastReadSector: lastReadSector,
+        lastReadAt: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    if (error.code === 'not-found') {
+      console.warn('Cannot update progress for a book that is not in the library.');
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**
@@ -105,7 +113,8 @@ export async function updateReadingSession(userId: string, bookId: string, sessi
     ]);
 
     if (!bookSnap.exists()) {
-      throw new Error('Cannot record a reading session for a book that is not in the library.');
+      console.warn('Cannot record a reading session for a book that is not in the library.');
+      return;
     }
 
     const bookData = bookSnap.data() as LibraryBook;

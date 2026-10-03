@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { getClientIp, isRateLimited, type RateLimitConfig } from '@/lib/rate-limit';
 
-const DEFAULT_LIMIT: RateLimitConfig = { maxRequests: 30, windowMs: 60_000 };
+const DEFAULT_LIMIT: RateLimitConfig = { maxRequests: 300, windowMs: 60_000 };
 
 export type ParamRule = {
   name: string;

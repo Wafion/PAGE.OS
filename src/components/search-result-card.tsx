@@ -13,8 +13,12 @@ function createBookQuery(book: SearchResult): string {
   params.set("title", book.title);
   params.set("authors", book.authors);
 
-  if (book.source === "gutendex") {
+  if (book.formats && Object.keys(book.formats).length > 0) {
     params.set("formats", JSON.stringify(book.formats));
+  }
+  
+  if (book.source === "web" && book.formats?.web) {
+    params.set("url", book.formats.web);
   }
 
   // You can add support for other sources here later, if needed.

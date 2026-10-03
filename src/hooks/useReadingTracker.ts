@@ -62,7 +62,7 @@ export default function useReadingTracker(
       const sessionDurationMs = sessionEndTime - sessionStartTime;
       const sessionDurationSec = Math.floor(sessionDurationMs / 1000);
 
-      if (sessionDurationSec > 0 && book && libraryBookId && user) {
+      if (sessionDurationSec > 0 && book && libraryBookId && user && isBookmarked) {
         try {
           // Update reading session statistics
           await updateReadingSession(user.uid, libraryBookId, {
@@ -134,7 +134,7 @@ export default function useReadingTracker(
 
   // Track sector changes to update progress periodically
   useEffect(() => {
-    if (!collectStatistics || !isTracking || !book || !libraryBookId || !user || sectorsCount === 0) return;
+    if (!collectStatistics || !isTracking || !book || !libraryBookId || !user || sectorsCount === 0 || !isBookmarked) return;
 
     // Only update if we've moved to a new sector
     if (activeSector !== lastSectorUpdate) {
@@ -168,7 +168,7 @@ export default function useReadingTracker(
   // Clean up any hanging session when component unmounts
   useEffect(() => {
     return () => {
-      if (collectStatistics && isTracking && sessionStartTime !== null && book && libraryBookId && user) {
+      if (collectStatistics && isTracking && sessionStartTime !== null && book && libraryBookId && user && isBookmarked) {
         const sessionEndTime = Date.now();
         const sessionDurationMs = sessionEndTime - sessionStartTime;
         const sessionDurationSec = Math.floor(sessionDurationMs / 1000);
@@ -181,7 +181,7 @@ export default function useReadingTracker(
         }
       }
     };
-  }, [book, collectStatistics, isTracking, libraryBookId, sessionStartTime, toast, user]);
+  }, [book, collectStatistics, isTracking, isBookmarked, libraryBookId, sessionStartTime, toast, user]);
 
   return {
     isTracking: collectStatistics ? isTracking : false,

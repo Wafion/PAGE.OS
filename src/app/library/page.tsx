@@ -1,18 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Library, LoaderCircle, User } from "lucide-react";
+import { Library, LoaderCircle, User, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
+import { useReaderSettings } from "@/context/reader-settings-provider";
 import { getLibraryBooks, LibraryBook } from "@/services/userData";
 import { SearchResultCard } from "@/components/search-result-card";
+import { MotionLibrary } from "@/components/library/motion-library";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function LibraryPage() {
+function LibraryContent() {
+  const { uiMode, setUiMode } = useReaderSettings();
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode");
+
+  useEffect(() => {
+    if (modeParam === "motion" && uiMode !== "motion") {
+      setUiMode("motion");
+    }
+  }, [modeParam, uiMode, setUiMode]);
+
   const { user } = useAuth();
   const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // If in Motion UI mode, render the reference-accurate bookshelf
+  if (uiMode === "motion" || modeParam === "motion") {
+    return <MotionLibrary />;
+  }
 
   useEffect(() => {
     if (user) {
@@ -89,13 +107,31 @@ export default function LibraryPage() {
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-8 animate-fade-in">
-      <header>
-        <h1 className="text-3xl font-headline text-accent">ARCHIVE_DIRECTORY</h1>
-        <p className="text-muted-foreground">
-          Your personal collection of synchronized memory logs.
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-headline text-accent">ARCHIVE_DIRECTORY</h1>
+          <p className="text-muted-foreground">
+            Your personal collection of synchronized memory logs.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setUiMode("motion")}
+          className="border-accent/40 text-accent hover:bg-accent/10 flex items-center gap-2 self-start sm:self-auto"
+        >
+          <Sparkles className="h-4 w-4" />
+          <span>Switch to Motion Bookshelf</span>
+        </Button>
       </header>
       {renderContent()}
     </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground font-mono">Initializing Library...</div>}>
+      <LibraryContent />
+    </Suspense>
   );
 }

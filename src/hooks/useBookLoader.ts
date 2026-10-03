@@ -235,11 +235,17 @@ export default function useBookLoader(searchParams: URLSearchParams, enabled = t
         let resolvedMedia: ReaderMediaType = 'text';
 
         if (source === 'web') {
-          const url = webUrl;
+          // If the url param isn't strictly provided, we try pulling it from the formats payload 
+          // (which happens when launching web archive books from the library).
+          const providedFormats = searchParams.get('formats') 
+            ? JSON.parse(searchParams.get('formats')!) as Record<string, string> 
+            : {};
+          
+          const url = webUrl || providedFormats.web || providedFormats.pdf;
           if (!url) {
             throw new Error('This archive record does not contain a readable file URL.');
           }
-          const isPdf = requestedFormat === 'pdf' || /\.pdf(?:$|[?#])/i.test(url);
+          const isPdf = requestedFormat === 'pdf' || !!providedFormats.pdf || /\.(?:pdf|lcpdf|kpdf)(?:$|[?#])/i.test(url);
           const media: ReaderMediaType = isPdf ? 'pdf' : 'text';
           setMediaType(media);
           resolvedMedia = media;
@@ -248,7 +254,7 @@ export default function useBookLoader(searchParams: URLSearchParams, enabled = t
             title,
             source: 'web',
             authors: searchParams.get('authors') || 'Open archive',
-            formats: { web: url },
+            formats: isPdf ? { pdf: url, web: url } : { web: url },
           };
         } else {
           const providedFormats = JSON.parse(searchParams.get('formats') || '{}') as Record<string, string>;

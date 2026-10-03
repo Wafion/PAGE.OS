@@ -6,9 +6,10 @@ import { CommandSearch } from "@/components/command-search";
 import { useBookBriefing } from "@/context/book-briefing-provider";
 import type { SearchResult } from "@/adapters/sourceManager";
 import { SearchResultCard } from "@/components/search-result-card";
-import FloatingCards from "@/components/ui/3d-sliding-cards";
+import MotionRecommendationShelf from "@/components/home/motion-recommendation-shelf";
 import {
   BookOpen,
+  ChevronDown,
   ChevronRight,
   Images,
   LoaderCircle,
@@ -251,6 +252,20 @@ export default function HomePage() {
     };
   }, [uiMode]);
 
+  // Auto-scroll to search results when they appear in Motion UI
+  useEffect(() => {
+    if (uiMode !== "motion") return;
+    if (hasSearched && !isLoading) {
+      const timer = window.setTimeout(() => {
+        const resultsEl = document.getElementById("motion-results");
+        if (resultsEl) {
+          resultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 150);
+      return () => window.clearTimeout(timer);
+    }
+  }, [hasSearched, isLoading, uiMode, lastSearchQuery]);
+
   useEffect(() => {
     let isCancelled = false;
 
@@ -458,7 +473,7 @@ export default function HomePage() {
     }
   };
 
-  const handleGenreSelect = (genre: LoungeGenre) => {
+  const handleGenreSelect = (genre: any) => {
     setSelectedGenre(genre);
     setHasSearched(false);
     setPrimaryResults([]);
@@ -566,8 +581,18 @@ export default function HomePage() {
   );
 
   if (uiMode === "motion") {
-    const motionLead = featuredBooks[0] ?? getFallbackGutenbergBooks()[0];
-    const motionShelf = featuredBooks.slice(1, 7);
+    const activeRecommendationBooks =
+      selectedGenre.key === "popular" ? featuredBooks : genreBooks;
+    const recommendationBooks =
+      activeRecommendationBooks.length > 0
+        ? activeRecommendationBooks
+        : featuredBooks.length > 0
+          ? featuredBooks
+          : getFallbackGutenbergBooks().slice(0, 12);
+    const isRecommendationLoading =
+      selectedGenre.key === "popular" ? isFeaturedLoading : isGenreLoading;
+    const recommendationSourceLabel =
+      selectedGenre.key === "popular" ? featuredSourceLabel : genreSourceLabel;
 
     return (
       <div className="motion-vinyl-layout">
@@ -609,46 +634,50 @@ export default function HomePage() {
           <div className="motion-vinyl-issue" aria-hidden="true"><span>01</span><i /><span>∞</span></div>
         </section>
 
-        <section className="motion-shelf-section">
-          <div className="motion-shelf-heading"><div><p className="motion-eyebrow">A CURATED DRIFT</p><h2>Books with a pulse</h2></div><span>DRAG TO EXPLORE →</span></div>
-          <FloatingCards
-            cards={motionShelf.map((book, index) => ({
-              id: `${book.source}-${book.id}-${index}`,
-              imgSrc: getBookCover(book),
-              title: book.title,
-              author: book.authors || "Unknown author",
-              href: `/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`,
-            }))}
-            onCardClick={(_, index) => showBriefing(motionShelf[index])}
-          />
-          <div className="motion-shelf">
-            {motionShelf.map((book, index) => (
-              <button key={`${book.source}-${book.id}-${index}`} type="button" onClick={() => showBriefing(book)} className="motion-shelf-card text-left">
-                <div className="motion-shelf-cover" style={getBookCover(book) ? { backgroundImage: `url(${getBookCover(book)})` } : undefined} />
-                <span>{String(index + 2).padStart(2, "0")}</span><strong>{book.title}</strong><small>{book.authors || "Unknown author"}</small>
-              </button>
-            ))}
-          </div>
-        </section>
+        <MotionRecommendationShelf
+          genres={LOUNGE_GENRES}
+          selectedGenre={selectedGenre}
+          onSelectGenre={handleGenreSelect}
+          books={recommendationBooks}
+          isLoading={isRecommendationLoading}
+          sourceLabel={recommendationSourceLabel}
+          onBookClick={showBriefing}
+        />
 
         <section id="motion-discover" className="motion-discover motion-orbit-section">
-          <video ref={orbitVideoRef} className="motion-orbit-video" muted playsInline preload="auto" aria-hidden="true">
-            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4" type="video/mp4" />
-          </video>
-          <div className="motion-orbit-overlay" aria-hidden="true" />
-          <div className="motion-orbit-intro">
-            <p className="motion-orbit-blur">Hey there, meet P.A.G.E.,<br />Public Archive Gateway Explorer</p>
-            <p className="motion-orbit-typewriter">{orbitGreeting}<span className="motion-orbit-cursor" /></p>
-            <div id="motion-search" className="motion-orbit-inline-search">
-              <CommandSearch onSearch={handleSearch} />
+          <div className="motion-orbit-hero-stage">
+            <video ref={orbitVideoRef} className="motion-orbit-video" muted playsInline preload="auto" aria-hidden="true">
+              <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4" type="video/mp4" />
+            </video>
+            <div className="motion-orbit-overlay" aria-hidden="true" />
+            <div className="motion-orbit-intro">
+              <p className="motion-orbit-blur">Hey there, meet P.A.G.E.,<br />Public Archive Gateway Explorer</p>
+              <p className="motion-orbit-typewriter">{orbitGreeting}<span className="motion-orbit-cursor" /></p>
+              <div id="motion-search" className="motion-orbit-inline-search">
+                <CommandSearch onSearch={handleSearch} />
+                {hasSearched && lastSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById("motion-results")?.scrollIntoView({ behavior: "smooth" })}
+                    className="mt-2.5 inline-flex items-center gap-1.5 text-xs text-[#0b0b0c]/60 hover:text-[#6c55db] transition-colors font-mono uppercase tracking-wider"
+                  >
+                    <span>Viewing results for &ldquo;{lastSearchQuery}&rdquo; below</span>
+                    <ChevronDown className="w-3.5 h-3.5 animate-bounce text-[#6c55db]" />
+                  </button>
+                )}
+              </div>
+              <div className="motion-orbit-signal" aria-label="Archive status">
+                <div><span>LIVE INDEX</span><strong>Open archive</strong><small>Books, images, and ideas in motion</small></div>
+                <div><span>RECOMMENDED</span><strong>{featuredBooks.length || "∞"}</strong><small>Fresh paths to follow</small></div>
+                <div><span>MODE</span><strong>WANDER</strong><small>Move your pointer to explore</small></div>
+              </div>
             </div>
-            <div className="motion-orbit-signal" aria-label="Archive status">
-              <div><span>LIVE INDEX</span><strong>Open archive</strong><small>Books, images, and ideas in motion</small></div>
-              <div><span>RECOMMENDED</span><strong>{featuredBooks.length || "∞"}</strong><small>Fresh paths to follow</small></div>
-              <div><span>MODE</span><strong>WANDER</strong><small>Move your pointer to explore</small></div>
-            </div>
-            {hasSearched ? <div className="motion-orbit-inline-results">{renderContent()}</div> : null}
           </div>
+          {hasSearched ? (
+            <div id="motion-results" className="motion-orbit-results-container scroll-mt-6">
+              <div className="motion-orbit-inline-results">{renderContent()}</div>
+            </div>
+          ) : null}
         </section>
       </div>
     );

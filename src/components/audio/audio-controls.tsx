@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Volume2,
   VolumeX,
@@ -14,6 +15,26 @@ import { Button } from "@/components/ui/button";
 import { useAudio } from "@/context/audio-provider";
 import { cn } from "@/lib/utils";
 
+const KNOWN_ROUTES = new Set([
+  "/",
+  "/infinite",
+  "/library",
+  "/profile",
+  "/settings",
+  "/legal",
+  "/legal/dmca",
+  "/statistics",
+]);
+
+function isUnmatchedRoute(path: string | null): boolean {
+  if (!path) return false;
+  if (KNOWN_ROUTES.has(path)) return false;
+  if (path.startsWith("/read")) return false;
+  if (path.startsWith("/infinite")) return false;
+  if (path.startsWith("/api/")) return false;
+  return true;
+}
+
 const SEGMENT_COUNT = 14;
 const WHEEL_STEP = 0.05;
 
@@ -25,6 +46,7 @@ const PRESETS = [
 ] as const;
 
 export function AudioControls() {
+  const pathname = usePathname();
   const { enabled, toggle, volume, setVolume, playing, currentTrack } = useAudio();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<number | null>(null);
@@ -32,6 +54,40 @@ export function AudioControls() {
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
+
+  const [isNotFound, setIsNotFound] = useState(() => {
+    if (isUnmatchedRoute(pathname)) return true;
+    if (typeof document !== "undefined") {
+      return (
+        document.body.dataset.pageosNotFound === "true" ||
+        Boolean(document.querySelector(".pageos-not-found"))
+      );
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const checkNotFound = () => {
+      const notFound =
+        isUnmatchedRoute(pathname) ||
+        document.body.dataset.pageosNotFound === "true" ||
+        Boolean(document.querySelector(".pageos-not-found"));
+      setIsNotFound(notFound);
+    };
+    checkNotFound();
+    const observer = new MutationObserver(checkNotFound);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-pageos-not-found"],
+      childList: true,
+      subtree: true,
+    });
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  if (isNotFound) {
+    return null;
+  }
 
   // Mirror latest values so native (non-passive) listeners never go stale.
   const volumeRef = useRef(volume);

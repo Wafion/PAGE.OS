@@ -32,9 +32,15 @@ export function BookBriefingDialog({
     params.set("title", book.title);
     params.set("authors", book.authors);
 
-    if (book.source === "gutendex") {
-      params.set("formats", JSON.stringify(book.formats || {}));
+    if (book.formats && Object.keys(book.formats).length > 0) {
+      params.set("formats", JSON.stringify(book.formats));
     }
+    
+    // For backwards compatibility with web sources
+    if (book.source === "web" && book.formats?.web) {
+      params.set("url", book.formats.web);
+    }
+    
     params.set("direct", "true");
     
     router.push(`/read?${params.toString()}`);

@@ -1,8 +1,13 @@
 
 'use client';
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { LoaderCircle } from 'lucide-react';
-import Reader from './Reader';
+
+const Reader = dynamic(() => import('./Reader'), {
+  ssr: false,
+  loading: () => <ReaderFallback />,
+});
 
 function ReaderFallback() {
   return (

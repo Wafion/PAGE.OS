@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { AmbiencePopover } from '@/components/audio/ambience-popover';
 import { generateBookId, updateBookProgress } from '@/services/userData';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version || '4.4.168'}/build/pdf.worker.min.mjs`;
 
 type PdfReaderProps = {
   book: SearchResult;
@@ -59,7 +59,7 @@ export default function PdfReader({
       })
       .catch((loadError) => {
         if (cancelled) return;
-        console.error('PDF loading error:', loadError);
+        console.warn('PDF loading error:', loadError);
         setError('PAGE.OS could not render this archive PDF. Try opening the source file instead.');
         setIsLoading(false);
       });
@@ -106,7 +106,7 @@ export default function PdfReader({
         await renderTask.promise;
       } catch (renderError) {
         if (!cancelled && (renderError as Error).name !== 'RenderingCancelledException') {
-          console.error('PDF rendering error:', renderError);
+          console.warn('PDF rendering error:', renderError);
           setError('This PDF page could not be rendered.');
         }
       }
@@ -125,7 +125,7 @@ export default function PdfReader({
       void updateBookProgress(userId, generateBookId(book), {
         percentage: ((activePage + 1) / pageCount) * 100,
         lastReadSector: activePage,
-      }).catch((progressError) => console.error('Could not save PDF reading position:', progressError));
+      }).catch((progressError) => console.warn('Could not save PDF reading position:', progressError));
     }, 750);
     return () => window.clearTimeout(timeout);
   }, [activePage, book, isBookmarked, pageCount, userId]);

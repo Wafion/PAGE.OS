@@ -28,35 +28,99 @@ export function MotionRouteMenu() {
     };
   }, [open]);
 
-  const isDarkSection = pathname === "/infinite" || pathname.startsWith("/read");
-  const navColor = isDarkSection ? "#f4efe7" : "#0b0b0c";
-  const navShadow = isDarkSection ? "0 1px 4px rgba(0,0,0,0.8)" : "0 1px 2px rgba(255,255,255,0.7)";
+  const KNOWN_ROUTES = new Set([
+    "/",
+    "/infinite",
+    "/library",
+    "/profile",
+    "/settings",
+    "/legal",
+    "/legal/dmca",
+    "/statistics",
+  ]);
+
+  const isUnmatched = (path: string | null): boolean => {
+    if (!path) return false;
+    if (KNOWN_ROUTES.has(path)) return false;
+    if (path.startsWith("/read")) return false;
+    if (path.startsWith("/infinite")) return false;
+    if (path.startsWith("/api/")) return false;
+    return true;
+  };
+
+  const [isNotFound, setIsNotFound] = useState(() => {
+    if (isUnmatched(pathname)) return true;
+    if (typeof document !== "undefined") {
+      return (
+        document.body.dataset.pageosNotFound === "true" ||
+        Boolean(document.querySelector(".pageos-not-found"))
+      );
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const checkNotFound = () => {
+      const notFound =
+        isUnmatched(pathname) ||
+        document.body.dataset.pageosNotFound === "true" ||
+        Boolean(document.querySelector(".pageos-not-found"));
+      setIsNotFound(notFound);
+    };
+    checkNotFound();
+    const observer = new MutationObserver(checkNotFound);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["data-pageos-not-found"],
+      childList: true,
+      subtree: true,
+    });
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const isDarkSection = pathname === "/infinite" || pathname.startsWith("/read") || isNotFound;
+  const navColor = isNotFound ? "#ffffff" : isDarkSection ? "#f4efe7" : "#0b0b0c";
+  const navShadow = isNotFound
+    ? "0 2px 14px rgba(0,0,0,0.75)"
+    : isDarkSection
+    ? "0 1px 4px rgba(0,0,0,0.8)"
+    : "0 1px 2px rgba(255,255,255,0.7)";
+
+  const isReader = pathname.startsWith("/read");
+  const isLibrary = pathname === "/library";
+  const hideVinylNav = isReader || isLibrary;
 
   return (
     <>
-      <nav
-        className="motion-vinyl-nav"
-        aria-label="Primary"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 60,
-          color: navColor,
-          textShadow: navShadow,
-        }}
-      >
-        <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home">P/OS</Link>
-        <div className="motion-vinyl-links">
-          {navigationItems.slice(0, 3).map(item => (
-             <Link key={item.href} href={item.href}>{item.motionLabel}</Link>
-          ))}
-        </div>
-        <div className="motion-vinyl-actions">
-           <AudioControls />
-        </div>
-      </nav>
+      {!hideVinylNav && (
+        <nav
+          className="motion-vinyl-nav"
+          aria-label="Primary"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 60,
+            color: navColor,
+            textShadow: navShadow,
+          }}
+        >
+          <Link href="/" className="motion-vinyl-logo" aria-label="PAGE.OS home">P/OS</Link>
+          {!isNotFound && (
+            <>
+              <div className="motion-vinyl-links">
+                {navigationItems.slice(0, 3).map(item => (
+                   <Link key={item.href} href={item.href}>{item.motionLabel}</Link>
+                ))}
+              </div>
+              <div className="motion-vinyl-actions">
+                 <AudioControls />
+              </div>
+            </>
+          )}
+        </nav>
+      )}
 
       <div className="motion-route-menu">
         <button

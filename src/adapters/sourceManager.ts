@@ -14,6 +14,7 @@ export type SearchResult =
       authors: string;
       formats?: {
         web: string; // or any URL string
+        pdf?: string;
       };
     };
 
