@@ -52,48 +52,51 @@ export async function GET(request: NextRequest) {
     languages: [],
   };
 
-  let fetchFailed = false;
+  // Fetch Gutendex and Google Books concurrently for instant response
+  const gutendexPromise = fetch(`https://gutendex.com/books/${id}`, {
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
+    },
+    signal: AbortSignal.timeout(2500),
+    next: { revalidate: 86400 },
+  })
+    .then(async (res) => {
+      if (res.ok) return (await res.json()) as GutendexBook;
+      return null;
+    })
+    .catch(() => null);
 
-  try {
-    const res = await fetch(`https://gutendex.com/books/${id}`, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
-      },
-      signal: AbortSignal.timeout(6000), // Reduce timeout so we fallback faster
-      next: { revalidate: 86400 },
-    });
+  const googleBooksPromise = titleParam
+    ? fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(titleParam)}${authorsParam ? `+inauthor:${encodeURIComponent(authorsParam.split(',')[0])}` : ''}&maxResults=1&langRestrict=en`,
+        {
+          signal: AbortSignal.timeout(3000),
+          next: { revalidate: 86400 * 7 },
+        },
+      )
+        .then(async (res) => {
+          if (res.ok) {
+            const gbData = await res.json();
+            return (gbData.items?.[0]?.volumeInfo?.description as string | undefined) ?? null;
+          }
+          return null;
+        })
+        .catch(() => null)
+    : Promise.resolve(null);
 
-    if (res.ok) {
-      book = (await res.json()) as GutendexBook;
-    } else {
-      fetchFailed = true;
-    }
-  } catch (error) {
-    console.warn('Gutendex lookup failed, falling back:', error);
-    fetchFailed = true;
+  const [gutendexResult, googleSummary] = await Promise.all([
+    gutendexPromise,
+    googleBooksPromise,
+  ]);
+
+  if (gutendexResult) {
+    book = gutendexResult;
   }
 
-  // Fallback to Google Books for summary if Gutendex summary is empty or failed
-  if (!book.summaries || book.summaries.length === 0 || fetchFailed) {
-    try {
-      if (titleParam) {
-        const query = `intitle:${encodeURIComponent(titleParam)}${authorsParam ? `+inauthor:${encodeURIComponent(authorsParam.split(',')[0])}` : ''}`;
-        const gbRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1&langRestrict=en`, {
-          signal: AbortSignal.timeout(5000),
-          next: { revalidate: 86400 * 7 }
-        });
-        
-        if (gbRes.ok) {
-          const gbData = await gbRes.json();
-          if (gbData.items && gbData.items.length > 0 && gbData.items[0].volumeInfo.description) {
-            book.summaries = [gbData.items[0].volumeInfo.description];
-          }
-        }
-      }
-    } catch (gbError) {
-      console.warn('Google Books fallback failed:', gbError);
-    }
+  // If Gutendex has no summary or failed, use Google Books summary
+  if ((!book.summaries || book.summaries.length === 0) && googleSummary) {
+    book.summaries = [googleSummary];
   }
 
   return NextResponse.json(

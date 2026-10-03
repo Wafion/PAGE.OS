@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           Accept: 'application/json',
           'User-Agent': 'PAGE.OS/1.0 (+open-knowledge-gateway)',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(4500),
         next: { revalidate: 600 },
       }),
       fetchProjectGutenbergOpdsBooks(query || undefined, Number(page) || 1),
@@ -95,12 +95,21 @@ export async function GET(request: NextRequest) {
       gutendexData = (await gutendexResult.value.json()) as GutenbergAPIResponse;
     } else if (gutendexResult.status === 'fulfilled') {
       const errorText = await gutendexResult.value.text();
-      console.error(
-        `Gutendex route failed: ${gutendexResult.value.status} ${gutendexResult.value.statusText}`,
+      console.warn(
+        `Gutendex route warning: ${gutendexResult.value.status} ${gutendexResult.value.statusText}`,
         errorText,
       );
     } else {
-      console.error('Gutendex route failed:', gutendexResult.reason);
+      const isTimeout =
+        gutendexResult.reason instanceof Error &&
+        (gutendexResult.reason.name === 'TimeoutError' ||
+          gutendexResult.reason.message.includes('timeout') ||
+          (gutendexResult.reason as { code?: number }).code === 23);
+      if (isTimeout) {
+        console.warn('Gutendex search upstream timed out; serving fallback archive results.');
+      } else {
+        console.error('Gutendex route failed:', gutendexResult.reason);
+      }
     }
 
     const opdsBooks = opdsResult.status === 'fulfilled' ? opdsResult.value : [];

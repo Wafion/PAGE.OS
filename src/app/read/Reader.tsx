@@ -54,7 +54,8 @@ export default function Reader() {
   const { uiMode } = useReaderSettings();
 
   // Briefing first: the user reviews the book before the reader opens.
-  const [stage, setStage] = useState<'briefing' | 'reading'>('reading');
+  const isDirect = searchParams.get('direct') === 'true';
+  const [stage, setStage] = useState<'briefing' | 'reading'>(isDirect ? 'reading' : 'briefing');
   const {
     book,
     isLoading,
@@ -85,10 +86,10 @@ export default function Reader() {
 
   // Every newly opened book starts at the briefing stage.
   useEffect(() => {
-    if (book) {
+    if (book && !isDirect) {
       setStage('briefing');
     }
-  }, [book?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [book?.id, isDirect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const paginate = useCallback(
     (delta: number) => {
@@ -796,6 +797,7 @@ export default function Reader() {
     </div>
   );
 }
+
 
 
 

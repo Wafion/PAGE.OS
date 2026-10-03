@@ -619,6 +619,7 @@ export default function HomePage() {
               author: book.authors || "Unknown author",
               href: `/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`,
             }))}
+            onCardClick={(_, index) => showBriefing(motionShelf[index])}
           />
           <div className="motion-shelf">
             {motionShelf.map((book, index) => (

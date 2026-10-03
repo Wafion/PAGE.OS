@@ -35,6 +35,7 @@ export function BookBriefingDialog({
     if (book.source === "gutendex") {
       params.set("formats", JSON.stringify(book.formats || {}));
     }
+    params.set("direct", "true");
     
     router.push(`/read?${params.toString()}`);
   };

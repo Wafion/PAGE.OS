@@ -12,9 +12,10 @@ export type FloatingCard = {
 
 type FloatingCardsProps = {
   cards: FloatingCard[];
+  onCardClick?: (card: FloatingCard, index: number) => void;
 };
 
-export default function FloatingCards({ cards }: FloatingCardsProps) {
+export default function FloatingCards({ cards, onCardClick }: FloatingCardsProps) {
   const [scrollOffset, setScrollOffset] = useState(0);
 
   useEffect(() => {
@@ -24,8 +25,8 @@ export default function FloatingCards({ cards }: FloatingCardsProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const moveCard = (event: MouseEvent<HTMLAnchorElement>, lift: string) => {
-    event.currentTarget.style.setProperty("--card-lift", lift);
+  const moveCard = (element: HTMLElement, lift: string) => {
+    element.style.setProperty("--card-lift", lift);
   };
 
   return (
@@ -45,14 +46,30 @@ export default function FloatingCards({ cards }: FloatingCardsProps) {
             </>
           );
 
+          if (onCardClick) {
+            return (
+              <button
+                key={card.id}
+                type="button"
+                className="floating-card text-left"
+                style={{ "--card-rotation": `${(index - 2.5) * 3}deg` } as CSSProperties}
+                onClick={() => onCardClick(card, index)}
+                onMouseEnter={(event) => moveCard(event.currentTarget, "-12px")}
+                onMouseLeave={(event) => moveCard(event.currentTarget, "0px")}
+              >
+                {content}
+              </button>
+            );
+          }
+
           return card.href ? (
             <a
               key={card.id}
               href={card.href}
               className="floating-card"
               style={{ "--card-rotation": `${(index - 2.5) * 3}deg` } as CSSProperties}
-              onMouseEnter={(event) => moveCard(event, "-12px")}
-              onMouseLeave={(event) => moveCard(event, "0px")}
+              onMouseEnter={(event) => moveCard(event.currentTarget, "-12px")}
+              onMouseLeave={(event) => moveCard(event.currentTarget, "0px")}
             >
               {content}
             </a>

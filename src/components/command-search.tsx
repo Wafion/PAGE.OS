@@ -1,10 +1,12 @@
-﻿
+
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { LoaderCircle, Search } from "lucide-react";
 import { useReaderSettings } from "@/context/reader-settings-provider";
+import { useBookBriefing } from "@/context/book-briefing-provider";
+import type { SearchResult } from "@/adapters/sourceManager";
 import { Switch } from "@/components/ui/switch";
 import { fetchGutenbergBooks } from "@/adapters/gutendex";
 
@@ -16,6 +18,7 @@ type SearchSuggestion = {
   source: "gutendex" | "web";
   href: string;
   openInNewTab?: boolean;
+  rawBook?: SearchResult;
 };
 
 interface CommandSearchProps {
@@ -31,6 +34,7 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [gutenbergSuggestions, setGutenbergSuggestions] = useState<SearchSuggestion[]>([]);
   const { uiMode } = useReaderSettings();
+  const { showBriefing } = useBookBriefing();
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suggestionRequestRef = useRef(0);
   const gutenbergSuggestionCacheRef = useRef(new Map<string, SearchSuggestion[]>());
@@ -98,6 +102,7 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
               query: book.title,
               source: "gutendex" as const,
               href: `/read?source=${book.source}&id=${book.id}&title=${encodeURIComponent(book.title)}&authors=${encodeURIComponent(book.authors)}&formats=${encodeURIComponent(JSON.stringify(book.formats))}`,
+              rawBook: book,
             }));
 
             gutenbergSuggestionCacheRef.current.set(effectiveQuery, mappedSuggestions);
@@ -141,6 +146,11 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
   const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
     setValue(suggestion.query);
     setShowSuggestions(false);
+
+    if (suggestion.rawBook) {
+      showBriefing(suggestion.rawBook);
+      return;
+    }
 
     if (suggestion.openInNewTab) {
       window.open(suggestion.href, "_blank", "noopener,noreferrer");
