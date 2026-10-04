@@ -5,6 +5,8 @@ import type { MediaItem } from './types';
 import {
   appendGalleryFeedChunk,
   type GalleryFeedCache,
+  GALLERY_FEED_CACHE_VERSION,
+  getInitialSeedChunk,
   getMediaItemKey,
   readGalleryFeedCache,
   writeGalleryFeedCache,
@@ -24,26 +26,37 @@ interface PendingPage {
 
 function createCache(): GalleryFeedCache {
   const now = Date.now();
-  return { version: 4, createdAt: now, updatedAt: now, seed: now, cycle: 0, nextSourcePage: 0, chunks: [] };
+  return {
+    version: GALLERY_FEED_CACHE_VERSION,
+    createdAt: now,
+    updatedAt: now,
+    seed: now,
+    cycle: 0,
+    nextSourcePage: 0,
+    chunks: [getInitialSeedChunk()],
+  };
 }
 
-function warmImages(items: MediaItem[]) {
+/**
+ * Concurrency-conscious image warming.
+ * Primes only high-priority visible/upcoming thumbnails to avoid saturating browser network sockets.
+ */
+function warmImages(items: MediaItem[], limit = 8) {
   if (typeof Image === 'undefined') return;
-  // Pre-load every image in the batch — they'll sit in browser disk cache.
-  items.forEach((item) => { const image = new Image(); image.src = item.url; });
-}
-
-function warmAllCachedChunks(cache: GalleryFeedCache) {
-  if (typeof Image === 'undefined') return;
-  // Kick off downloads for all images across all cached chunks so they're
-  // in browser disk cache before any card mounts.
-  for (const chunk of cache.chunks) {
-    for (const item of chunk.items) {
-      if (item?.url) {
-        const image = new Image();
-        image.src = item.url;
-      }
+  items.slice(0, limit).forEach((item) => {
+    if (item?.url) {
+      const image = new Image();
+      image.src = item.url;
     }
+  });
+}
+
+function warmInitialViewportImages(cache: GalleryFeedCache) {
+  if (typeof Image === 'undefined' || !cache.chunks.length) return;
+  // Pre-load only the first chunk's top items (the initial visible viewport)
+  const firstChunk = cache.chunks[0];
+  if (firstChunk?.items) {
+    warmImages(firstChunk.items, 12);
   }
 }
 
@@ -66,7 +79,8 @@ export function useGalleryFeed(enabled: boolean) {
     const current = cacheRef.current;
     if (!current) return null;
     const pending = pendingRef.current;
-    if (pending && pending.cycle === current.cycle && pending.sourcePage === current.nextSourcePage) return pending;
+    if (pending && pending.cycle === current.cycle && pending.sourcePage === current.nextSourcePage)
+      return pending;
     if (inFlightRef.current) return inFlightRef.current;
 
     setLoading(true);
@@ -91,7 +105,8 @@ export function useGalleryFeed(enabled: boolean) {
           hasMore: data.hasMore !== false && data.items.length > 0,
         };
         pendingRef.current = next;
-        warmImages(next.items);
+        // Warm only top 6 upcoming cards so network bandwidth is preserved for current viewport
+        warmImages(next.items, 6);
         return next;
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : 'Unable to load more artwork.');
@@ -109,7 +124,11 @@ export function useGalleryFeed(enabled: boolean) {
     const current = cacheRef.current;
     if (!current) return;
     let pending = pendingRef.current;
-    if (!pending || pending.cycle !== current.cycle || pending.sourcePage !== current.nextSourcePage) {
+    if (
+      !pending ||
+      pending.cycle !== current.cycle ||
+      pending.sourcePage !== current.nextSourcePage
+    ) {
       pending = await prefetchNext();
     }
     if (!pending) return;
@@ -122,27 +141,41 @@ export function useGalleryFeed(enabled: boolean) {
       items: pending.items,
       fetchedAt: Date.now(),
     });
-    commitCache(pending.hasMore
-      ? { ...next, nextSourcePage: pending.sourcePage + 1 }
-      : { ...next, cycle: pending.cycle + 1, nextSourcePage: 0 });
+    commitCache(
+      pending.hasMore
+        ? { ...next, nextSourcePage: pending.sourcePage + 1 }
+        : { ...next, cycle: pending.cycle + 1, nextSourcePage: 0 },
+    );
   }, [commitCache, prefetchNext]);
 
   React.useEffect(() => {
     if (!enabled || initialized.current) return;
     initialized.current = true;
-    const next = readGalleryFeedCache() ?? createCache();
+
+    // Instant local cache read or instant initial seed chunk
+    const existing = readGalleryFeedCache();
+    const next = existing && existing.chunks.length > 0 ? existing : createCache();
+
     cacheRef.current = next;
     setCache(next);
-    // Pre-load all cached images into browser disk cache
-    warmAllCachedChunks(next);
-    // Fill the first visual page. Every later page is staged ahead of the viewport.
+
+    // Warm initial viewport images with bounded concurrency
+    warmInitialViewportImages(next);
+
+    // Kick off progressive discovery in the background
     void revealNext();
   }, [enabled, revealNext]);
 
-  const items = React.useMemo(() => (cache?.chunks ?? []).flatMap((chunk) => chunk.items.map((item) => ({
-    item,
-    key: `${chunk.cycle}:${getMediaItemKey(item)}`,
-  }))), [cache]);
+  const items = React.useMemo(
+    () =>
+      (cache?.chunks ?? []).flatMap((chunk) =>
+        chunk.items.map((item) => ({
+          item,
+          key: `${chunk.cycle}:${getMediaItemKey(item)}`,
+        })),
+      ),
+    [cache],
+  );
 
   return { items, loading, error, hasMore: true, prefetchNext, loadNextPage: revealNext };
 }

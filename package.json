@@ -9,7 +9,9 @@
     "build": "node ./node_modules/next/dist/bin/next build",
     "lint": "node ./node_modules/next/dist/bin/next lint",
     "typecheck": "node ./scripts/run-typecheck.mjs",
-    "test:proxy-guards": "node --experimental-strip-types --no-warnings ./scripts/test-proxy-guards.mjs"
+    "test:proxy-guards": "node --experimental-strip-types --no-warnings ./scripts/test-proxy-guards.mjs",
+    "test:artwork-delivery": "node --experimental-strip-types --no-warnings --import ./scripts/register-loader.mjs ./scripts/test-artwork-delivery.mjs",
+    "test": "npm run test:proxy-guards && npm run test:artwork-delivery"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

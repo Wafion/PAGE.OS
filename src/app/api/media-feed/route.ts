@@ -387,7 +387,12 @@ export async function GET(request: Request) {
   if (itemId?.startsWith('met-')) {
     const item = await fetchMetItemById(itemId);
     if (item) {
-      return NextResponse.json(item);
+      return NextResponse.json(item, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+          'CDN-Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      });
     }
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -402,6 +407,17 @@ export async function GET(request: Request) {
 
   pool = getCombinedPool(pool.length === 0 ? getFallbackArtworks() : pool);
 
+  if (searchParams.get('export') === '1') {
+    return NextResponse.json(
+      { items: pool, lastUpdated, total: pool.length },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      },
+    );
+  }
+
   if (feed === '1') {
     const seed = Number.parseInt(searchParams.get('seed') ?? '', 10);
     const page = Number.parseInt(searchParams.get('page') ?? '0', 10);
@@ -410,13 +426,40 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid feed pagination parameters.' }, { status: 400 });
     }
     const result = buildFeedPage(seed, page, pool, limit);
-    return NextResponse.json({ ...result, page, seed });
+    return NextResponse.json(
+      { ...result, page, seed, cachedAt: lastUpdated },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400',
+          'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+          'Vary': 'Accept-Encoding',
+        },
+      },
+    );
   }
 
   if (cx !== null && cy !== null) {
     const seed = parseInt(cx, 10) * 31337 + parseInt(cy, 10) * 7919;
-    return NextResponse.json(buildDiverseSelection(seed, pool, 10));
+    return NextResponse.json(
+      buildDiverseSelection(seed, pool, 10),
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=86400',
+          'CDN-Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+          'Vary': 'Accept-Encoding',
+        },
+      },
+    );
   }
 
-  return NextResponse.json(buildDiverseSelection(Date.now(), pool, 100));
+  return NextResponse.json(
+    buildDiverseSelection(Date.now(), pool, 100),
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Vary': 'Accept-Encoding',
+      },
+    },
+  );
 }

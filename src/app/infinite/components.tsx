@@ -206,8 +206,15 @@ export function MediaCard({ item, onSelect }: { item: MediaItem; onSelect?: (ite
             <img
               src={item.url}
               alt={item.title}
+              width={item.width}
+              height={item.height}
+              loading="lazy"
               className="w-full block"
-              style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}
+              style={{
+                aspectRatio: `${item.width}/${item.height}`,
+                opacity: loaded ? 1 : 0,
+                transition: 'opacity 0.4s ease',
+              }}
             />
             {!loaded && (
               <div
@@ -249,11 +256,11 @@ function GalleryFeedCard({
   const [imageLoaded, setImageLoaded] = React.useState(() => isImageReady(item.url));
   const cardRef = React.useRef<HTMLButtonElement>(null);
 
-  // Preload image on mount so it's in browser cache before user scrolls to it
+  // Preload image on mount for initial viewport cards to avoid socket starvation
   React.useEffect(() => {
-    if (imageLoaded || imageError) return;
+    if (imageLoaded || imageError || index >= 16) return;
     preloadImage(item.url);
-  }, [item.url, imageLoaded, imageError]);
+  }, [item.url, imageLoaded, imageError, index]);
 
   const handleError = React.useCallback(() => {
     setImageError(true);
@@ -273,17 +280,28 @@ function GalleryFeedCard({
       onClick={() => onSelect?.(item)}
     >
       {imageError ? (
-        <span className="art-feed-missing-image" aria-label={`${item.title} image unavailable`}>
+        <span
+          className="art-feed-missing-image"
+          aria-label={`${item.title} image unavailable`}
+          style={{ aspectRatio: `${item.width}/${item.height}` }}
+        >
           <span>Archive image</span>
         </span>
       ) : (
         <img
           src={item.url}
           alt={item.title}
-          loading={index < 30 ? 'eager' : 'lazy'}
+          width={item.width}
+          height={item.height}
+          loading={index < 12 ? 'eager' : 'lazy'}
+          fetchPriority={index < 6 ? 'high' : 'auto'}
           onLoad={handleLoad}
           onError={handleError}
-          style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+          style={{
+            aspectRatio: `${item.width}/${item.height}`,
+            opacity: imageLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
         />
       )}
       <span className="art-feed-card-info">
@@ -295,17 +313,19 @@ function GalleryFeedCard({
 }
 
 /** A conventional, scrollable alternative to the spatial explorer. */
-function GalleryFeedViewportOverlay({ onReturnToInfinite }: { onReturnToInfinite: () => void }) {
+function GalleryFeedViewportOverlay({ onReturnToInfinite }: { onReturnToInfinite?: () => void }) {
   if (typeof document === 'undefined') return null;
 
   return createPortal(
     <>
       <div className="art-feed-viewport-glass art-feed-viewport-glass-top" aria-hidden="true" />
       <div className="art-feed-viewport-glass art-feed-viewport-glass-bottom" aria-hidden="true" />
-      <button type="button" className="art-feed-return" onClick={onReturnToInfinite}>
-        <Infinity className="h-3.5 w-3.5" aria-hidden="true" />
-        <span>Infinite discover</span>
-      </button>
+      {onReturnToInfinite && (
+        <button type="button" className="art-feed-return" onClick={onReturnToInfinite}>
+          <Infinity className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Infinite discover</span>
+        </button>
+      )}
     </>,
     document.body,
   );
@@ -328,7 +348,7 @@ export function GalleryFeed({
   prefetchNext: () => Promise<unknown>;
   loadNextPage: () => void;
   onSelect?: (item: MediaItem) => void;
-  onReturnToInfinite: () => void;
+  onReturnToInfinite?: () => void;
 }) {
   const sentinelRef = React.useRef<HTMLDivElement>(null);
   const isInitialLoading = loading && items.length === 0;
@@ -460,6 +480,7 @@ export function BottomControls({
   onResetWander,
   viewMode = 'infinite',
   onViewModeChange,
+  isMobile = false,
 }: {
   camera: CameraState;
   wander: WanderStats;
@@ -467,6 +488,7 @@ export function BottomControls({
   onResetWander: () => void;
   viewMode?: 'infinite' | 'feed';
   onViewModeChange?: (mode: 'infinite' | 'feed') => void;
+  isMobile?: boolean;
 }) {
   return (
     <div
@@ -521,13 +543,15 @@ export function BottomControls({
             <Sparkles className="w-3 h-3" />
             Reset trail
           </button>}
-          <button
-            type="button"
-            onClick={() => onViewModeChange?.('infinite')}
-            className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 sm:rounded-sm sm:py-1 ${viewMode === 'infinite' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
-          >
-            <Infinity className="w-3 h-3" /> Infinite
-          </button>
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => onViewModeChange?.('infinite')}
+              className={`flex items-center justify-center gap-1 rounded-md px-3 py-2 sm:rounded-sm sm:py-1 ${viewMode === 'infinite' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}
+            >
+              <Infinity className="w-3 h-3" /> Infinite
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onViewModeChange?.('feed')}

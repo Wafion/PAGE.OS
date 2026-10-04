@@ -121,26 +121,39 @@ function dedupeItems(items: MediaItem[]): MediaItem[] {
   });
 }
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T | null> {
-  try {
-    const response = await fetch(url, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'PAGE.OS/1.0 (+public-domain-art-feed)',
-        ...(init?.headers ?? {}),
-      },
-      signal: AbortSignal.timeout(12000),
-    });
+async function fetchJson<T>(url: string, init?: RequestInit, retries = 1): Promise<T | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'PAGE.OS/1.0 (+public-domain-art-feed)',
+          ...(init?.headers ?? {}),
+        },
+        signal: AbortSignal.timeout(4500),
+        // Persist upstream museum responses in Next.js shared Data Cache across serverless instances
+        next: { revalidate: 86400 },
+      } as RequestInit);
 
-    if (!response.ok) {
-      return null;
+      if (!response.ok) {
+        if (response.status >= 500 && attempt < retries) {
+          const jitter = Math.random() * 200;
+          await new Promise((r) => setTimeout(r, 300 * (attempt + 1) + jitter));
+          continue;
+        }
+        return null;
+      }
+
+      return (await response.json()) as T;
+    } catch {
+      if (attempt < retries) {
+        const jitter = Math.random() * 200;
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1) + jitter));
+      }
     }
-
-    return (await response.json()) as T;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 function chunkArray<T>(items: T[], size: number): T[][];
@@ -348,8 +361,9 @@ LIMIT 180
 
 async function fetchFromMet(): Promise<MediaItem[]> {
   const items: MediaItem[] = [];
+  const sampledTerms = [...MET_SEARCH_TERMS].sort(() => 0.5 - Math.random()).slice(0, 2);
 
-  for (const entry of MET_SEARCH_TERMS) {
+  for (const entry of sampledTerms) {
     const searchParams = new URLSearchParams({
       q: entry.query,
       hasImages: 'true',
@@ -443,8 +457,9 @@ async function fetchFromMet(): Promise<MediaItem[]> {
 
 async function fetchFromCleveland(): Promise<MediaItem[]> {
   const items: MediaItem[] = [];
+  const sampledTerms = [...CLEVELAND_SEARCH_TERMS].sort(() => 0.5 - Math.random()).slice(0, 2);
 
-  for (const entry of CLEVELAND_SEARCH_TERMS) {
+  for (const entry of sampledTerms) {
     const params = new URLSearchParams({
       q: entry.query,
       limit: '10',
@@ -580,12 +595,26 @@ function getSeededArtworks(): MediaItem[] {
   ];
 }
 
-export async function hydratePool(): Promise<{ added: number; total: number }> {
-  const [wikidataCommons, met, cleveland] = await Promise.all([
+export async function hydratePool(): Promise<{ added: number; total: number; sources: Record<string, number> }> {
+  const [wikidataResult, metResult, clevelandResult] = await Promise.allSettled([
     fetchFromWikidataCommons(),
     fetchFromMet(),
     fetchFromCleveland(),
   ]);
+
+  const wikidataCommons = wikidataResult.status === 'fulfilled' ? wikidataResult.value : [];
+  const met = metResult.status === 'fulfilled' ? metResult.value : [];
+  const cleveland = clevelandResult.status === 'fulfilled' ? clevelandResult.value : [];
+
+  if (wikidataResult.status === 'rejected') {
+    console.warn('Wikidata Commons hydration failed:', wikidataResult.reason);
+  }
+  if (metResult.status === 'rejected') {
+    console.warn('Met Museum hydration failed:', metResult.reason);
+  }
+  if (clevelandResult.status === 'rejected') {
+    console.warn('Cleveland Museum hydration failed:', clevelandResult.reason);
+  }
 
   const merged = dedupeItems([
     ...getSeededArtworks(),
@@ -599,5 +628,13 @@ export async function hydratePool(): Promise<{ added: number; total: number }> {
   }));
 
   const { GlobalPool } = await import('./global-pool');
-  return await GlobalPool.getInstance().addItems(merged);
+  const result = await GlobalPool.getInstance().addItems(merged);
+  return {
+    ...result,
+    sources: {
+      wikidata: wikidataCommons.length,
+      met: met.length,
+      cleveland: cleveland.length,
+    },
+  };
 }

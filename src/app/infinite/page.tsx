@@ -8,10 +8,18 @@ import { HeroSection, MasonryChunk, BottomControls, SkeletonChunk, GalleryFeed }
 import { MediaDetailDialog } from './detail-dialog';
 import { useWander } from './useWander';
 import { useGalleryFeed } from './useGalleryFeed';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+import { readSpatialPoolCache, writeSpatialPoolCache } from './gallery-feed-cache';
+import { EMBEDDED_ARTWORK_MANIFEST } from '@/lib/data/artwork-manifest';
 
 function useMediaFeed() {
-  const [items, setItems] = React.useState<MediaItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [items, setItems] = React.useState<MediaItem[]>(() => {
+    const cached = readSpatialPoolCache();
+    if (cached && cached.length > 0) return cached;
+    return EMBEDDED_ARTWORK_MANIFEST.slice(0, 100);
+  });
+  const [loading, setLoading] = React.useState(false);
   const done = React.useRef(false);
 
   React.useEffect(() => {
@@ -20,8 +28,14 @@ function useMediaFeed() {
     (async () => {
       try {
         const res = await fetch('/api/media-feed');
+        if (!res.ok) return;
         const data: MediaItem[] = await res.json();
-        if (Array.isArray(data) && data.length > 0) setItems(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setItems(data);
+          writeSpatialPoolCache(data);
+        }
+      } catch (err) {
+        console.warn('Background spatial pool refresh failed, preserving cache:', err);
       } finally {
         setLoading(false);
       }
@@ -32,6 +46,7 @@ function useMediaFeed() {
 }
 
 export default function InfinitePage() {
+  const isMobile = useIsMobile();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = React.useState({ w: 0, h: 0 });
   const [selectedItem, setSelectedItem] = React.useState<MediaItem | null>(null);
@@ -40,21 +55,31 @@ export default function InfinitePage() {
   const [viewMode, setViewMode] = React.useState<'infinite' | 'feed'>('infinite');
   const centered = React.useRef(false);
 
-  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef, viewMode === 'infinite');
+  // When a mobile user visits, lock the mode to gallery view ('feed')
+  React.useEffect(() => {
+    if (isMobile) {
+      setViewMode('feed');
+    }
+  }, [isMobile]);
+
+  const effectiveViewMode = isMobile ? 'feed' : viewMode;
+
+  const { camera, onPointerDown, onPointerMove, onPointerUp, setPosition, setCameraState, lastInteractionAt } = useCamera(containerRef, effectiveViewMode === 'infinite');
   const { items, loading } = useMediaFeed();
-  const galleryFeed = useGalleryFeed(viewMode === 'feed');
+  const galleryFeed = useGalleryFeed(effectiveViewMode === 'feed');
   const visibleChunks = useChunkVisibility(camera, viewportSize.w, viewportSize.h);
   const getChunkItems = useGetChunkItems(items);
 
   const returnToInfinite = React.useCallback(() => {
+    if (isMobile) return;
     // Feed mode uses document scrolling; return the spatial canvas to the same viewport origin as a direct visit.
     window.scrollTo(0, 0);
     setViewMode('infinite');
     window.requestAnimationFrame(() => window.scrollTo(0, 0));
-  }, []);
+  }, [isMobile]);
 
   React.useEffect(() => {
-    if (!wanderEnabled) {
+    if (!wanderEnabled || effectiveViewMode !== 'infinite') {
       setWanderPaused(false);
       return;
     }
@@ -69,16 +94,16 @@ export default function InfinitePage() {
     }
 
     setWanderPaused(false);
-  }, [lastInteractionAt, wanderEnabled]);
+  }, [lastInteractionAt, wanderEnabled, effectiveViewMode]);
 
   React.useEffect(() => {
-    if (!selectedItem || !wanderEnabled) return;
+    if (!selectedItem || !wanderEnabled || effectiveViewMode !== 'infinite') return;
     setWanderPaused(true);
-  }, [selectedItem, wanderEnabled]);
+  }, [selectedItem, wanderEnabled, effectiveViewMode]);
 
   const { stats: wanderStats, resetProgress } = useWander({
-    enabled: wanderEnabled,
-    paused: wanderPaused || selectedItem !== null,
+    enabled: wanderEnabled && effectiveViewMode === 'infinite',
+    paused: wanderPaused || selectedItem !== null || effectiveViewMode !== 'infinite',
     camera,
     viewportW: viewportSize.w,
     viewportH: viewportSize.h,
@@ -86,7 +111,7 @@ export default function InfinitePage() {
   });
 
   React.useEffect(() => {
-    if (viewMode !== 'infinite') return;
+    if (effectiveViewMode !== 'infinite') return;
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
@@ -102,12 +127,16 @@ export default function InfinitePage() {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [setPosition, viewMode]);
+  }, [setPosition, effectiveViewMode]);
 
   return (
-    <div className={`flex-1 flex flex-col min-h-0${viewMode === 'feed' ? ' art-feed-page' : ' min-h-[calc(100dvh-3.5rem)]'}`} style={{ background: viewMode === 'feed' ? '#111111' : 'hsl(var(--background))' }}>
-      {viewMode === 'feed' ? (
-        <GalleryFeed {...galleryFeed} onSelect={setSelectedItem} onReturnToInfinite={returnToInfinite} />
+    <div className={`flex-1 flex flex-col min-h-0${effectiveViewMode === 'feed' ? ' art-feed-page' : ' min-h-[calc(100dvh-3.5rem)]'}`} style={{ background: effectiveViewMode === 'feed' ? '#111111' : 'hsl(var(--background))' }}>
+      {effectiveViewMode === 'feed' ? (
+        <GalleryFeed
+          {...galleryFeed}
+          onSelect={setSelectedItem}
+          onReturnToInfinite={isMobile ? undefined : returnToInfinite}
+        />
       ) : (
         <div
           ref={containerRef}
@@ -158,7 +187,7 @@ export default function InfinitePage() {
         </div>
       )}
 
-      {viewMode === 'infinite' && <BottomControls
+      {effectiveViewMode === 'infinite' && !isMobile && <BottomControls
         camera={camera}
         wander={wanderStats}
         onToggleWander={() => {
@@ -166,8 +195,12 @@ export default function InfinitePage() {
           setWanderPaused(false);
         }}
         onResetWander={resetProgress}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        viewMode={effectiveViewMode}
+        onViewModeChange={(mode) => {
+          if (isMobile && mode === 'infinite') return;
+          setViewMode(mode);
+        }}
+        isMobile={isMobile}
       />}
       <MediaDetailDialog
         item={selectedItem}
@@ -175,7 +208,7 @@ export default function InfinitePage() {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedItem(null);
-            if (wanderEnabled) {
+            if (wanderEnabled && effectiveViewMode === 'infinite') {
               window.setTimeout(() => setWanderPaused(false), 250);
             }
           }
