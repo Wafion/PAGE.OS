@@ -26,11 +26,31 @@ function LibraryContent() {
   const { user } = useAuth();
   const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   // If in Motion UI mode, render the reference-accurate bookshelf
   if (uiMode === "motion" || modeParam === "motion") {
     return <MotionLibrary />;
   }
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true);
+    try {
+      const { auth, googleProvider } = await import("@/lib/firebase");
+      const { signInWithPopup, setPersistence, browserLocalPersistence } = await import("firebase/auth");
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      if (
+        error?.code !== "auth/popup-closed-by-user" &&
+        error?.code !== "auth/cancelled-popup-request"
+      ) {
+        console.error("Error signing in with Google:", error);
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -57,20 +77,37 @@ function LibraryContent() {
 
     if (!user) {
         return (
-             <Card className="border-border/50 bg-card text-center">
+             <Card className="border-border/50 bg-card text-center max-w-lg mx-auto">
                 <CardHeader>
                     <div className="mx-auto bg-input rounded-full p-3 w-fit">
                         <User className="h-8 w-8 text-accent" />
                     </div>
                 </CardHeader>
                 <CardContent>
-                <CardTitle className="font-headline text-lg text-accent/80">AUTHENTICATION REQUIRED</CardTitle>
-                <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                    Please log in to your profile to view your archived transmissions.
+                <CardTitle className="font-headline text-lg text-accent/80">SIGN IN TO SAVE YOUR READINGS</CardTitle>
+                <p className="text-muted-foreground mt-2 max-w-md mx-auto text-sm">
+                    You must be logged in to view and save your readings. Sign in to track your reading progress and keep your library synchronized across all your devices.
                 </p>
-                <Button asChild variant="outline" className="mt-4 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent">
-                    <Link href="/profile">Go to Profile</Link>
-                </Button>
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Button
+                      type="button"
+                      disabled={isSigningIn}
+                      onClick={handleSignIn}
+                      className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90"
+                    >
+                      {isSigningIn ? (
+                        <>
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Signing in...</span>
+                        </>
+                      ) : (
+                        <span>Sign in with Google</span>
+                      )}
+                    </Button>
+                    <Button asChild variant="outline" className="w-full sm:w-auto border-accent/50 text-accent hover:bg-accent/10 hover:text-accent">
+                        <Link href="/profile">Go to Profile</Link>
+                    </Button>
+                </div>
                 </CardContent>
             </Card>
         )
@@ -96,11 +133,9 @@ function LibraryContent() {
     
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {libraryBooks
-                .filter((book) => book.source === "gutendex" || book.source === "web")
-                .map((book) => (
-                    <SearchResultCard key={`${book.source}-${book.id}`} book={book as any} />
-                ))}
+            {libraryBooks.map((book) => (
+                <SearchResultCard key={`${book.source || "book"}-${book.id}`} book={book as any} />
+            ))}
         </div>
     )
   };

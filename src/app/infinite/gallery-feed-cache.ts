@@ -148,10 +148,17 @@ export function appendGalleryFeedChunk(
       .filter((existing) => existing.cycle === chunk.cycle)
       .flatMap((existing) => existing.items.map(getMediaItemKey).filter(Boolean)),
   );
+  const seenUrls = new Set(
+    cache.chunks
+      .flatMap((existing) => existing.items.map((it) => it.url?.toLowerCase().trim()).filter(Boolean)),
+  );
   const items = chunk.items.filter((item) => {
     const key = getMediaItemKey(item);
+    const url = item.url?.toLowerCase().trim();
     if (!key || seen.has(key)) return false;
+    if (url && seenUrls.has(url)) return false;
     seen.add(key);
+    if (url) seenUrls.add(url);
     return true;
   });
   return {

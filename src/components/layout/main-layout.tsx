@@ -10,25 +10,34 @@ import { MotionRouteMenu } from "./motion-route-menu";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { showBootAnimation, uiMode } = useReaderSettings();
-  const [isBooting, setIsBooting] = useState(true);
+  const [isBooting, setIsBooting] = useState(false);
   const pathname = usePathname();
   const isInfinitePage = pathname.startsWith("/infinite");
 
   useEffect(() => {
+    // Never show bootloader on any route other than the root landing page ("/")
+    if (pathname !== "/") {
+      setIsBooting(false);
+      return;
+    }
+
     if (uiMode === "lounge" || uiMode === "motion") {
       setIsBooting(false);
       return;
     }
+
     try {
       const hasBooted = sessionStorage.getItem("pageos-booted");
       if (hasBooted === "true" || !showBootAnimation) {
         setIsBooting(false);
+      } else {
+        setIsBooting(true);
       }
     } catch (error) {
       console.warn("Could not read sessionStorage for boot status, skipping animation.", error);
       setIsBooting(false);
     }
-  }, [showBootAnimation, uiMode]);
+  }, [pathname, showBootAnimation, uiMode]);
 
   useEffect(() => {
     const handleChunkError = (event: PromiseRejectionEvent | ErrorEvent) => {
@@ -82,10 +91,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [uiMode]);
 
-  if (isBooting) {
-    return <Bootloader onComplete={handleBootComplete} />;
-  }
-
   if (pathname.startsWith("/read")) {
     return (
       <main className="pageos-app-shell pageos-reader-shell" data-page-route={pathname}>
@@ -95,18 +100,23 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
+  const showBootOverlay = isBooting && pathname === "/";
+
   return (
-    <div className="flex min-h-screen flex-col">
-      {uiMode === "motion" ? <MotionRouteMenu /> : <SidebarPopup />}
-      <AppHeader />
-      <main
-        key={pathname}
-        data-page-route={pathname}
-        className={`${uiMode === "motion" ? "pageos-route-stage" : ""} flex-1${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
-      >
-        {children}
-      </main>
-    </div>
+    <>
+      {showBootOverlay && <Bootloader onComplete={handleBootComplete} />}
+      <div className="flex min-h-screen flex-col">
+        {uiMode === "motion" ? <MotionRouteMenu /> : <SidebarPopup />}
+        <AppHeader />
+        <main
+          key={pathname}
+          data-page-route={pathname}
+          className={`${uiMode === "motion" ? "pageos-route-stage" : ""} flex-1${isInfinitePage ? " flex min-h-0 flex-col" : ""}`}
+        >
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
 

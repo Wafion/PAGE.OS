@@ -158,7 +158,19 @@ export async function getLibraryBooks(userId: string): Promise<LibraryBook[]> {
   if (snapshot.empty) {
     return [];
   }
-  return snapshot.docs.map(doc => doc.data() as LibraryBook).sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+  return snapshot.docs
+    .map((docSnap) => {
+      const data = docSnap.data() as LibraryBook;
+      return {
+        ...data,
+        id: data.id || docSnap.id,
+      };
+    })
+    .sort((a, b) => {
+      const timeA = a.savedAt ? new Date(a.savedAt).getTime() : 0;
+      const timeB = b.savedAt ? new Date(b.savedAt).getTime() : 0;
+      return (Number.isNaN(timeB) ? 0 : timeB) - (Number.isNaN(timeA) ? 0 : timeA);
+    });
 }
 
 /**

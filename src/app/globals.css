@@ -2167,6 +2167,7 @@ body:has(.pageos-not-found) main {
   width: min(94vw, 1120px);
   max-height: min(92vh, 92dvh);
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .pageos-detail-panel {
@@ -2174,7 +2175,12 @@ body:has(.pageos-not-found) main {
   display: flex;
   flex-direction: column;
   max-height: min(92vh, 92dvh);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  pointer-events: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 2rem;
   background:
@@ -2183,8 +2189,6 @@ body:has(.pageos-not-found) main {
     linear-gradient(180deg, rgba(7, 13, 22, 0.98), rgba(10, 15, 24, 0.98));
   color: rgba(255, 255, 255, 0.96);
   box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .pageos-detail-toolbar {
@@ -2466,10 +2470,26 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   display: none;
 }
 
+html.gallery-autoscroll-locked,
+body.gallery-autoscroll-locked {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  touch-action: none !important;
+  overscroll-behavior: none !important;
+}
+
 .art-feed {
-  min-height: 100%;
-  padding: 1.35rem 2rem 6.6rem;
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
   background: #111;
+  box-sizing: border-box;
 }
 
 /* Small buffer so the first row of images can render off-screen
@@ -2653,7 +2673,9 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   display: block;
   width: 100%;
   height: auto;
-  min-height: 130px;
+  /* Reserve the card's media box while the source is decoding. The inline
+     ratio on the card is always valid, including incomplete API records. */
+  min-height: 0;
   object-fit: cover;
   transition: transform 380ms cubic-bezier(0.2, 0.7, 0.2, 1), filter 240ms ease;
 }
@@ -2720,6 +2742,130 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   border-color: rgba(220, 214, 255, 0.48);
   background: rgba(45, 41, 66, 0.82);
 }
+
+/* ── Pinned Multi-Column Parallax Gallery ── */
+.art-feed-pinned-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background: #111;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+.art-feed-pinned-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.art-feed-cascade-container {
+  display: flex;
+  gap: 1.25rem;
+  max-width: 2100px;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  padding: 0.75rem clamp(1rem, 3vw, 2.5rem) 0;
+  box-sizing: border-box;
+  contain: paint layout size;
+}
+
+.art-cascade-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  contain: paint layout;
+  transform: translateZ(0);
+}
+
+.art-cascade-track {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.art-cascade-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  contain: layout paint;
+}
+
+.art-cascade-group .art-feed-card {
+  position: relative;
+  margin-bottom: 1.25rem;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  content-visibility: visible !important;
+  background: #17161b;
+}
+
+.art-cascade-group .art-feed-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, #16151a 20%, #23222a 40%, #16151a 60%);
+  background-size: 200% 100%;
+  animation: art-card-shimmer 2.2s ease-in-out infinite;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+
+.art-cascade-group .art-feed-card.is-loaded::before {
+  opacity: 0;
+}
+
+@keyframes art-card-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.art-feed-return {
+  position: fixed;
+  right: clamp(1rem, 2.5vw, 2rem);
+  bottom: 1.25rem;
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(220, 214, 255, 0.28);
+  border-radius: 999px;
+  padding: 0.6rem 0.95rem;
+  background: rgba(22, 21, 31, 0.85);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), inset 0 1px rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, color 160ms ease;
+  cursor: pointer;
+}
+
+.art-feed-return:hover,
+.art-feed-return:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(220, 214, 255, 0.55);
+  background: rgba(45, 41, 66, 0.92);
+  color: #fff;
+}
 .art-feed-missing-image {
   display: grid;
   width: 100%;
@@ -2734,7 +2880,30 @@ html.gallery-feed-scroll::-webkit-scrollbar {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.art-feed-card:hover img { transform: scale(1.025); filter: brightness(0.74); }
+.art-feed-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #19181d;
+  contain: paint layout;
+  transform: translateZ(0);
+}
+.art-feed-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+.art-feed-card:hover::after,
+.art-feed-card:focus-visible::after {
+  opacity: 1;
+}
+.art-feed-card:hover img {
+  transform: scale(1.025);
+}
 .art-feed-card-info {
   position: absolute;
   right: 0;

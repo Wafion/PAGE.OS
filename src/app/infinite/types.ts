@@ -1,21 +1,3 @@
-export interface CameraState {
-  x: number;
-  y: number;
-  zoom: number;
-}
-
-export interface WanderStats {
-  active: boolean;
-  status: string;
-  discoveries: number;
-  streak: number;
-  waypointLabel: string;
-}
-
-export interface ChunkCoord {
-  cx: number;
-  cy: number;
-}
 
 export interface MediaItem {
   id?: string;

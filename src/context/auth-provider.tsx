@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onIdTokenChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { LoaderCircle } from 'lucide-react';
 
 type AuthContextType = {
   user: User | null;
@@ -19,19 +18,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const unsubscribe = onIdTokenChanged(auth, (user) => {
-        setUser(user);
-        setLoading(false);
-        setError(null);
-      }, (error) => {
-        console.error('Firebase Auth error:', error);
-        setError(error.message);
-        setLoading(false);
-      });
+    // Safety fallback: if Firebase Auth takes longer than 2s (e.g. ad-blocker, Brave Shields, offline),
+    // mark loading as false so background auth never hangs the client state.
+    const fallbackTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
 
-      return () => unsubscribe();
+    try {
+      const unsubscribe = onIdTokenChanged(
+        auth,
+        (currentUser) => {
+          clearTimeout(fallbackTimer);
+          setUser(currentUser);
+          setLoading(false);
+          setError(null);
+        },
+        (err) => {
+          clearTimeout(fallbackTimer);
+          console.error('Firebase Auth error:', err);
+          setError(err.message);
+          setLoading(false);
+        }
+      );
+
+      return () => {
+        clearTimeout(fallbackTimer);
+        unsubscribe();
+      };
     } catch (err) {
+      clearTimeout(fallbackTimer);
       console.error('Failed to initialize Firebase Auth:', err);
       setError(err instanceof Error ? err.message : 'Unknown auth error');
       setLoading(false);
@@ -39,26 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = { user, loading, error };
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center gap-4 bg-background text-foreground">
-        <LoaderCircle className="h-8 w-8 animate-spin text-accent" />
-        <span>Authenticating...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center gap-4 bg-background text-foreground">
-        <div className="text-center">
-          <p className="text-red-500 mb-2">Authentication Error</p>
-          <p className="text-sm text-muted-foreground">{error}</p>
-        </div>
-      </div>
-    );
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

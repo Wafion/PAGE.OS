@@ -11,6 +11,7 @@ import {
   readGalleryFeedCache,
   writeGalleryFeedCache,
 } from './gallery-feed-cache';
+import { EMBEDDED_ARTWORK_MANIFEST } from '@/lib/data/artwork-manifest';
 
 interface FeedResponse {
   items?: MediaItem[];
@@ -26,14 +27,23 @@ interface PendingPage {
 
 function createCache(): GalleryFeedCache {
   const now = Date.now();
+  const chunk0 = getInitialSeedChunk();
+  // Include additional baseline chunks from the embedded manifest (90+ items)
+  // so each column starts with a large pool of unique artworks on first load.
+  const chunk1Items = EMBEDDED_ARTWORK_MANIFEST.slice(20, 55);
+  const chunk2Items = EMBEDDED_ARTWORK_MANIFEST.slice(55, 90);
   return {
     version: GALLERY_FEED_CACHE_VERSION,
     createdAt: now,
     updatedAt: now,
     seed: now,
     cycle: 0,
-    nextSourcePage: 0,
-    chunks: [getInitialSeedChunk()],
+    nextSourcePage: 3,
+    chunks: [
+      chunk0,
+      { page: 1, cycle: 0, items: chunk1Items, fetchedAt: now },
+      { page: 2, cycle: 0, items: chunk2Items, fetchedAt: now },
+    ],
   };
 }
 
@@ -62,7 +72,10 @@ function warmInitialViewportImages(cache: GalleryFeedCache) {
 
 export function useGalleryFeed(enabled: boolean) {
   const [cache, setCache] = React.useState<GalleryFeedCache | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  // Keep the feed in a loading state until the synchronous cache/seed has been
+  // attached. This prevents a one-frame empty viewport before the first effect
+  // runs on a cold navigation.
+  const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const initialized = React.useRef(false);
   const cacheRef = React.useRef<GalleryFeedCache | null>(null);
@@ -98,11 +111,12 @@ export function useGalleryFeed(enabled: boolean) {
         const data: FeedResponse = await response.json();
         if (!Array.isArray(data.items)) throw new Error('The artwork response was invalid.');
 
+        const artworkItems = data.items.filter((item) => item.type === 'artwork' || item.type !== 'book');
         const next: PendingPage = {
           cycle: current.cycle,
           sourcePage: current.nextSourcePage,
-          items: data.items,
-          hasMore: data.hasMore !== false && data.items.length > 0,
+          items: artworkItems,
+          hasMore: data.hasMore !== false && artworkItems.length > 0,
         };
         pendingRef.current = next;
         // Warm only top 6 upcoming cards so network bandwidth is preserved for current viewport
@@ -149,7 +163,11 @@ export function useGalleryFeed(enabled: boolean) {
   }, [commitCache, prefetchNext]);
 
   React.useEffect(() => {
-    if (!enabled || initialized.current) return;
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+    if (initialized.current) return;
     initialized.current = true;
 
     // Instant local cache read or instant initial seed chunk
@@ -166,16 +184,23 @@ export function useGalleryFeed(enabled: boolean) {
     void revealNext();
   }, [enabled, revealNext]);
 
-  const items = React.useMemo(
-    () =>
-      (cache?.chunks ?? []).flatMap((chunk) =>
-        chunk.items.map((item) => ({
+  const items = React.useMemo(() => {
+    const seenUrls = new Set<string>();
+    const result: Array<{ item: MediaItem; key: string }> = [];
+    for (const chunk of cache?.chunks ?? []) {
+      for (const item of chunk.items) {
+        if (item.type === 'book') continue;
+        const urlKey = item.url?.toLowerCase().trim();
+        if (urlKey && seenUrls.has(urlKey)) continue;
+        if (urlKey) seenUrls.add(urlKey);
+        result.push({
           item,
           key: `${chunk.cycle}:${getMediaItemKey(item)}`,
-        })),
-      ),
-    [cache],
-  );
+        });
+      }
+    }
+    return result;
+  }, [cache]);
 
   return { items, loading, error, hasMore: true, prefetchNext, loadNextPage: revealNext };
 }

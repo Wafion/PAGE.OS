@@ -221,7 +221,7 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
   }, [open, item?.id, item?.url]);
 
   React.useEffect(() => {
-    if (!open || !item || item.type !== "artwork" || !item.id?.startsWith("met-")) {
+    if (!open || !item || item.type !== "artwork" || !item.id || !/^met-\d+$/.test(item.id)) {
       return;
     }
 
@@ -324,7 +324,7 @@ export function MediaDetailDialog({ item, open, onOpenChange }: MediaDetailDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="pageos-detail-dialog border-0 bg-transparent p-0 shadow-none [&>button]:hidden sm:max-w-[min(1120px,94vw)]">
         <DialogTitle className="sr-only">{displayItem.title} details</DialogTitle>
-        <div className="pageos-detail-panel">
+        <div className="pageos-detail-panel" onWheel={(e) => e.stopPropagation()}>
           <div className="pageos-detail-toolbar">
             <DialogClose asChild>
               <button className="pageos-detail-icon-button" aria-label="Close details">

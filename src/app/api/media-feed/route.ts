@@ -425,7 +425,8 @@ export async function GET(request: Request) {
     if (!Number.isFinite(seed) || !Number.isInteger(page) || page < 0) {
       return NextResponse.json({ error: 'Invalid feed pagination parameters.' }, { status: 400 });
     }
-    const result = buildFeedPage(seed, page, pool, limit);
+    const artworkPool = pool.filter((item) => item.type === 'artwork' || item.type !== 'book');
+    const result = buildFeedPage(seed, page, artworkPool, limit);
     return NextResponse.json(
       { ...result, page, seed, cachedAt: lastUpdated },
       {
