@@ -48,11 +48,12 @@ export async function dispatchFeedbackNotifications(payload: FeedbackNotificatio
 
   const promises: Promise<void>[] = [];
 
-  // 1. Local persistent file inbox (data/feedback-inbox.jsonl)
+  // 1. Local persistent file inbox (data/feedback-inbox.jsonl or /tmp on Vercel)
   promises.push(
     (async () => {
       try {
-        const dataDir = path.join(process.cwd(), 'data');
+        const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+        const dataDir = isServerless ? '/tmp' : path.join(process.cwd(), 'data');
         await fs.mkdir(dataDir, { recursive: true });
         const filePath = path.join(dataDir, 'feedback-inbox.jsonl');
         const line = JSON.stringify({ ...payload, meta }) + '\n';
@@ -157,6 +158,8 @@ export async function dispatchFeedbackNotifications(payload: FeedbackNotificatio
               });
 
               if (retryRes.ok) {
+                const retryJson: any = await retryRes.json().catch(() => ({}));
+                console.log(`[Resend] Delivered to fallback ${fallbackEmail}, ID: ${retryJson?.id}`);
                 channelsNotified.push(`email_resend (routed to ${fallbackEmail})`);
                 return;
               }
@@ -164,13 +167,17 @@ export async function dispatchFeedbackNotifications(payload: FeedbackNotificatio
 
             throw new Error(`Resend HTTP ${res.status}: ${errText}`);
           }
-          channelsNotified.push('email_resend');
+
+          const resJson: any = await res.json().catch(() => ({}));
+          console.log(`[Resend] Successfully delivered to ${recipientEmail}, Resend ID: ${resJson?.id}`);
+          channelsNotified.push(`email_resend (ID: ${resJson?.id || 'ok'})`);
         } catch (err: any) {
           errors.email_resend = err?.message || 'Failed to send email via Resend';
         }
       })()
     );
   }
+
 
   // 3. Discord Webhook (instant push notifications to phone/desktop)
   const discordWebhookUrl = process.env.FEEDBACK_DISCORD_WEBHOOK_URL;
