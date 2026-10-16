@@ -78,3 +78,6 @@ brag-output-*/
 downloaded.pdf
 test-next-blob.mjs
 test-server.mjs
+
+# Local runtime data
+/data/

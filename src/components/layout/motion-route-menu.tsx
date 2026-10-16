@@ -36,6 +36,8 @@ export function MotionRouteMenu() {
     "/legal",
     "/legal/dmca",
     "/statistics",
+    "/community/feedback",
+    "/feedback",
   ]);
 
   const isUnmatched = (path: string | null): boolean => {

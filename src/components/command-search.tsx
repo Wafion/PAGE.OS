@@ -25,6 +25,22 @@ interface CommandSearchProps {
   onSearch: (query: string) => void;
 }
 
+const EASTER_EGG_KEYWORDS = [
+  "dev",
+  "developer",
+  "feedback",
+  "message",
+  "letter",
+  "secret",
+  "easter",
+  "hello",
+  "contact",
+  "despatch",
+  "dispatch",
+  "yash",
+  "author",
+];
+
 export function CommandSearch({ onSearch }: CommandSearchProps) {
   const router = useRouter();
   const [value, setValue] = useState("");
@@ -49,6 +65,12 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
       ? `author: ${trimmedValue}`
       : trimmedValue;
   }, [authorMode, trimmedValue]);
+
+  const isEasterEggMatch = useMemo(() => {
+    if (trimmedValue.length < 2) return false;
+    const lower = trimmedValue.toLowerCase();
+    return EASTER_EGG_KEYWORDS.some((kw) => lower.includes(kw));
+  }, [trimmedValue]);
 
   const handleSearchTrigger = async () => {
     if (!trimmedValue) {
@@ -160,7 +182,7 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
     router.push(suggestion.href);
   };
 
-  const hasSuggestions = gutenbergSuggestions.length > 0;
+  const hasSuggestions = gutenbergSuggestions.length > 0 || isEasterEggMatch;
 
   return (
     <div className={uiMode === "lounge" ? "library-command-search" : "flex flex-col gap-3"}>
@@ -173,6 +195,9 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
         </span>
         <Input
           type="text"
+          autoComplete="off"
+          data-1p-ignore="true"
+          data-protonpass-ignore="true"
           placeholder={
             uiMode === "lounge"
               ? authorMode
@@ -227,13 +252,51 @@ export function CommandSearch({ onSearch }: CommandSearchProps) {
                 : "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 overflow-hidden border border-border/60 bg-card/95 shadow-xl backdrop-blur"
             }
           >
-            {isSuggesting ? (
+            {isSuggesting && !isEasterEggMatch ? (
               <div className={`flex items-center gap-3 px-4 py-4 text-sm ${uiMode === "motion" ? "text-[#0b0b0c]/70" : "text-muted-foreground"}`}>
                 <LoaderCircle className={`h-4 w-4 animate-spin ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent"}`} />
                 <span>{uiMode === "lounge" ? "Finding suggestions..." : "Fetching suggestions..."}</span>
               </div>
             ) : hasSuggestions ? (
               <div className="max-h-80 overflow-y-auto py-2">
+                {isEasterEggMatch && (
+                  <div className="border-b border-border/40 pb-2 mb-2 px-2">
+                    <div className={`px-2 py-1 text-[10px] font-mono tracking-[0.2em] uppercase font-bold flex items-center justify-between ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent"}`}>
+                      <span>// SECRET DESPATCH</span>
+                      <span className="text-[8.5px] px-1.5 py-0.5 rounded bg-accent/15 text-accent font-semibold">001</span>
+                    </div>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setShowSuggestions(false);
+                        router.push("/community/feedback");
+                      }}
+                      className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left transition group ${
+                        uiMode === "motion"
+                          ? "bg-[#6c55db]/10 hover:bg-[#6c55db]/20 text-[#0b0b0c]"
+                          : "bg-accent/10 hover:bg-accent/20 text-foreground"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-semibold flex items-center gap-1.5">
+                          <span>📬</span>
+                          <span className="group-hover:underline">Message to the Developer</span>
+                        </p>
+                        <p className={`truncate text-[11px] font-mono mt-0.5 ${uiMode === "motion" ? "text-[#0b0b0c]/70" : "text-muted-foreground"}`}>
+                          A small corner for your thoughts · Direct line to the author
+                        </p>
+                      </div>
+                      <span className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.16em] px-2 py-1 rounded border font-semibold ${
+                        uiMode === "motion"
+                          ? "border-[#6c55db]/40 text-[#6c55db] bg-white/80"
+                          : "border-accent/40 text-accent bg-background/80"
+                      }`}>
+                        OPEN ↗
+                      </span>
+                    </button>
+                  </div>
+                )}
                 {gutenbergSuggestions.length > 0 && (
                   <div>
                     <div className={`px-4 py-2 text-[11px] uppercase tracking-[0.18em] ${uiMode === "motion" ? "text-[#6c55db]" : "text-accent/80"}`}>

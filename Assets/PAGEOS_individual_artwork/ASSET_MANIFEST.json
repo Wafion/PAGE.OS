@@ -1,0 +1,72 @@
+[
+  {
+    "file": "01-pageos-globe-poster.png",
+    "source_file": "a_textured_vintage_analog_paper_poster_card_desi.png",
+    "description": "PAGE.OS globe poster",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "02-developer-portrait.png",
+    "source_file": "a_textured_vintage_analog_illustration_poster_scen.png",
+    "description": "Developer portrait with headphones and scribbled face",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "03-lavender-notes-card.png",
+    "source_file": "a_single_isolated_graphic_design_image_on_a_dark_b.png",
+    "description": "Lavender notes card",
+    "dimensions": [
+      1305,
+      1205
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "04-mountain-print.png",
+    "source_file": "a_vintage_textured_collage_style_paper_poster_on.png",
+    "description": "Mountain print on aged graph paper",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "05-botanical-grid.png",
+    "source_file": "a_textured_vintage_scrapbook_graph_paper_style_i.png",
+    "description": "Botanical grid paper",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "06-celestial-moon-print.png",
+    "source_file": "a_wide_flat_vintage_retro_sci_fi_astronomy_poste.png",
+    "description": "Celestial moon archival print",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  },
+  {
+    "file": "07-mountain-collage-variant.png",
+    "source_file": "a_textured_vintage_hand_drawn_collage_illustrati.png",
+    "description": "Optional alternate mountain collage artwork",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "format": "PNG"
+  }
+]

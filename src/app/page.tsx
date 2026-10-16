@@ -595,7 +595,7 @@ export default function HomePage() {
       selectedGenre.key === "popular" ? featuredSourceLabel : genreSourceLabel;
 
     return (
-      <div className="motion-vinyl-layout">
+      <div className="motion-vinyl-layout" suppressHydrationWarning>
         <section className="motion-vinyl-hero">
           <div className="motion-vinyl-media" aria-hidden="true">
             <img src={MOTION_HERO_POSTER} alt="" className="motion-vinyl-poster" />
@@ -712,7 +712,7 @@ export default function HomePage() {
       selectedGenre.key === "popular" ? featuredSourceLabel : genreSourceLabel;
 
     return (
-      <div className="library-page">
+      <div className="library-page" suppressHydrationWarning>
         <section className="library-hero">
           <div className="library-hero-copy">
             <div className="library-hero-badge">
@@ -905,7 +905,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8">
+    <div className="flex flex-col gap-8 p-4 md:p-8" suppressHydrationWarning>
       <div>
         <h1 className="text-3xl font-headline text-accent">SYSTEM_FEED</h1>
         <p className="text-muted-foreground">

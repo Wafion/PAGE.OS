@@ -5,6 +5,7 @@ import {
   Settings,
   User,
   Shield,
+  Mail,
 } from "lucide-react";
 
 export const navigationItems = [
@@ -68,4 +69,15 @@ export const navigationItems = [
     code: "06",
     icon: Shield,
   },
+  {
+    href: "/community/feedback",
+    location: "/community/feedback",
+    classicLabel: "Message Developer",
+    loungeLabel: "Letter to Developer",
+    motionLabel: "Developer Dispatch",
+    detail: "Share your thoughts, ideas, or say hello to the developer.",
+    code: "07",
+    icon: Mail,
+  },
 ] as const;
+

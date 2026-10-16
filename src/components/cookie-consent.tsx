@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Cookie, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
@@ -85,6 +86,7 @@ function ConsentAwareInsights() {
 }
 
 export function CookieConsentBanner() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -100,6 +102,8 @@ export function CookieConsentBanner() {
 
     setIsVisible(false);
   }, []);
+
+  if (pathname?.startsWith("/community/feedback") || pathname === "/feedback") return null;
 
   return (
     <>

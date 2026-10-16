@@ -1,12 +1,15 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { useAudio } from "@/context/audio-provider";
 
 export function NowPlayingBar() {
+  const pathname = usePathname();
   const { currentTrack, playing, enabled } = useAudio();
 
+  if (pathname?.startsWith("/community/feedback") || pathname === "/feedback") return null;
   if (!enabled || !playing || !currentTrack) return null;
 
   return (

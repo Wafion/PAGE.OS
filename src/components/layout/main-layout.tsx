@@ -7,6 +7,7 @@ import { Bootloader } from "@/components/bootloader";
 import { useReaderSettings } from "@/context/reader-settings-provider";
 import { SidebarPopup } from "@/components/ui/sidebar/popup";
 import { MotionRouteMenu } from "./motion-route-menu";
+import { DeveloperEasterEgg } from "@/components/feedback/developer-easter-egg";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { showBootAnimation, uiMode } = useReaderSettings();
@@ -91,11 +92,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [uiMode]);
 
+  if (pathname.startsWith("/community/feedback") || pathname === "/feedback") {
+    return (
+      <main className="min-h-screen bg-[#161616]" data-page-route={pathname}>
+        {children}
+      </main>
+    );
+  }
+
   if (pathname.startsWith("/read")) {
     return (
       <main className="pageos-app-shell pageos-reader-shell" data-page-route={pathname}>
         {uiMode === "motion" ? <MotionRouteMenu /> : <SidebarPopup />}
         {children}
+        <DeveloperEasterEgg />
       </main>
     );
   }
@@ -115,6 +125,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         >
           {children}
         </main>
+        <DeveloperEasterEgg />
       </div>
     </>
   );
